@@ -46,6 +46,8 @@ namespace Jetpack
         private bool _isFlying = false;
         private bool _markedToFly = false;      // will fly once not grounded
 
+        private InputListener _inputListener = null;
+
         // make another one that needs thumbs closed, but fingers open at the same time for a small amount of time
         private KeyDoublePressTracker _keyTracker = new KeyDoublePressTracker();
 
@@ -53,41 +55,32 @@ namespace Jetpack
         {
             base.ScriptLoaded(modData);
 
-            //PlayerControl.local.OnButtonPressEvent += Local_OnButtonPressEvent;
-        }
-        private void Local_OnButtonPressEvent(PlayerControl.Hand hand, PlayerControl.Hand.Button button, bool pressed)
-        {
-            Debug.Log($"{hand.side} {button} {pressed}\r\n{JsonUtility.ToJson(hand, true)}");
+            _inputListener = new InputListener(_keyTracker);
         }
 
         public override void ScriptUpdate()
         {
             base.ScriptUpdate();
 
-            if (PlayerControl.loader == PlayerControl.Loader.OpenVR)
+            _inputListener.OnUpdate();
+
+            if (_keyTracker.WasBothDoubleClicked)
             {
-                var input = ((InputSteamVR)PlayerControl.input);
+                _keyTracker.Clear();
 
-                _keyTracker.Update(input);
-
-                if (_keyTracker.WasBothDoubleClicked)
+                if (Player.local.locomotion.isGrounded)
                 {
-                    _keyTracker.Clear();
-
-                    if (Player.local.locomotion.isGrounded)
-                    {
-                        if (_isFlying)
-                            DeactivateFly();
-                        else
-                            _markedToFly = true;
-                    }
+                    if (_isFlying)
+                        DeactivateFly();
                     else
-                    {
-                        if (_isFlying)
-                            DeactivateFly();
-                        else
-                            ActivateFly();
-                    }
+                        _markedToFly = true;
+                }
+                else
+                {
+                    if (_isFlying)
+                        DeactivateFly();
+                    else
+                        ActivateFly();
                 }
             }
 
@@ -111,10 +104,7 @@ namespace Jetpack
                     DestabilizeHeldNPC(Player.local.handLeft);
                     DestabilizeHeldNPC(Player.local.handRight);
 
-                    if (PlayerControl.loader == PlayerControl.Loader.Oculus)
-                        TryFlyUp(((InputXR_Oculus)PlayerControl.input).rightController.thumbstick.GetValue());
-                    else
-                        TryFlyUp(((InputSteamVR)PlayerControl.input).turnAction.axis);
+                    TryFlyUp(_inputListener.GetRightStick());
                 }
             }
             else

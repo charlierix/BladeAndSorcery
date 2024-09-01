@@ -36,12 +36,10 @@ namespace Jetpack
 
         public void Update(InputSteamVR input)
         {
-
             // It was averaging 10 - 15 ms
             //DateTime now = DateTime.UtcNow;
             //Debug.Log($"KeyDoublePressTracker Tick: {(now - _prevTime).TotalMilliseconds:N0}");
             //_prevTime = now;
-
 
             if (WasBothDoubleClicked)
                 return;
