@@ -88,7 +88,7 @@ namespace Jetpack
                     if (_isFlying)
                         DeactivateFly();
                     else
-                        _markedToFly = true;
+                        _markedToFly = true;        // TODO: when grounded, apply enough impulse upward to not be grounded (if that's possible)
                 }
                 else
                 {
