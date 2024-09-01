@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using ThunderRoad;
 using UnityEngine;
 
@@ -26,16 +25,32 @@ namespace Jetpack
             }
             return options;
         }
+        public static ModOptionFloat[] ZeroToThirtySix()
+        {
+            const int COUNT = 36;
+
+            ModOptionFloat[] options = new ModOptionFloat[101];
+            float val = 0;
+            float step = COUNT / (options.Length - 1);
+
+            for (int i = 0; i < options.Length; i++)
+            {
+                options[i] = new ModOptionFloat(val.ToString("0.0"), val);
+                val += step;
+            }
+
+            return options;
+        }
 
         [ModOption(name: "Use Jetpack Mod", tooltip: "Turns on/off the Jetpack mod.", defaultValueIndex = 1, order = 0)]
         public static bool useJetpackMod = true;
 
         [ModOptionSlider]
-        [ModOption(name: "Vertical Force", tooltip: "Determines how fast the player can fly vertically.", valueSourceName = nameof(ZeroToOneHundered), defaultValueIndex = 6, order = 1)]
+        [ModOption(name: "Vertical Force", tooltip: "Determines how fast the player can fly vertically.", valueSourceName = nameof(ZeroToThirtySix), order = 1)]
         public static float verticalForce = 6;     // discussion on discord was saying defaultValueIndex is ignored in 1.0.3, need to explicitely set a value
 
         [ModOptionSlider]
-        [ModOption(name: "Horizontal Speed", tooltip: "Determines how fast the player can fly horizontally.", valueSourceName = nameof(ZeroToOneHundered), defaultValueIndex = 9, order = 2)]
+        [ModOption(name: "Horizontal Speed", tooltip: "Determines how fast the player can fly horizontally.", valueSourceName = nameof(ZeroToThirtySix), order = 2)]
         public static float horizontalSpeed = 9;
 
         // PRE-FLIGHT DATA
