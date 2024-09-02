@@ -65,6 +65,12 @@ namespace Jetpack
         }
     }
 
+    // TODO: deactivate is so quiet you can't hear it
+    // activate needs to be boosted in the json by 12 db
+    // activate takes too long.  it should be sped up 3 or 4 times
+
+    // TODO: make some debug beep sounds
+
     public enum SoundName
     {
         Jetpack_Activate,
