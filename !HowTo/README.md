@@ -4,6 +4,8 @@ If you're new to git, cloning is basically downloading a copy - with an ability 
 
 You can either download the zip or run "git clone url" from command line.  Either way, click the root page of this repo, drop down the green button and make your selection
 
+![cloning](Cloning.png)
+
 The folder can be anywhere.  Visual Studio defaults to something like users\name\repos\source.  Personally, I like to make a !dev_repos folder at the root of my hard drive and put all repos there.  It's easy to find and has a low risk of long folder names messing things up
 
 If you're just going to download, there's no need for any special git tools.  But if you're going to make your own repo, create a github account.  [GitHub Desktop](https://desktop.github.com/download) is a good tool for managing repos.  You can clone directly from it, or if you've already cloned something, you can add a repo later.  VSCode and Visual Studio have git abilities as well, but I wouldn't trust visual studio when dealing with files outside of the solution
@@ -59,6 +61,8 @@ Then open **Window -> Asset Management -> Addressables -> Groups**.  Dock that n
 
 This will create an addressable group to hold sounds representing some sound effect.  Group, because you want a bunch of slightly deviated versions of a sound randomly chosen so the mod doesn't feel cheap and annoying every time the "sound" plays.  Addressable meaning it's a unique string that can be called from any script in the game
 
+(Most of this came from the wiki and Silk's comments)
+
 ### Files
 Make a folder somewhere under Assets folder.  I made a folder called !MyMods\\modname
 
@@ -107,64 +111,58 @@ manifest.json will be created in
 
 ![example](AssetBundle.png)
 
+### Effect JSON
+You also need to create an effect json file.  Here is a minimal json if all you want is audio (thanks to MagitMan).  None of the examples put author name and mod name in ID, just container address.  So I'm not sure what the scope of ID is (are mods sandboxed from each other?).  Until I know better, I'm playing it safe and using a global naming scheme
+
+Filename: Effect_AudioActivateFlight.json
+
+```json
+{
+	"$type": "ThunderRoad.EffectData, ThunderRoad",
+	"id": "PerfNormBeastJetpackActivateFlight",
+	"sensitiveContent": "None",
+	"sensitiveFilterBehaviour": "Discard",
+	"version": 0,
+	"groupId": "Misc",
+	"volumeDb": 0.0,
+	"modules": [
+		{
+			"$type": "ThunderRoad.EffectModuleAudio, ThunderRoad",
+			"audioContainerAddress": "PerfNormBeast.Jetpack.Audio.ActivateFlight"
+		}
+	]
+}
+```
+
+There are example jsons here (but they are all too complicated for just doing audio)
+> reponame\BuildStaging\Catalogs\Default\bas\Effects
+
+There is also [this](https://kospy.github.io/BasSDK/Components/ThunderRoad/Effects/Effect.html) page, but it's empty
+
 # Play Sound From Code
+Here is how you play the sound from code
 
+```csharp
+Transform play_at = Player.local.transform;     // or wherever it should be played
+string id = "PerfNormBeastJetpackActivateFlight";
 
+// New every time...
+Catalog.GetData<EffectData>(id).Spawn(play_at).Play();
 
+// Or cached...
+_dict = new Dictionary<string, EffectInstance>();
 
+if (!_dict.TryGetValue(id, out EffectInstance effect))
+{
+    effect = Catalog.GetData<EffectData>(id).Spawn(play_at);
+    _dict.Add(id, effect);
+}
 
-> MagitMan
-
-ik how to play the sound I think but referencing it is my problem. its a sonic boom sound.
-private AudioContainer BoomSound = Catalog.GetData<AudioContainer>("BoomSound");
-
-
-> Silk
-
- On Start
-public EffectInstance effect;
-Catalog.GetDataEffectData(Your Effect ID).Spawn(Wherever.transform);
-
- Whenever you want to play the sound
 effect.Play();
+```
 
+# Folders / Files
 
+Here is a picture of how various files end up in the final deployed mod folder
 
-Silk — 08/21/2024 9:22 AM
-Effect JSONs are EffectData
-Your audio container is in that effect, calling Play() will play everything in the JSON
-
-
-MagitMan — 08/21/2024 9:22 AM
-hold on im just testing your code
-its giving me no errors so thank you
-
-
-Silk — 08/21/2024 9:23 AM
-You'll wanna change that transform*
-
-
-MagitMan — 08/21/2024 9:23 AM
-i set it to the player
-
-
-Silk — 08/21/2024 9:23 AM
-Make sure player isn't null at the time you're getting + spawning the data or it won't work
-If you run it OnEnd of OnPossess that should be fine
-if you're not familiar, onEnd refers to EventTime, some events get called when they start and when they end so just checking if (eventTime == EventTime.OnEnd) makes sure your code is only run once 
-
-
-MagitMan — 08/21/2024 9:25 AM
-okay thanks
-
-
-MagitMan — 08/21/2024 9:35 AM
-I got a yellow message saying "Can not play a disabled audio source", i set the audio source on posses as you said but is that a problem with my json maybe?
-
-
-
-
-
-
-
-
+![fileflow](FileFlows.png)

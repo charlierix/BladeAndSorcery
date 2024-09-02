@@ -192,6 +192,8 @@ namespace Jetpack
             Player.crouchOnJump = false;
             //GameManager.options.allowStickJump = false;       // this doesn't seem to affect anything
 
+            PlaySounds.Play(SoundName.Jetpack_Activate);
+
             Debug.Log($"Activating Flight:\r\n{JsonUtility.ToJson(_old, true)}");
         }
 
@@ -211,6 +213,8 @@ namespace Jetpack
                 Player.crouchOnJump = _old.CrouchOnJump;
                 GameManager.options.allowStickJump = _old.StickJump;
             }
+
+            PlaySounds.Play(SoundName.Jetpack_Deactivate);
         }
     }
 }
