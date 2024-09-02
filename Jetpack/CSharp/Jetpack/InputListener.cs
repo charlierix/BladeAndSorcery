@@ -21,7 +21,7 @@ namespace Jetpack
         {
             _keyTracker = keyTracker;
 
-            PlayerControl.local.OnButtonPressEvent += Local_OnButtonPressEvent;
+            //PlayerControl.local.OnButtonPressEvent += Local_OnButtonPressEvent;
         }
 
         // Called from ScriptUpdate (multiple times a second)

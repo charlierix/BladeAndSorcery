@@ -45,6 +45,7 @@
     <Compile Include="JetpackScript.cs" />
     <Compile Include="KeyDoublePressTracker.cs" />
     <Compile Include="Models\FlightData.cs" />
+    <Compile Include="PlaySounds.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

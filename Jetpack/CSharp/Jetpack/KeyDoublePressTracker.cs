@@ -168,7 +168,7 @@ namespace Jetpack
             // DoubleClick detected
             DoubleClickTime = _thresholds[_thresholds.Count - 1].Time;
 
-            Debug.Log($"Double Click: {(_thresholds[_thresholds.Count - 1].Time - _thresholds[_thresholds.Count - 4].Time).TotalMilliseconds:N0}");
+            //Debug.Log($"Double Click: {(_thresholds[_thresholds.Count - 1].Time - _thresholds[_thresholds.Count - 4].Time).TotalMilliseconds:N0}");
         }
 
         #endregion

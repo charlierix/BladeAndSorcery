@@ -25,13 +25,29 @@ namespace Jetpack
             }
             return options;
         }
+        public static ModOptionFloat[] ZeroToTwelve()
+        {
+            const int COUNT = 12;
+
+            ModOptionFloat[] options = new ModOptionFloat[101];
+            float val = 0;
+            float step = (float)COUNT / (options.Length - 1);
+
+            for (int i = 0; i < options.Length; i++)
+            {
+                options[i] = new ModOptionFloat(val.ToString("0.0"), val);
+                val += step;
+            }
+
+            return options;
+        }
         public static ModOptionFloat[] ZeroToThirtySix()
         {
             const int COUNT = 36;
 
             ModOptionFloat[] options = new ModOptionFloat[101];
             float val = 0;
-            float step = COUNT / (options.Length - 1);
+            float step = (float)COUNT / (options.Length - 1);
 
             for (int i = 0; i < options.Length; i++)
             {
@@ -46,12 +62,12 @@ namespace Jetpack
         public static bool useJetpackMod = true;
 
         [ModOptionSlider]
-        [ModOption(name: "Vertical Force", tooltip: "Determines how fast the player can fly vertically.", valueSourceName = nameof(ZeroToThirtySix), order = 1)]
-        public static float verticalForce = 6;     // discussion on discord was saying defaultValueIndex is ignored in 1.0.3, need to explicitely set a value
+        [ModOption(name: "Horizontal Speed", tooltip: "Determines how fast the player can fly horizontally.", valueSourceName = nameof(ZeroToThirtySix), order = 1)]
+        public static float horizontalSpeed = 9;
 
         [ModOptionSlider]
-        [ModOption(name: "Horizontal Speed", tooltip: "Determines how fast the player can fly horizontally.", valueSourceName = nameof(ZeroToThirtySix), order = 2)]
-        public static float horizontalSpeed = 9;
+        [ModOption(name: "Vertical Force", tooltip: "Determines how fast the player can fly vertically.", valueSourceName = nameof(ZeroToTwelve), order = 2)]
+        public static float verticalForce = 6;     // discussion on discord was saying defaultValueIndex is ignored in 1.0.3, need to explicitely set a value
 
         // PRE-FLIGHT DATA
         private FlightData _old = null;
@@ -82,6 +98,8 @@ namespace Jetpack
             if (_keyTracker.WasBothDoubleClicked)
             {
                 _keyTracker.Clear();
+
+                PlaySounds.Play(SoundName.Jetpack_Activate, cache_effect: false);
 
                 if (Player.local.locomotion.isGrounded)
                 {
@@ -192,9 +210,10 @@ namespace Jetpack
             Player.crouchOnJump = false;
             //GameManager.options.allowStickJump = false;       // this doesn't seem to affect anything
 
-            Debug.Log($"Activating Flight:\r\n{JsonUtility.ToJson(_old, true)}");
-        }
+            //PlaySounds.Play(SoundName.Jetpack_Activate);
 
+            //Debug.Log($"Activating Flight:\r\n{JsonUtility.ToJson(_old, true)}");
+        }
         private void DeactivateFly()
         {
             _isFlying = false;
@@ -211,6 +230,8 @@ namespace Jetpack
                 Player.crouchOnJump = _old.CrouchOnJump;
                 GameManager.options.allowStickJump = _old.StickJump;
             }
+
+            //PlaySounds.Play(SoundName.Jetpack_Deactivate);
         }
     }
 }
