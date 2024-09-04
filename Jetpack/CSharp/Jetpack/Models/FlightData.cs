@@ -1,3 +1,6 @@
+using ThunderRoad;
+using UnityEngine;
+
 namespace Jetpack.Models
 {
     [System.Serializable]
@@ -13,5 +16,9 @@ namespace Jetpack.Models
         public bool FallDamage;
         public bool CrouchOnJump;
         public bool StickJump;
+
+        public float Height;
+        public Morphology Morphology;
+        public Vector3 HeadLocalPosition;
     }
 }

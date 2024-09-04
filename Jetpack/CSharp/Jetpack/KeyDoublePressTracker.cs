@@ -7,6 +7,11 @@ using ThunderRoad;
 using Unity.Mathematics;
 using UnityEngine;
 
+
+// look at:
+// PlayerControl.GetHand(Side.Right).usePressed
+
+
 namespace Jetpack
 {
     /// <summary>

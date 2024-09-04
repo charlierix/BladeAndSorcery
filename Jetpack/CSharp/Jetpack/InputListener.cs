@@ -31,10 +31,22 @@ namespace Jetpack
                 Update_OpenVR((InputSteamVR)PlayerControl.input);
         }
 
-        /// <summary>
-        /// Returns the right thumbstick position
-        /// </summary>
-        public Vector2 GetRightStick()
+        // Returns the left and right thumbstick positions
+        public static Vector2 GetLeftStick()
+        {
+            switch (PlayerControl.loader)
+            {
+                case PlayerControl.Loader.Oculus:
+                    return ((InputXR_Oculus)PlayerControl.input).leftController.thumbstick.GetValue();
+
+                case PlayerControl.Loader.OpenVR:
+                    return ((InputSteamVR)PlayerControl.input).moveAction.axis;
+
+                default:
+                    throw new ApplicationException($"Unexpected loader {PlayerControl.loader}");
+            }
+        }
+        public static Vector2 GetRightStick()
         {
             switch(PlayerControl.loader)
             {

@@ -60,7 +60,8 @@ namespace Jetpack
                     instance._cache.Add(name, effect);
                 }
 
-                effect.Play();      // hopefully this is async, otherwise this will hold the lock
+                effect.Stop();
+                effect.Play();
             }
         }
     }
