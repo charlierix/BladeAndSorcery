@@ -12,7 +12,7 @@ namespace Jetpack
         private FlightActivationType? _activation_type = null;
         //private string _activation_type = null;
 
-        public void Update(FlightActivationType activation_type, bool is_flying)
+        public void Update(FlightActivationType activation_type, bool requireBothHands, bool is_flying)
         {
             // detect a switch in transition type from last update.  if so, reset trackers
             if (_activation_type == null || _activation_type.Value != activation_type)

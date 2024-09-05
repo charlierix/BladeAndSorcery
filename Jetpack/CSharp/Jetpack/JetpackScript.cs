@@ -8,7 +8,6 @@ using UnityEngine;
 using UnityEngine.UIElements;
 
 
-// Do all of these big changes in a separate branch
 
 
 // Make a Flying class to handle actual flying
@@ -20,7 +19,6 @@ using UnityEngine.UIElements;
 
 // activate sound sounds more like a fireball than flight
 
-// Add sound options
 
 
 
@@ -32,26 +30,38 @@ namespace Jetpack
     {
         // https://kospy.github.io/BasSDK/Components/Guides/ModOptions/#how-do-i-use-modoptions
 
-        [ModOption(name: "Use Jetpack Mod", tooltip: "Turns on/off the Jetpack mod", order = 0)]
-        public static bool useJetpackMod = true;
+        private const string CATEGORY_ACTIVATE = "Activation / Deactivation";
+        private const string CATEGORY_FLIGHTPROPS = "Flight Properties";
+        private const string CATEGORY_SOUNDS = "Sounds";        // TODO: add this
+        private const string CATEGORY_SCALE = "Player Size";
 
-        public static ModOptionString[] flightActivation_Options = new[]
+        [ModOption(name: "Use Jetpack Mod", tooltip: "Turns on/off the Jetpack mod")]
+        public static bool UseJetpackMod = true;
+
+        // ******************** Activation / Deactivation ********************
+
+        //[ModOptionTextDisplay("description of section", null)]
+        //[ModOption("Info")]
+        //private static void label1(string value) { }
+
+        public static ModOptionString[] FlightActivation_Options = new[]
         {
             new ModOptionString("Hold Up (right stick)", null, FlightActivationType.HoldUp.ToString()),
             new ModOptionString("Hold Jump", null, FlightActivationType.HoldJump.ToString()),
             new ModOptionString("Double Jump", null, FlightActivationType.DoubleJump.ToString()),
             new ModOptionString("Double Click Use", null, FlightActivationType.DoubleClick_Use.ToString()),
             new ModOptionString("Hold The Bird", null, FlightActivationType.HoldBird.ToString()),     // 🖕
+            new ModOptionString("Hold Peace Sign", null, FlightActivationType.HoldPeace.ToString()),      // ✌️
             new ModOptionString("Hold Devil Horns", null, FlightActivationType.HoldDevilHorns.ToString()),        // 🤘
             new ModOptionString("Hold Rock On", null, FlightActivationType.HoldRockOn.ToString()),        // 🤟
-            new ModOptionString("Hold Peace Sign", null, FlightActivationType.HoldPeace.ToString()),      // ✌️
         };
 
         private static string _flightActivation = FlightActivationType.HoldUp.ToString();
         private static FlightActivationType _flightActivation_cast = FlightActivationType.HoldUp;
 
-        [ModOption(name: "Flight Activation/Deactivation", tooltip: "hello", valueSourceName: nameof(flightActivation_Options), order = 1)]
-        public static string flightActivation
+        [ModOptionCategory(CATEGORY_ACTIVATE, -99)]
+        [ModOption(name: "Flight Activation/Deactivation", tooltip: "How to activate flight (some options will also be used to deactivate)\n\nThe hold options are for controllers that have finger tracking", valueSourceName: nameof(FlightActivation_Options))]
+        public static string FlightActivation
         {
             get
             {
@@ -66,30 +76,69 @@ namespace Jetpack
             }
         }
 
-        [ModOption(name: "Stop flying on ground", tooltip: "Whether to stop flight when on the ground", order = 2)]
-        public static bool deactivateOnGround = true;
+        [ModOptionCategory(CATEGORY_ACTIVATE, -99)]
+        [ModOption(name: "Stop flying on ground", tooltip: "Whether to stop flight when on the ground")]
+        public static bool DeactivateOnGround = true;
 
+        [ModOptionCategory(CATEGORY_ACTIVATE, -99)]
+        [ModOption(name: "Require Both Hands", tooltip: "Options that are double click or gestures can be required to be done at the same time by both hands or just one\n\nSingle hand is easier but may cause misreads")]
+        public static bool RequireBothHands = true;
+
+        // ******************** Flight Properties ********************
+
+        // TODO: Option to reduce accel if in confined space (probably just a checkbox, the raycast dist and % reduction can probably be hardcoded - it may not be linear)
+
+        [ModOptionCategory(CATEGORY_FLIGHTPROPS, -99)]
         [ModOptionSlider]
-        [ModOption(name: "Horizontal Speed", tooltip: "Determines how fast the player can fly horizontally", order = 3)]
+        [ModOption(name: "Horizontal Accel", tooltip: "How hard to accelerate horizontally")]
         [ModOptionFloatValues(0, 24, 0.25f)]
-        public static float horizontalSpeed = 9;
+        public static float HorizontalSpeed = 9;
 
+        [ModOptionCategory(CATEGORY_FLIGHTPROPS, -99)]
         [ModOptionSlider]
-        [ModOption(name: "Vertical Force", tooltip: "Determines how fast the player can fly vertically", order = 4)]
+        [ModOption(name: "Vertical Accel", tooltip: "How hard to accelerate vertically")]
         [ModOptionFloatValues(0, 12, 0.25f)]
-        public static float verticalForce = 6;     // discussion on discord was saying defaultValueIndex is ignored in 1.0.3, need to explicitely set a value
+        public static float VerticalForce = 6;     // discussion on discord was saying defaultValueIndex is ignored in 1.0.3, need to explicitely set a value
 
-
+        // ******************** Player Size ********************
 
         // TODO:
         // Put scale logic as a separate thing from activate/deactivate flight
         //  create extra sliders and checkboxes
         //  make an apply scale button and back to default button
 
+        [ModOptionCategory(CATEGORY_SCALE, -99)]
         [ModOptionSlider]
-        [ModOption(name: "Player Size %", tooltip: "Can shrink the player so there is more room to fly", order = 5)]
+        [ModOption(name: "Player Size %", tooltip: "Can shrink the player so there is more room to fly")]
         [ModOptionFloatValues(0, 100, 1f)]
         public static float playerScale = 100;
+
+        public static ModOptionString[] scaleApplyButtonLabel = new[]
+        {
+            new ModOptionString("Apply Scale", "Apply Scale")
+        };
+
+        [ModOptionCategory(CATEGORY_SCALE, -99)]
+        [ModOptionButton]
+        [ModOption("Set scale to current settings", null, nameof(scaleApplyButtonLabel))]      // "Push the button" is the label to the left of the button
+        public static void OnApplyScale(string value)
+        {
+            Debug.Log("OnApplyScale Pressed");
+        }
+
+        public static ModOptionString[] scaleRevertButtonLabel = new[]
+        {
+            new ModOptionString("Default Scale", "Default Scale")
+        };
+
+        [ModOptionCategory(CATEGORY_SCALE, -99)]
+        [ModOptionButton]
+        [ModOption("Put scale back to normal", null, nameof(scaleRevertButtonLabel))]      // "Push the button" is the label to the left of the button
+        public static void OnRevertScale(string value)
+        {
+            Debug.Log("OnRevertScale Pressed");
+        }
+
 
         //[ModOptionButton]
         //[ModOption(name: "Apply Scale Settings", order = 6)]
@@ -132,7 +181,7 @@ namespace Jetpack
             base.ScriptUpdate();
 
 
-            _transitions.Update(_flightActivation_cast, _isFlying);
+            _transitions.Update(_flightActivation_cast, RequireBothHands, _isFlying);
 
 
             _inputListener.OnUpdate();
@@ -159,7 +208,7 @@ namespace Jetpack
                 }
             }
 
-            if (_isFlying && deactivateOnGround && Player.local.locomotion.isGrounded)
+            if (_isFlying && DeactivateOnGround && Player.local.locomotion.isGrounded)
                 DeactivateFly();
 
             if (_markedToFly && !Player.local.locomotion.isGrounded)
@@ -199,13 +248,13 @@ namespace Jetpack
 
             // TODO: may need to project transform's forward and right to horizontal plane
 
-            _loco.physicBody.AddForce(transform.forward * horizontalSpeed * axis.y, ForceMode.Acceleration);
-            _loco.physicBody.AddForce(transform.right * horizontalSpeed * axis.x, ForceMode.Acceleration);
+            _loco.physicBody.AddForce(transform.forward * HorizontalSpeed * axis.y, ForceMode.Acceleration);
+            _loco.physicBody.AddForce(transform.right * HorizontalSpeed * axis.x, ForceMode.Acceleration);
         }
         private void AccelUp(Vector2 axis)
         {
             if (axis.y != 0.0 && (!Pointer.GetActive() || !Pointer.GetActive().isPointingUI))
-                _loco.physicBody.AddForce(Vector3.up * verticalForce * axis.y, ForceMode.Acceleration);
+                _loco.physicBody.AddForce(Vector3.up * VerticalForce * axis.y, ForceMode.Acceleration);
         }
 
         private static void DestabilizeHeldNPC(PlayerHand side)
@@ -234,7 +283,7 @@ namespace Jetpack
         {
             _markedToFly = false;
 
-            if (!useJetpackMod)
+            if (!UseJetpackMod)
             {
                 Debug.Log("ActivateFly() called, but mod is disabled");
                 return;
