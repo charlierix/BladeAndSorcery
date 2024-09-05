@@ -11,23 +11,18 @@ namespace Jetpack.InputWatchers
     /// <summary>
     /// Listens to events and state of controllers, exposes result props
     /// </summary>
-    public class InputListener
+    public class InputUtil
     {
-        private readonly KeyDoublePressTracker _keyTracker;
-
-        // Should be instantiated from ScriptLoaded
-        public InputListener(KeyDoublePressTracker keyTracker)
+        public static bool SupportsFingerTracking()
         {
-            _keyTracker = keyTracker;
-
-            //PlayerControl.local.OnButtonPressEvent += Local_OnButtonPressEvent;
+            // TODO: Figure out if there are others
+            return PlayerControl.loader == PlayerControl.Loader.OpenVR;
         }
 
-        // Called from ScriptUpdate (multiple times a second)
-        public void OnUpdate()
+        public static void Update_KeyTracker(KeyDoublePressTracker tracker)
         {
             if (PlayerControl.loader == PlayerControl.Loader.OpenVR)
-                Update_OpenVR((InputSteamVR)PlayerControl.input);
+                tracker.Update((InputSteamVR)PlayerControl.input);
         }
 
         // Returns the left and right thumbstick positions
@@ -63,11 +58,6 @@ namespace Jetpack.InputWatchers
         private void Local_OnButtonPressEvent(PlayerControl.Hand hand, PlayerControl.Hand.Button button, bool pressed)
         {
             Debug.Log($"{hand.side} {button} {pressed}\r\n{JsonUtility.ToJson(hand, true)}");
-        }
-
-        private void Update_OpenVR(InputSteamVR input)
-        {
-            _keyTracker.Update(input);
         }
     }
 }

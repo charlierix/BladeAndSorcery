@@ -30,7 +30,7 @@ namespace Jetpack.InputWatchers
             _start = null;
         }
 
-        public bool IsHeldUp(float duration_ms = 333)
+        public bool IsHeldUp(float duration_ms = 500)
         {
             if (_start == null)
                 return false;

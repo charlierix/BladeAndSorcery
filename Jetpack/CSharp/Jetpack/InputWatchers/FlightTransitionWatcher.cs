@@ -13,6 +13,7 @@ namespace Jetpack.InputWatchers
         private FlightActivationType? _activation_type = null;
 
         private HoldUpTracker _holdUpTracker = null;
+        private KeyDoublePressTracker _keyDoublePressTracker = null;
 
         public bool Update(FlightActivationType activation_type, bool requireBothHands, bool deactivateOnGround, bool is_flying)
         {
@@ -32,7 +33,8 @@ namespace Jetpack.InputWatchers
                 case FlightActivationType.HoldUp:
                     return Update_HoldUp(is_flying);
 
-                case FlightActivationType.DoubleClick_Use:
+                case FlightActivationType.DoubleClick_Thumbpad:
+                    return Update_DoubleClick_Thumbpad(requireBothHands, deactivateOnGround, is_flying);
 
                 case FlightActivationType.HoldBird:
 
@@ -53,20 +55,30 @@ namespace Jetpack.InputWatchers
             }
         }
 
-        private static bool AlwaysDeactivateOnGround(FlightActivationType activation_type)
-        {
-            // TODO: HoldJump and DoubleJump need to differentiate between holding up and clicking stick
-            return activation_type == FlightActivationType.HoldUp;
-        }
-
         private bool Update_HoldUp(bool is_flying)
         {
             if (is_flying)
                 return false;       // holding up on the right thumbstick will only activate flight, never deactivate
 
-            _holdUpTracker.Update(InputListener.GetRightStick());
+            _holdUpTracker.Update(InputUtil.GetRightStick());
 
             return _holdUpTracker.IsHeldUp();
+        }
+        private bool Update_DoubleClick_Thumbpad(bool requireBothHands, bool deactivateOnGround, bool is_flying)
+        {
+            if (_keyDoublePressTracker == null)
+                return false;
+
+            InputUtil.Update_KeyTracker(_keyDoublePressTracker);
+
+            bool retVal = requireBothHands ?
+                _keyDoublePressTracker.WasBothDoubleClicked :
+                _keyDoublePressTracker.WasEitherDoubleClicked;
+
+            if (retVal)
+                _keyDoublePressTracker.Clear();
+
+            return retVal;
         }
 
         private void ChangeActivationType(FlightActivationType activation_type)
@@ -74,6 +86,7 @@ namespace Jetpack.InputWatchers
             _activation_type = activation_type;
 
             _holdUpTracker = null;
+            _keyDoublePressTracker = null;
 
             switch (activation_type)
             {
@@ -87,7 +100,9 @@ namespace Jetpack.InputWatchers
                 case FlightActivationType.DoubleJump:
                     break;
 
-                case FlightActivationType.DoubleClick_Use:
+                case FlightActivationType.DoubleClick_Thumbpad:
+                    if (InputUtil.SupportsFingerTracking())
+                        _keyDoublePressTracker = new KeyDoublePressTracker();
                     break;
 
                 case FlightActivationType.HoldBird:
@@ -109,6 +124,11 @@ namespace Jetpack.InputWatchers
             }
         }
 
+        private static bool AlwaysDeactivateOnGround(FlightActivationType activation_type)
+        {
+            // TODO: HoldJump and DoubleJump need to differentiate between holding up and clicking stick
+            return activation_type == FlightActivationType.HoldUp;
+        }
     }
 
     public enum FlightActivationType
@@ -117,7 +137,7 @@ namespace Jetpack.InputWatchers
         HoldJump,
         DoubleJump,
 
-        DoubleClick_Use,
+        DoubleClick_Thumbpad,
 
         HoldBird,
         HoldPeace,

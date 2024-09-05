@@ -36,6 +36,8 @@ namespace Jetpack.InputWatchers
 
         public bool WasBothDoubleClicked { get; set; }
 
+        public bool WasEitherDoubleClicked { get; set; }
+
         DateTime _prevTime = DateTime.UtcNow;
 
         public void Update(InputSteamVR input)
@@ -45,11 +47,10 @@ namespace Jetpack.InputWatchers
             //Debug.Log($"KeyDoublePressTracker Tick: {(now - _prevTime).TotalMilliseconds:N0}");
             //_prevTime = now;
 
-            if (WasBothDoubleClicked)
-                return;
-
             _left.Update(input.skeletonLeftAction.thumbCurl);
             _right.Update(input.skeletonRightAction.thumbCurl);
+
+            WasEitherDoubleClicked = _left.DoubleClickTime != null || _right.DoubleClickTime != null;
 
             if (_left.DoubleClickTime == null || _right.DoubleClickTime == null)
                 return;
@@ -116,9 +117,7 @@ namespace Jetpack.InputWatchers
         public void Update(float value)
         {
             if (_prev <= OPEN && value > OPEN)
-            {
                 AddThreshold(true);
-            }
             
             if (_prev < CLOSED && value >= CLOSED)      // it's possible to cross both the open and closed thresholds in a single tick
             {

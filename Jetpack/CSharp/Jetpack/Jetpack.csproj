@@ -44,7 +44,7 @@
     <Compile Include="InputWatchers\FlightTransitionWatcher.cs" />
     <Compile Include="InputWatchers\HoldGestureTracker.cs" />
     <Compile Include="InputWatchers\HoldUpTracker.cs" />
-    <Compile Include="InputWatchers\InputListener.cs" />
+    <Compile Include="InputWatchers\InputUtil.cs" />
     <Compile Include="JetpackScript.cs" />
     <Compile Include="InputWatchers\KeyDoublePressTracker.cs" />
     <Compile Include="Models\FlightData.cs" />

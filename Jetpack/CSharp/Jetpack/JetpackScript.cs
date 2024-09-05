@@ -48,9 +48,9 @@ namespace Jetpack
         public static ModOptionString[] FlightActivation_Options = new[]
         {
             new ModOptionString("Hold Up (right stick)", null, FlightActivationType.HoldUp.ToString()),
-            new ModOptionString("Hold Jump", null, FlightActivationType.HoldJump.ToString()),
-            new ModOptionString("Double Jump", null, FlightActivationType.DoubleJump.ToString()),
-            new ModOptionString("Double Click Use", null, FlightActivationType.DoubleClick_Use.ToString()),
+            //new ModOptionString("Hold Jump", null, FlightActivationType.HoldJump.ToString()),     // TODO: check the difference between jump on click and jump on up
+            //new ModOptionString("Double Jump", null, FlightActivationType.DoubleJump.ToString()),
+            new ModOptionString("Double Click Thumbpad", null, FlightActivationType.DoubleClick_Thumbpad.ToString()),
             new ModOptionString("Hold The Bird", null, FlightActivationType.HoldBird.ToString()),     // 🖕
             new ModOptionString("Hold Peace Sign", null, FlightActivationType.HoldPeace.ToString()),      // ✌️
             new ModOptionString("Hold Devil Horns", null, FlightActivationType.HoldDevilHorns.ToString()),        // 🤘
@@ -158,24 +158,7 @@ namespace Jetpack
         private bool _isFlying = false;
         private bool _markedToFly = false;      // will fly once not grounded
 
-
         private FlightTransitionWatcher _transitions = new FlightTransitionWatcher();
-
-
-        // These listeners should be managed by transition watcher
-        //private InputListener _inputListener = null;
-        //private KeyDoublePressTracker _keyTracker = new KeyDoublePressTracker();
-
-
-
-
-
-        public override void ScriptLoaded(ModManager.ModData modData)
-        {
-            base.ScriptLoaded(modData);
-
-            //_inputListener = new InputListener(_keyTracker);
-        }
 
         public override void ScriptUpdate()
         {
@@ -183,14 +166,8 @@ namespace Jetpack
 
             bool should_switch = _transitions.Update(_flightActivation_cast, RequireBothHands, DeactivateOnGround, _isFlying);
 
-
-            //_inputListener.OnUpdate();
-
-            //if (_keyTracker.WasBothDoubleClicked)
             if (should_switch)
             {
-                //_keyTracker.Clear();
-
                 PlaySounds.Play(SoundName.Jetpack_Activate, cache_effect: false);       // for some reason, the cached version only plays once.  Maybe it gets disabled once the the sound stops?  or needs to be reset somehow?
 
                 if (Player.local.locomotion.isGrounded)
@@ -230,8 +207,8 @@ namespace Jetpack
                     // TODO: make an option for horiztonal control mode (direct or accel)
                     //_loco.horizontalAirSpeed = horizontalSpeed / 100f;
 
-                    AccelHorz(InputListener.GetLeftStick());
-                    AccelUp(InputListener.GetRightStick());
+                    AccelHorz(InputUtil.GetLeftStick());
+                    AccelUp(InputUtil.GetRightStick());
                 }
             }
             else
