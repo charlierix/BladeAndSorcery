@@ -35,89 +35,47 @@ namespace Jetpack
         [ModOption(name: "Use Jetpack Mod", tooltip: "Turns on/off the Jetpack mod", order = 0)]
         public static bool useJetpackMod = true;
 
-
-        //public static ModOptionString[] flightActivation_Options = new[]
-        //{
-        //    new ModOptionString("Hold Up (right stick)", FlightTransitionWatcher.HOLD_UP),
-        //    new ModOptionString("Hold Jump", FlightTransitionWatcher.HOLD_JUMP),
-        //    new ModOptionString("Double Jump", FlightTransitionWatcher.DOUBLE_JUMP),
-        //    new ModOptionString("Double Click Use (index only)", FlightTransitionWatcher.DOUBLECLICK_USE),
-        //    new ModOptionString("Hold The Bird 🖕 (index only)", FlightTransitionWatcher.HOLD_BIRD),
-        //    new ModOptionString("Hold Devil Horns 🤘 (index only)", FlightTransitionWatcher.HOLD_DEVILHORNS),
-        //    new ModOptionString("Hold Rock On 🤟 (index only)", FlightTransitionWatcher.HOLD_ROCKON),
-        //    new ModOptionString("Hold Peace Sign ✌️ (index only)", FlightTransitionWatcher.HOLD_PEACE),
-        //};
-
-        //public static ModOptionString[] flightActivation_Options = new[]
-        //{
-        //    new ModOptionString("Hold Up (right stick)", FlightActivationType.HoldUp),
-        //    new ModOptionString("Hold Jump", FlightActivationType.HoldJump),
-        //    new ModOptionString("Double Jump", FlightActivationType.DoubleJump),
-        //    new ModOptionString("Double Click Use (index only)", FlightActivationType.DoubleClick_Use),
-        //    new ModOptionString("Hold The Bird 🖕 (index only)", FlightActivationType.HoldBird),
-        //    new ModOptionString("Hold Devil Horns 🤘 (index only)", FlightActivationType.HoldDevilHorns),
-        //    new ModOptionString("Hold Rock On 🤟 (index only)", FlightActivationType.HoldRockOn),
-        //    new ModOptionString("Hold Peace Sign ✌️ (index only)", FlightActivationType.HoldPeace),
-        //};
-
-        //[ModOption(name: "Flight Activation/Deactivation", tooltip: "", valueSourceName: nameof(flightActivation_Options), order = 1)]
-        //public static FlightActivationType flightActivation = FlightActivationType.HoldUp;
-
         public static ModOptionString[] flightActivation_Options = new[]
         {
-            new ModOptionString("Hold Up (right stick)", FlightActivationType.HoldUp.ToString()),
-            new ModOptionString("Hold Jump", FlightActivationType.HoldJump.ToString()),
-            new ModOptionString("Double Jump", FlightActivationType.DoubleJump.ToString()),
-            new ModOptionString("Double Click Use", FlightActivationType.DoubleClick_Use.ToString()),
-            new ModOptionString("Hold The Bird 🖕", FlightActivationType.HoldBird.ToString()),
-            new ModOptionString("Hold Devil Horns 🤘", FlightActivationType.HoldDevilHorns.ToString()),
-            new ModOptionString("Hold Rock On 🤟", FlightActivationType.HoldRockOn.ToString()),
-            new ModOptionString("Hold Peace Sign ✌️", FlightActivationType.HoldPeace.ToString()),
+            new ModOptionString("Hold Up (right stick)", null, FlightActivationType.HoldUp.ToString()),
+            new ModOptionString("Hold Jump", null, FlightActivationType.HoldJump.ToString()),
+            new ModOptionString("Double Jump", null, FlightActivationType.DoubleJump.ToString()),
+            new ModOptionString("Double Click Use", null, FlightActivationType.DoubleClick_Use.ToString()),
+            new ModOptionString("Hold The Bird", null, FlightActivationType.HoldBird.ToString()),     // 🖕
+            new ModOptionString("Hold Devil Horns", null, FlightActivationType.HoldDevilHorns.ToString()),        // 🤘
+            new ModOptionString("Hold Rock On", null, FlightActivationType.HoldRockOn.ToString()),        // 🤟
+            new ModOptionString("Hold Peace Sign", null, FlightActivationType.HoldPeace.ToString()),      // ✌️
         };
 
-
-        
-
-        //public static ModOptionString[] flightActivation_Options = new[]
-        //{
-        //    new ModOptionString(FlightTransitionWatcher.HOLD_UP, FlightTransitionWatcher.HOLD_UP),
-        //    new ModOptionString(FlightTransitionWatcher.HOLD_JUMP, FlightTransitionWatcher.HOLD_JUMP),
-        //    new ModOptionString(FlightTransitionWatcher.DOUBLE_JUMP, FlightTransitionWatcher.DOUBLE_JUMP),
-        //    new ModOptionString(FlightTransitionWatcher.DOUBLECLICK_USE, FlightTransitionWatcher.DOUBLECLICK_USE),
-        //    new ModOptionString(FlightTransitionWatcher.HOLD_BIRD, FlightTransitionWatcher.HOLD_BIRD),
-        //    new ModOptionString(FlightTransitionWatcher.HOLD_DEVILHORNS, FlightTransitionWatcher.HOLD_DEVILHORNS),
-        //    new ModOptionString(FlightTransitionWatcher.HOLD_ROCKON, FlightTransitionWatcher.HOLD_ROCKON),
-        //    new ModOptionString(FlightTransitionWatcher.HOLD_PEACE, FlightTransitionWatcher.HOLD_PEACE),
-        //};
-        //public static ModOptionString[] flightActivation_Options = new[]
-        //{
-        //    new ModOptionString(FlightTransitionWatcher.HOLD_UP, "a"),
-        //    new ModOptionString(FlightTransitionWatcher.HOLD_JUMP, "b"),
-        //    new ModOptionString(FlightTransitionWatcher.DOUBLE_JUMP, "c"),
-        //    new ModOptionString(FlightTransitionWatcher.DOUBLECLICK_USE, "d"),
-        //    new ModOptionString(FlightTransitionWatcher.HOLD_BIRD, "e"),
-        //    new ModOptionString(FlightTransitionWatcher.HOLD_DEVILHORNS, "f"),
-        //    new ModOptionString(FlightTransitionWatcher.HOLD_ROCKON, "g"),
-        //    new ModOptionString(FlightTransitionWatcher.HOLD_PEACE, "h"),
-        //};
-
+        private static string _flightActivation = FlightActivationType.HoldUp.ToString();
+        private static FlightActivationType _flightActivation_cast = FlightActivationType.HoldUp;
 
         [ModOption(name: "Flight Activation/Deactivation", tooltip: "hello", valueSourceName: nameof(flightActivation_Options), order = 1)]
-        public static string flightActivation = FlightActivationType.HoldUp.ToString();
+        public static string flightActivation
+        {
+            get
+            {
+                return _flightActivation;
+            }
+            set
+            {
+                _flightActivation = value;
 
+                if (!Enum.TryParse<FlightActivationType>(value, out _flightActivation_cast))
+                    Debug.Log($"Couldn't parse FlightActivationType: {value}.  Leaving it as {_flightActivation_cast}");
+            }
+        }
 
-
-
-        [ModOption(name: "Stop flying on ground", tooltip: "Whether to stop flight when on the ground", order = 1)]
+        [ModOption(name: "Stop flying on ground", tooltip: "Whether to stop flight when on the ground", order = 2)]
         public static bool deactivateOnGround = true;
 
         [ModOptionSlider]
-        [ModOption(name: "Horizontal Speed", tooltip: "Determines how fast the player can fly horizontally", order = 2)]
+        [ModOption(name: "Horizontal Speed", tooltip: "Determines how fast the player can fly horizontally", order = 3)]
         [ModOptionFloatValues(0, 24, 0.25f)]
         public static float horizontalSpeed = 9;
 
         [ModOptionSlider]
-        [ModOption(name: "Vertical Force", tooltip: "Determines how fast the player can fly vertically", order = 3)]
+        [ModOption(name: "Vertical Force", tooltip: "Determines how fast the player can fly vertically", order = 4)]
         [ModOptionFloatValues(0, 12, 0.25f)]
         public static float verticalForce = 6;     // discussion on discord was saying defaultValueIndex is ignored in 1.0.3, need to explicitely set a value
 
@@ -129,7 +87,7 @@ namespace Jetpack
         //  make an apply scale button and back to default button
 
         [ModOptionSlider]
-        [ModOption(name: "Player Size %", tooltip: "Can shrink the player so there is more room to fly", order = 4)]
+        [ModOption(name: "Player Size %", tooltip: "Can shrink the player so there is more room to fly", order = 5)]
         [ModOptionFloatValues(0, 100, 1f)]
         public static float playerScale = 100;
 
@@ -140,19 +98,6 @@ namespace Jetpack
         //    Debug.Log("ApplyScale Clicked");
         //}
 
-
-
-        //public static ModOptionString[] stringOptionHighLow = new[]
-        //{
-        //    new ModOptionString("High", "Default.High"),
-        //    new ModOptionString("Medium", "Default.Medium"),
-        //    new ModOptionString("Low", "Default.Low"),
-        //    new ModOptionString("Test", (object)"mystringvalue"),
-        //    new ModOptionString("Test", "", "mystringvalue"),
-        //};
-
-        //[ModOption("DefaultValStringField", null, nameof(stringOptionHighLow))]
-        //public static string DefaultValStringField = "Medium";
 
 
         // PRE-FLIGHT DATA
@@ -187,7 +132,7 @@ namespace Jetpack
             base.ScriptUpdate();
 
 
-            _transitions.Update(flightActivation, _isFlying);
+            _transitions.Update(_flightActivation_cast, _isFlying);
 
 
             _inputListener.OnUpdate();
