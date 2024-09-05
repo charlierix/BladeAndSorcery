@@ -12,25 +12,73 @@ namespace Jetpack.InputWatchers
     {
         private FlightActivationType? _activation_type = null;
 
-        public void Update(FlightActivationType activation_type, bool requireBothHands, bool is_flying)
+        private HoldUpTracker _holdUpTracker = null;
+
+        public bool Update(FlightActivationType activation_type, bool requireBothHands, bool deactivateOnGround, bool is_flying)
         {
             // detect a switch in transition type from last update.  if so, reset trackers
             if (_activation_type == null || _activation_type.Value != activation_type)
                 ChangeActivationType(activation_type);
 
             if (_activation_type == null)       // null if there is an error setting it up
-                return;
+                return false;
 
-            // call corresponding tracker (if there's a need to based on current state)
+            if (is_flying && Player.local.locomotion.isGrounded && (deactivateOnGround || AlwaysDeactivateOnGround(_activation_type.Value)))
+                return true;
+
+            // Call corresponding tracker
+            switch (_activation_type.Value)
+            {
+                case FlightActivationType.HoldUp:
+                    return Update_HoldUp(is_flying);
+
+                case FlightActivationType.DoubleClick_Use:
+
+                case FlightActivationType.HoldBird:
+
+                case FlightActivationType.HoldPeace:
+
+                case FlightActivationType.HoldDevilHorns:
+
+                case FlightActivationType.HoldRockOn:
+
+                case FlightActivationType.HoldJump:
+                case FlightActivationType.DoubleJump:
+                    Debug.Log($"Finish this: {_activation_type.Value}");
+                    return false;
+
+                default:
+                    Debug.Log($"Unexpected {nameof(FlightActivationType)}: {_activation_type.Value}");
+                    return false;
+            }
+        }
+
+        private static bool AlwaysDeactivateOnGround(FlightActivationType activation_type)
+        {
+            // TODO: HoldJump and DoubleJump need to differentiate between holding up and clicking stick
+            return activation_type == FlightActivationType.HoldUp;
+        }
+
+        private bool Update_HoldUp(bool is_flying)
+        {
+            if (is_flying)
+                return false;       // holding up on the right thumbstick will only activate flight, never deactivate
+
+            _holdUpTracker.Update(InputListener.GetRightStick());
+
+            return _holdUpTracker.IsHeldUp();
         }
 
         private void ChangeActivationType(FlightActivationType activation_type)
         {
             _activation_type = activation_type;
 
+            _holdUpTracker = null;
+
             switch (activation_type)
             {
                 case FlightActivationType.HoldUp:
+                    _holdUpTracker = new HoldUpTracker();
                     break;
 
                 case FlightActivationType.HoldJump:

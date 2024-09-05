@@ -163,8 +163,8 @@ namespace Jetpack
 
 
         // These listeners should be managed by transition watcher
-        private InputListener _inputListener = null;
-        private KeyDoublePressTracker _keyTracker = new KeyDoublePressTracker();
+        //private InputListener _inputListener = null;
+        //private KeyDoublePressTracker _keyTracker = new KeyDoublePressTracker();
 
 
 
@@ -174,22 +174,22 @@ namespace Jetpack
         {
             base.ScriptLoaded(modData);
 
-            _inputListener = new InputListener(_keyTracker);
+            //_inputListener = new InputListener(_keyTracker);
         }
 
         public override void ScriptUpdate()
         {
             base.ScriptUpdate();
 
+            bool should_switch = _transitions.Update(_flightActivation_cast, RequireBothHands, DeactivateOnGround, _isFlying);
 
-            _transitions.Update(_flightActivation_cast, RequireBothHands, _isFlying);
 
+            //_inputListener.OnUpdate();
 
-            _inputListener.OnUpdate();
-
-            if (_keyTracker.WasBothDoubleClicked)
+            //if (_keyTracker.WasBothDoubleClicked)
+            if (should_switch)
             {
-                _keyTracker.Clear();
+                //_keyTracker.Clear();
 
                 PlaySounds.Play(SoundName.Jetpack_Activate, cache_effect: false);       // for some reason, the cached version only plays once.  Maybe it gets disabled once the the sound stops?  or needs to be reset somehow?
 
