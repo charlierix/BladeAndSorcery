@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ThunderRoad;
 using Valve.VR;
+using static UnityEngine.Rendering.DebugUI.Table;
 
 namespace Jetpack
 {
@@ -68,14 +69,21 @@ namespace Jetpack
             }
         }
 
-        public bool IsHeld(float duration_ms = 750)
+        public bool IsHeld(bool require_both, float duration_ms = 750)
         {
-            if (_left == null || _right == null)
+            bool is_left = IsHeld_Hand(_left, duration_ms);
+            bool is_right = IsHeld_Hand(_right, duration_ms);
+
+            return require_both ?
+                is_left && is_right :
+                is_left || is_right;
+        }
+        private static bool IsHeld_Hand(DateTime? hand, float duration_ms)
+        {
+            if (hand == null)
                 return false;
 
-            DateTime now = DateTime.UtcNow;
-
-            return (now - _left.Value).TotalMilliseconds >= duration_ms && (now - _left.Value).TotalMilliseconds >= duration_ms;
+            return (DateTime.UtcNow - hand.Value).TotalMilliseconds >= duration_ms;
         }
 
         public void Clear()
