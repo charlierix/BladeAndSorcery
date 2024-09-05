@@ -41,11 +41,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FlightTransitionWatcher.cs" />
-    <Compile Include="HoldGestureTracker.cs" />
-    <Compile Include="InputListener.cs" />
+    <Compile Include="InputWatchers\FlightTransitionWatcher.cs" />
+    <Compile Include="InputWatchers\HoldGestureTracker.cs" />
+    <Compile Include="InputWatchers\InputListener.cs" />
     <Compile Include="JetpackScript.cs" />
-    <Compile Include="KeyDoublePressTracker.cs" />
+    <Compile Include="InputWatchers\KeyDoublePressTracker.cs" />
     <Compile Include="Models\FlightData.cs" />
     <Compile Include="PlaySounds.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using ThunderRoad;
 using UnityEngine;
 
-namespace Jetpack
+namespace Jetpack.InputWatchers
 {
     public class FlightTransitionWatcher
     {

@@ -5,9 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using ThunderRoad;
 using UnityEngine;
-using UnityEngine.Windows;
 
-namespace Jetpack
+namespace Jetpack.InputWatchers
 {
     /// <summary>
     /// Listens to events and state of controllers, exposes result props

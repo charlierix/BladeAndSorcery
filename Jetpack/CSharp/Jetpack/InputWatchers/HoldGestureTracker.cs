@@ -5,9 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using ThunderRoad;
 using Valve.VR;
-using static UnityEngine.Rendering.DebugUI.Table;
 
-namespace Jetpack
+namespace Jetpack.InputWatchers
 {
     // Looks for both hands holding fingers in a certain position for some amount of time
     public class HoldGestureTracker

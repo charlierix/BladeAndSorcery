@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ThunderRoad;
-using Unity.Mathematics;
 using UnityEngine;
 
 
@@ -12,7 +11,7 @@ using UnityEngine;
 // PlayerControl.GetHand(Side.Right).usePressed
 
 
-namespace Jetpack
+namespace Jetpack.InputWatchers
 {
     /// <summary>
     /// This watches for both thumbpads to be double clicked at the same time
