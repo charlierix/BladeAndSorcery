@@ -61,7 +61,7 @@ namespace Jetpack
         private static FlightActivationType _flightActivation_cast = FlightActivationType.HoldUp;
 
         [ModOptionCategory(CATEGORY_ACTIVATE, -99)]
-        [ModOption(name: "Flight Activation/Deactivation", tooltip: "How to activate flight (some options will also be used to deactivate)\n\nThe hold options are for controllers that have finger tracking", valueSourceName: nameof(FlightActivation_Options))]
+        [ModOption(name: "Flight Activation/Deactivation", tooltip: "How to activate flight (some options will also be used to deactivate)\n\nThe hold options are for controllers that have finger tracking", valueSourceName: nameof(FlightActivation_Options), order = 0)]
         public static string FlightActivation
         {
             get
@@ -78,11 +78,11 @@ namespace Jetpack
         }
 
         [ModOptionCategory(CATEGORY_ACTIVATE, -99)]
-        [ModOption(name: "Stop flying on ground", tooltip: "Whether to stop flight when on the ground")]
+        [ModOption(name: "Stop flying on ground", tooltip: "Whether to stop flight when on the ground", order = 1)]
         public static bool DeactivateOnGround = true;
 
         [ModOptionCategory(CATEGORY_ACTIVATE, -99)]
-        [ModOption(name: "Require Both Hands", tooltip: "Options that are double click or gestures can be required to be done at the same time by both hands or just one\n\nSingle hand is easier but may cause misreads")]
+        [ModOption(name: "Require Both Hands", tooltip: "Options that are double click or gestures can be required to be done at the same time by both hands or just one\n\nSingle hand is easier but may cause misreads", order = 2)]
         public static bool RequireBothHands = true;
 
         // ******************** Flight Properties ********************
@@ -91,15 +91,29 @@ namespace Jetpack
 
         [ModOptionCategory(CATEGORY_FLIGHTPROPS, -99)]
         [ModOptionSlider]
-        [ModOption(name: "Horizontal Accel", tooltip: "How hard to accelerate horizontally")]
+        [ModOption(name: "Horizontal Accel", tooltip: "How hard to accelerate horizontally", order = 0)]
         [ModOptionFloatValues(0, 24, 0.25f)]
         public static float HorizontalSpeed = 9;
 
         [ModOptionCategory(CATEGORY_FLIGHTPROPS, -99)]
         [ModOptionSlider]
-        [ModOption(name: "Vertical Accel", tooltip: "How hard to accelerate vertically")]
+        [ModOption(name: "Vertical Accel", tooltip: "How hard to accelerate vertically", order = 1)]
         [ModOptionFloatValues(0, 12, 0.25f)]
         public static float VerticalForce = 6;     // discussion on discord was saying defaultValueIndex is ignored in 1.0.3, need to explicitely set a value
+
+        [ModOptionCategory(CATEGORY_FLIGHTPROPS, -99)]
+        [ModOptionSlider]
+        [ModOption(name: "Drag", tooltip: "Wind resistance", order = 2)]
+        [ModOptionFloatValues(0, 2, 0.05f)]
+        public static float Drag = 0.9f;
+
+        [ModOptionCategory(CATEGORY_FLIGHTPROPS, -99)]
+        [ModOptionSlider]
+        [ModOption(name: "Gravity", tooltip: "0 is no gravity.  9.8 is standard", order = 3)]
+        [ModOptionFloatValues(0, 18, 0.1f)]
+        public static float GravitySetting = 0f;
+
+        //public static float
 
         // ******************** Player Size ********************
 
@@ -157,6 +171,7 @@ namespace Jetpack
         private Locomotion _loco = null;
         private bool _isFlying = false;
         private bool _markedToFly = false;      // will fly once not grounded
+        private float _last_applied_drag = -1;
 
         private FlightTransitionWatcher _transitions = new FlightTransitionWatcher();
 
@@ -191,6 +206,12 @@ namespace Jetpack
 
             if (_markedToFly && !Player.local.locomotion.isGrounded)
                 ActivateFly();
+
+            if (_isFlying && _last_applied_drag != Drag)
+            {
+                _loco.physicBody.drag = Drag;
+                _last_applied_drag = Drag;
+            }
         }
 
         public override void ScriptFixedUpdate()
@@ -231,8 +252,21 @@ namespace Jetpack
         }
         private void AccelUp(Vector2 axis)
         {
-            if (axis.y != 0.0 && (!Pointer.GetActive() || !Pointer.GetActive().isPointingUI))
-                _loco.physicBody.AddForce(Vector3.up * VerticalForce * axis.y, ForceMode.Acceleration);
+            float up_accel = 0f;
+
+            float axis_y = axis.y;
+
+            if (axis_y != 0.0 && (!Pointer.GetActive() || !Pointer.GetActive().isPointingUI))
+            {
+                up_accel = VerticalForce * axis_y;
+
+                if (axis_y > 0)
+                    up_accel += GravitySetting;     // when pushing up, cancel out gravity.  When pushing down, it's accelerating down in addition to gravity
+            }
+
+            up_accel -= GravitySetting;
+
+            _loco.physicBody.AddForce(Vector3.up * up_accel, ForceMode.Acceleration);
         }
 
         private static void DestabilizeHeldNPC(PlayerHand side)
@@ -295,9 +329,12 @@ namespace Jetpack
             // ENABLE FLIGHT STATS
             _isFlying = true;
             _loco.groundAngle = -359f;
-            _loco.physicBody.useGravity = false;
+            _loco.physicBody.useGravity = false;        // this mod will do its own gravity, if the slider is non zero
             //_loco.physicBody.mass = 100000f;
-            _loco.physicBody.drag = 0.9f;
+
+            _loco.physicBody.drag = Drag;
+            _last_applied_drag = Drag;
+
             _loco.velocity = Vector3.zero;
             Player.fallDamage = false;
             Player.crouchOnJump = false;
