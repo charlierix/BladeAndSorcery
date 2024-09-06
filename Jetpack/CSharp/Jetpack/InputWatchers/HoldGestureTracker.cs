@@ -23,9 +23,11 @@ namespace Jetpack.InputWatchers
         #endregion
 
         //private const float OPEN = 0f;        // the value when the thumb is fully open
-        //private const float CLOSED = 0.5f;    // the value when the thumb is on the thumbpad
-        private const float OPEN = 0.35f;        // allowing for some fuzziness.  The curl just needs to pass these thresholds
-        private const float CLOSED = 0.42f;
+        //private const float CLOSED = 1f;      // the value when the thumb is on the thumbpad
+        private const float OPEN = 0.6f;        // allowing for some fuzziness.  The curl just needs to pass these thresholds
+        private const float CLOSED = 0.8f;
+
+        // TODO: may want to ignore ring finger when pinky needs to be open
 
         // 0 = thumb ... 4 = pinky
         private readonly bool[] _whichClosed;
@@ -48,9 +50,9 @@ namespace Jetpack.InputWatchers
         /// <summary>
         /// Call this regularly.  If there's a break in holding the gesture, it will need to start over
         /// </summary>
-        public void Update(InputSteamVR input)
+        public void Update(float[] left, float[] right)
         {
-            if (IsHoldingGesture(input.skeletonLeftAction, _whichClosed))
+            if (IsHoldingGesture(left, _whichClosed))
             {
                 if (_left == null)
                     _left = DateTime.UtcNow;
@@ -63,7 +65,7 @@ namespace Jetpack.InputWatchers
                     _requirereset_left = false;
             }
 
-            if (IsHoldingGesture(input.skeletonRightAction, _whichClosed))
+            if (IsHoldingGesture(right, _whichClosed))
             {
                 if (_right == null)
                     _right = DateTime.UtcNow;
@@ -72,7 +74,7 @@ namespace Jetpack.InputWatchers
             {
                 _right = null;
 
-                if(_requirereset_right)
+                if (_requirereset_right)
                     _requirereset_right = false;
             }
         }
@@ -112,22 +114,14 @@ namespace Jetpack.InputWatchers
             _requirereset_right = true;
         }
 
-        private static bool IsHoldingGesture(SteamVR_Action_Skeleton hand, bool[] desired)
+        private static bool IsHoldingGesture(float[] hand, bool[] desired)
         {
-            if (!MatchesDesired(hand.thumbCurl, desired[0]))
-                return false;
+            if (hand.Length != desired.Length)
+                throw new ArgumentException($"hand and desired aren't the same length (should be 5).  hand: {hand.Length}, desired: {desired.Length}");
 
-            if (!MatchesDesired(hand.indexCurl, desired[1]))
-                return false;
-
-            if (!MatchesDesired(hand.middleCurl, desired[2]))
-                return false;
-
-            if (!MatchesDesired(hand.ringCurl, desired[3]))
-                return false;
-
-            if (!MatchesDesired(hand.pinkyCurl, desired[4]))
-                return false;
+            for (int i = 0; i < hand.Length; i++)
+                if (!MatchesDesired(hand[i], desired[i]))
+                    return false;
 
             return true;
         }

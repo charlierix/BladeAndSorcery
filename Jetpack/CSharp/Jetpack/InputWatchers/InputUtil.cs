@@ -19,16 +19,25 @@ namespace Jetpack.InputWatchers
             return PlayerControl.loader == PlayerControl.Loader.OpenVR;
         }
 
-        // TODO: these functions shouldn't be passing the input specific objects into the trackers.  They should abstract out the data and pass that
         public static void Update_KeyTracker(KeyDoublePressTracker tracker)
         {
             if (PlayerControl.loader == PlayerControl.Loader.OpenVR)
-                tracker.Update((InputSteamVR)PlayerControl.input);
+            {
+                InputSteamVR input = (InputSteamVR)PlayerControl.input;
+                tracker.Update(NormalizeCurl_Index(input.skeletonLeftAction.thumbCurl), NormalizeCurl_Index(input.skeletonRightAction.thumbCurl));
+            }
         }
         public static void Update_GestureTracker(HoldGestureTracker tracker)
         {
             if (PlayerControl.loader == PlayerControl.Loader.OpenVR)
-                tracker.Update((InputSteamVR)PlayerControl.input);
+            {
+                InputSteamVR input = (InputSteamVR)PlayerControl.input;
+
+                float[] left = new[] { NormalizeCurl_Index(input.skeletonLeftAction.thumbCurl), NormalizeCurl_Index(input.skeletonLeftAction.indexCurl), NormalizeCurl_Index(input.skeletonLeftAction.middleCurl), NormalizeCurl_Index(input.skeletonLeftAction.ringCurl), NormalizeCurl_Index(input.skeletonLeftAction.pinkyCurl )};
+                float[] right = new[] { NormalizeCurl_Index(input.skeletonRightAction.thumbCurl), NormalizeCurl_Index(input.skeletonRightAction.indexCurl), NormalizeCurl_Index(input.skeletonRightAction.middleCurl), NormalizeCurl_Index(input.skeletonRightAction.ringCurl), NormalizeCurl_Index(input.skeletonRightAction.pinkyCurl )};
+
+                tracker.Update(left, right);
+            }
         }
 
         // Returns the left and right thumbstick positions
@@ -64,6 +73,12 @@ namespace Jetpack.InputWatchers
         private void Local_OnButtonPressEvent(PlayerControl.Hand hand, PlayerControl.Hand.Button button, bool pressed)
         {
             Debug.Log($"{hand.side} {button} {pressed}\r\n{JsonUtility.ToJson(hand, true)}");
+        }
+
+        private static float NormalizeCurl_Index(float curl)
+        {
+            // Index is 0 when open, .5 when closed.  Changing to go 0 to 1
+            return Mathf.Clamp01(curl * 2);
         }
     }
 }

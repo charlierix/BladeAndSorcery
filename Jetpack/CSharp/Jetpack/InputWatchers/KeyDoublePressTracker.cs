@@ -40,15 +40,15 @@ namespace Jetpack.InputWatchers
 
         DateTime _prevTime = DateTime.UtcNow;
 
-        public void Update(InputSteamVR input)
+        public void Update(float thumbcurl_left, float thumbcurl_right)
         {
             // It was averaging 10 - 15 ms
             //DateTime now = DateTime.UtcNow;
             //Debug.Log($"KeyDoublePressTracker Tick: {(now - _prevTime).TotalMilliseconds:N0}");
             //_prevTime = now;
 
-            _left.Update(input.skeletonLeftAction.thumbCurl);
-            _right.Update(input.skeletonRightAction.thumbCurl);
+            _left.Update(thumbcurl_left);
+            _right.Update(thumbcurl_right);
 
             WasEitherDoubleClicked = _left.DoubleClickTime != null || _right.DoubleClickTime != null;
 
@@ -100,9 +100,9 @@ namespace Jetpack.InputWatchers
         #region Declaration Section
 
         //private const float OPEN = 0f;        // the value when the thumb is fully open
-        //private const float CLOSED = 0.5f;    // the value when the thumb is on the thumbpad
-        private const float OPEN = 0.2f;        // allowing for some fuzziness.  The curl just needs to pass these thresholds
-        private const float CLOSED = 0.42f;
+        //private const float CLOSED = 1f;      // the value when the thumb is on the thumbpad
+        private const float OPEN = 0.5f;        // allowing for some fuzziness.  The curl just needs to pass these thresholds
+        private const float CLOSED = 0.8f;
 
         private const double TOTAL_MILLISECONDS = 650;
 
