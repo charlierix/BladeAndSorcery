@@ -14,16 +14,21 @@ namespace Jetpack.InputWatchers
 
         private HoldUpTracker _holdUpTracker = null;
         private KeyDoublePressTracker _keyDoublePressTracker = null;
+        private HoldGestureTracker _gestureTracker = null;
 
+        /// <summary>
+        /// Watches the inputs according to activation_type and returns true when is_flying needs to be changed
+        /// </summary>
         public bool Update(FlightActivationType activation_type, bool requireBothHands, bool deactivateOnGround, bool is_flying)
         {
-            // detect a switch in transition type from last update.  if so, reset trackers
+            // Detect a switch in transition type from last update.  if so, reset trackers
             if (_activation_type == null || _activation_type.Value != activation_type)
                 ChangeActivationType(activation_type);
 
             if (_activation_type == null)       // null if there is an error setting it up
                 return false;
 
+            // Cancel flight if grounded
             if (is_flying && Player.local.locomotion.isGrounded && (deactivateOnGround || AlwaysDeactivateOnGround(_activation_type.Value)))
                 return true;
 
@@ -37,12 +42,10 @@ namespace Jetpack.InputWatchers
                     return Update_DoubleClick_Thumbpad(requireBothHands, deactivateOnGround, is_flying);
 
                 case FlightActivationType.HoldBird:
-
                 case FlightActivationType.HoldPeace:
-
                 case FlightActivationType.HoldDevilHorns:
-
                 case FlightActivationType.HoldRockOn:
+                    return Update_Gesture(requireBothHands);
 
                 case FlightActivationType.HoldJump:
                 case FlightActivationType.DoubleJump:
@@ -80,6 +83,17 @@ namespace Jetpack.InputWatchers
 
             return retVal;
         }
+        private bool Update_Gesture(bool requireBothHands)
+        {
+            InputUtil.Update_GestureTracker(_gestureTracker);
+
+            bool retVal = _gestureTracker.IsHeld(requireBothHands);
+
+            if (retVal)
+                _gestureTracker.RequireReset();        
+
+            return retVal;
+        }
 
         private void ChangeActivationType(FlightActivationType activation_type)
         {
@@ -87,6 +101,7 @@ namespace Jetpack.InputWatchers
 
             _holdUpTracker = null;
             _keyDoublePressTracker = null;
+            _gestureTracker = null;
 
             switch (activation_type)
             {
@@ -106,15 +121,19 @@ namespace Jetpack.InputWatchers
                     break;
 
                 case FlightActivationType.HoldBird:
+                    _gestureTracker = new HoldGestureTracker(true, true, false, true, true);
                     break;
 
                 case FlightActivationType.HoldPeace:
+                    _gestureTracker = new HoldGestureTracker(true, false, false, true, true);
                     break;
 
                 case FlightActivationType.HoldDevilHorns:
+                    _gestureTracker = new HoldGestureTracker(true, false, true, true, false);
                     break;
 
                 case FlightActivationType.HoldRockOn:
+                    _gestureTracker = new HoldGestureTracker(false, false, true, true, false);
                     break;
 
                 default:

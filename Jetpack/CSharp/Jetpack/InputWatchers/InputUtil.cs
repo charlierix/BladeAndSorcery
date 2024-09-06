@@ -19,7 +19,13 @@ namespace Jetpack.InputWatchers
             return PlayerControl.loader == PlayerControl.Loader.OpenVR;
         }
 
+        // TODO: these functions shouldn't be passing the input specific objects into the trackers.  They should abstract out the data and pass that
         public static void Update_KeyTracker(KeyDoublePressTracker tracker)
+        {
+            if (PlayerControl.loader == PlayerControl.Loader.OpenVR)
+                tracker.Update((InputSteamVR)PlayerControl.input);
+        }
+        public static void Update_GestureTracker(HoldGestureTracker tracker)
         {
             if (PlayerControl.loader == PlayerControl.Loader.OpenVR)
                 tracker.Update((InputSteamVR)PlayerControl.input);

@@ -34,6 +34,9 @@ namespace Jetpack.InputWatchers
         private DateTime? _left = null;
         private DateTime? _right = null;
 
+        private bool _requirereset_left = false;
+        private bool _requirereset_right = false;
+
         /// <summary>
         /// Sets up to watch each finger's position
         /// </summary>
@@ -55,6 +58,9 @@ namespace Jetpack.InputWatchers
             else
             {
                 _left = null;
+
+                if (_requirereset_left)
+                    _requirereset_left = false;
             }
 
             if (IsHoldingGesture(input.skeletonRightAction, _whichClosed))
@@ -65,21 +71,24 @@ namespace Jetpack.InputWatchers
             else
             {
                 _right = null;
+
+                if(_requirereset_right)
+                    _requirereset_right = false;
             }
         }
 
-        public bool IsHeld(bool require_both, float duration_ms = 750)
+        public bool IsHeld(bool require_both, float duration_ms = 500)
         {
-            bool is_left = IsHeld_Hand(_left, duration_ms);
-            bool is_right = IsHeld_Hand(_right, duration_ms);
+            bool is_left = IsHeld_Hand(_left, _requirereset_left, duration_ms);
+            bool is_right = IsHeld_Hand(_right, _requirereset_right, duration_ms);
 
             return require_both ?
                 is_left && is_right :
                 is_left || is_right;
         }
-        private static bool IsHeld_Hand(DateTime? hand, float duration_ms)
+        private static bool IsHeld_Hand(DateTime? hand, bool require_reset, float duration_ms)
         {
-            if (hand == null)
+            if (hand == null || require_reset)
                 return false;
 
             return (DateTime.UtcNow - hand.Value).TotalMilliseconds >= duration_ms;
@@ -89,6 +98,18 @@ namespace Jetpack.InputWatchers
         {
             _left = null;
             _right = null;
+
+            _requirereset_left = false;
+            _requirereset_right = false;
+        }
+
+        /// <summary>
+        /// IsHeld won't return true until they've released their gesture, then done the gesture again
+        /// </summary>
+        public void RequireReset()
+        {
+            _requirereset_left = true;
+            _requirereset_right = true;
         }
 
         private static bool IsHoldingGesture(SteamVR_Action_Skeleton hand, bool[] desired)

@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Jetpack.InputWatchers
 {
     /// <summary>
-    /// Keeps track of whether the thumbstick is held up for some duration
+    /// Keeps track of whether the thumbstick is held up for some duration (y=1)
     /// </summary>
     public class HoldUpTracker
     {
