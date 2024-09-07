@@ -10,6 +10,7 @@ using UnityEngine.UIElements;
 
 
 
+// TODOS:
 
 // Make a Flying class to handle actual flying
 
@@ -18,8 +19,29 @@ using UnityEngine.UIElements;
 // on first activation, then keep from that point on
 
 
+// Figure out how to make debug graphics
+
+
+// Options to reduce accel if in confined space (probably just a checkbox, the raycast dist and % reduction can probably be hardcoded - it may not be linear)
+
+
 // activate sound sounds more like a fireball than flight
 
+
+// Put scale logic as a separate thing from activate/deactivate flight
+//  create extra sliders and checkboxes
+//  make an apply scale button and back to default button
+
+
+// instead of a single flight mode for the whole mod, create a few modes that can have activation gestures assigned
+//  jetpack - default to up activation, double jump would be a good alternative
+//      has some gravity, basic flight
+//
+//  winged - some combination of bird and airplane
+//
+//  iron man - thruster based at low speed, winged at higher speeds
+//
+//  fpv drone - try to emulate a drone with thumbstick inputs
 
 
 
@@ -31,19 +53,21 @@ namespace Jetpack
     {
         // https://kospy.github.io/BasSDK/Components/Guides/ModOptions/#how-do-i-use-modoptions
 
+        #region Mod Options
+
         private const string CATEGORY_ACTIVATE = "Activation / Deactivation";
         private const string CATEGORY_FLIGHTPROPS = "Flight Properties";
         private const string CATEGORY_SOUNDS = "Sounds";        // TODO: add this
         private const string CATEGORY_SCALE = "Player Size";
 
+        //[ModOptionTextDisplay("description of section", null)]
+        //[ModOption("Info")]
+        //private static void label1(string value) { }
+
         [ModOption(name: "Use Jetpack Mod", tooltip: "Turns on/off the Jetpack mod")]
         public static bool UseJetpackMod = true;
 
         // ******************** Activation / Deactivation ********************
-
-        //[ModOptionTextDisplay("description of section", null)]
-        //[ModOption("Info")]
-        //private static void label1(string value) { }
 
         public static ModOptionString[] FlightActivation_Options = new[]
         {
@@ -87,8 +111,6 @@ namespace Jetpack
 
         // ******************** Flight Properties ********************
 
-        // TODO: Option to reduce accel if in confined space (probably just a checkbox, the raycast dist and % reduction can probably be hardcoded - it may not be linear)
-
         [ModOptionCategory(CATEGORY_FLIGHTPROPS, -99)]
         [ModOptionSlider]
         [ModOption(name: "Horizontal Accel", tooltip: "How hard to accelerate horizontally", order = 0)]
@@ -113,14 +135,7 @@ namespace Jetpack
         [ModOptionFloatValues(0, 18, 0.1f)]
         public static float GravitySetting = 0f;
 
-        //public static float
-
         // ******************** Player Size ********************
-
-        // TODO:
-        // Put scale logic as a separate thing from activate/deactivate flight
-        //  create extra sliders and checkboxes
-        //  make an apply scale button and back to default button
 
         [ModOptionCategory(CATEGORY_SCALE, -99)]
         [ModOptionSlider]
@@ -154,15 +169,7 @@ namespace Jetpack
             Debug.Log("OnRevertScale Pressed");
         }
 
-
-        //[ModOptionButton]
-        //[ModOption(name: "Apply Scale Settings", order = 6)]
-        //public static void ApplyScale_UI()
-        //{
-        //    Debug.Log("ApplyScale Clicked");
-        //}
-
-
+        #endregion
 
         // PRE-FLIGHT DATA
         private FlightData _old = null;
