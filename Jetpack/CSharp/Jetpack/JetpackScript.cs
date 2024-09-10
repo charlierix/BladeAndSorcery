@@ -1,12 +1,15 @@
 ﻿using Jetpack.InputWatchers;
 using Jetpack.Models;
+using PerfectlyNormalUnity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using ThunderRoad;
 using UnityEngine;
-using UnityEngine.UIElements;
+using static ThunderRoad.EffectModuleMesh;
 
 
 
@@ -23,6 +26,9 @@ using UnityEngine.UIElements;
 
 
 // Options to reduce accel if in confined space (probably just a checkbox, the raycast dist and % reduction can probably be hardcoded - it may not be linear)
+//  Physics.OverlapSphere
+//  Physics.SphereCastAll
+//  Physics.Raycast
 
 
 // activate sound sounds more like a fireball than flight
@@ -181,6 +187,19 @@ namespace Jetpack
         private float _last_applied_drag = -1;
 
         private FlightTransitionWatcher _transitions = new FlightTransitionWatcher();
+
+        //private DebugRenderer3D _renderer = null;
+
+        public override void ScriptLoaded(ModManager.ModData modData)
+        {
+            base.ScriptLoaded(modData);
+
+            //Debug.Log("Wiring up DebugRenderer3D");
+            //_renderer = Player.local.gameObject.AddComponent<DebugRenderer3D>();
+            //Debug.Log("Wired up DebugRenderer3D");
+
+            ReportResourceMaterials2();
+        }
 
         public override void ScriptUpdate()
         {
@@ -390,6 +409,13 @@ namespace Jetpack
     }}
 }}
             */
+
+
+            // Creates a dot that stays where it's spawned
+            //SpawnDot2();
+
+            // Creates a dot that stays with transform.pos as the player flies around (on the floor, center of the irl room that player walks around)
+            //SpawnDot3();
         }
         private void DeactivateFly()
         {
@@ -467,6 +493,157 @@ namespace Jetpack
 
             // TODO: _old.Morphology was set in activate flight, change this to some kind of startup event
             Player.local.creature.morphology = _old.Morphology;
+        }
+
+
+        private void SpawnDot()
+        {
+            Vector3 pos = Player.local.transform.position;
+            Debug.Log($"Player.local.transform.position: {pos}");
+
+            //pos = Player.local.transform.TransformPoint(pos);
+            //Debug.Log($"Player.local.transform.TransformPoint: {pos}");
+
+            Debug.Log($"Adding debug dot: {pos.ToStringSignificantDigits(2)}");
+            //_renderer.AddDot(pos, 1f, UtilityUnity.ColorFromHex("FF0"));
+
+
+
+            // This is invisible, but still darkens the area
+            //  maybe the wrong shader?
+            //  maybe needs a different layer?
+            //
+            // It would probably be better to follow a tutorial and make a simple weapon mod.  That might show what is going wrong
+
+
+
+            GameObject dot = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+
+            //Collider collider = dot.GetComponent<Collider>();
+            //if (collider != null)
+            //    UnityEngine.Object.Destroy(collider);
+
+            dot.transform.position = pos;
+            dot.transform.localScale = new Vector3(9, 9, 9);
+
+            MeshRenderer mesh = dot.GetComponent<MeshRenderer>();
+
+
+            // This goes straight for the shader
+            //mesh.material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+
+            // This creates a new instance of SimpleLit
+            //Material simpleLitCopy = Instantiate(Resources.Load<Material>("Packages/Universal RP/Runtime/Materials/SimpleLit"));
+
+
+            //mesh.material = Material.
+
+            //mesh.material.color = Color.yellow;
+            //mesh.material.SetColor("Base Map", Color.yellow);
+
+
+            Debug.Log($"Added debug dot: {pos.ToStringSignificantDigits(2)}");
+        }
+        private void SpawnDot2()
+        {
+            Vector3 pos = Player.local.transform.position;
+            Debug.Log($"Adding debug dot: {pos.ToStringSignificantDigits(2)}");
+
+            GameObject dot = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+
+            Collider collider = dot.GetComponent<Collider>();
+            if (collider != null)
+                UnityEngine.Object.Destroy(collider);
+
+            dot.transform.position = pos;
+            dot.transform.localScale = new Vector3(9, 9, 9);
+
+            MeshRenderer mesh = dot.GetComponent<MeshRenderer>();
+
+            // Can also use "ThunderRoad/LitMoss"
+            // D:\blade and sorcery\BasSDK_2\Assets\SDK\Shaders\Lit_Moss.shader
+            // https://kospy.github.io/BasSDK/Components/Guides/Shader/LitMoss.html
+
+            mesh.material.shader = Shader.Find("Sprites/Default");      // BREAD — the default shader that's applied isn't in the game, need to change it
+
+            //mesh.material.SetColor("_BaseColor", Color.yellow);     // doesn't do anything
+            mesh.material.color = StaticRandom.ColorHSV();
+
+            Debug.Log($"Added debug dot: {pos.ToStringSignificantDigits(2)}, {mesh.material.name}");
+        }
+        private void SpawnDot3()
+        {
+            // lyneca, bladey dancey man:
+            // Call this in a loop to make a dot that moves to transform.position every frame
+            // ThunderRoad.DebugViz.Viz.Dot(this, Player.local.transform.position).Color(Color.blue);
+
+            Debug.Log($"Adding VizDot");
+
+            EffectData effect_data = Catalog.GetData<EffectData>("PerfNormBeastJetpackVizDot2");
+            EffectInstance instance = effect_data.Spawn(Player.local.transform);
+            instance.Play();
+
+            Debug.Log($"Added VizDot");
+        }
+
+        private static void ReportResourceMaterials()
+        {
+            Material[] materials = Resources.LoadAll<Material>(""); // The empty string "" means it will load all materials from the "Resources" folder and its subfolders.
+
+            string[] paths = materials.
+                //Select(o => AssetDatabase.GetAssetPath(o)).
+                //Select(o => "AssetDatabase is only available in UnityEditor").
+                Select(o => o.name).
+                SelectMany(o => SplitExtension(o)).
+                SelectMany(o => GetAltPaths(o)).
+                ToArray();
+
+            var found = paths.
+                Select(o => new
+                {
+                    path = o,
+                    mat = Resources.Load<Material>(o),
+                }).
+                Where(o => o.mat != null).
+                ToArray();
+
+            //string report = string.Join("\n", found.Select(o => o.path));
+
+            foreach (var item in found)
+                Debug.Log(item.path);
+        }
+        private static string[] SplitExtension(string path)
+        {
+            Match match = Regex.Match(path, @"\.\w+$");
+
+            if (!match.Success)
+                return new[] { path };
+
+            return new[]
+            {
+                path,
+                path.Substring(0, match.Index),
+            };
+        }
+        private static string[] GetAltPaths(string path)
+        {
+            string[] name_split = path.Split('/');
+
+            string[] retVal = new string[name_split.Length];
+
+            for (int i = 0; i < name_split.Length; i++)
+                retVal[i] = string.Join("/", Enumerable.Range(i, name_split.Length - i).Select(o => name_split[o]));
+            return retVal;
+        }
+
+        private static void ReportResourceMaterials2()
+        {
+            Material[] materials = Resources.LoadAll<Material>(""); // The empty string "" means it will load all materials from the "Resources" folder and its subfolders.
+
+            Debug.Log("Resources.LoadAll<Material>(\"\");");
+
+            foreach (Material material in materials)
+                Debug.Log(material.name);
         }
 
     }
