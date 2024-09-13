@@ -5,10 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeneticSharp" Version="2.6.0" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="UnityEditor">
       <HintPath>C:\Program Files\Unity\Hub\Editor\2021.3.38f1\Editor\Data\Managed\UnityEngine\UnityEditor.dll</HintPath>
     </Reference>
