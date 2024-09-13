@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace PerfectlyNormalUnity.FollowDirectionPosition
+namespace PerfectlyNormalBaS.FollowDirectionPosition
 {
     public enum FollowDirectionType
     {

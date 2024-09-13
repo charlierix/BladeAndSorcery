@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
-namespace PerfectlyNormalUnity.DebugLogger_Models
+namespace PerfectlyNormalBaS.DebugLogger_Models
 {
     [Serializable]
     public class ItemAxisLines : ItemBase

@@ -1,4 +1,4 @@
-﻿using PerfectlyNormalUnity.DebugLogger_Models;
+﻿using PerfectlyNormalBaS.DebugLogger_Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace PerfectlyNormalUnity
+namespace PerfectlyNormalBaS
 {
     /// <summary>
     /// This class is used to log visuals and text, save to a file, then view from a c# app

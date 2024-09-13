@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PerfectlyNormalUnity.DebugLogger_Models
+namespace PerfectlyNormalBaS.DebugLogger_Models
 {
     [Serializable]
     public class LogScene

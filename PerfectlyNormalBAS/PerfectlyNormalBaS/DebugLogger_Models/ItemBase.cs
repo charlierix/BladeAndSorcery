@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace PerfectlyNormalUnity.DebugLogger_Models
+namespace PerfectlyNormalBaS.DebugLogger_Models
 {
     [Serializable]
     public abstract class ItemBase

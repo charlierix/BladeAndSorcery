@@ -6,8 +6,8 @@ using GeneticSharp.Domain.Populations;
 using GeneticSharp.Domain.Selections;
 using GeneticSharp.Domain.Terminations;
 using GeneticSharp.Infrastructure.Framework.Threading;
-using PerfectlyNormalUnity.Clipper;
-using PerfectlyNormalUnity.GeneticSharp;
+using PerfectlyNormalBaS.Clipper;
+using PerfectlyNormalBaS.GeneticSharp;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -15,7 +15,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace PerfectlyNormalUnity
+namespace PerfectlyNormalBaS
 {
     //NOTE: This was originally written for wpf, so Z is up.  But in unity, Y is up.  This class still rotates 3D points onto the XY plane, where unity probably thinks in the XZ plane
     //TODO: May want to change that in the future

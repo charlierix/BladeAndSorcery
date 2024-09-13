@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
-namespace PerfectlyNormalUnity.FollowDirectionPosition
+namespace PerfectlyNormalBaS.FollowDirectionPosition
 {
     /// <summary>
     /// This chases an orientation

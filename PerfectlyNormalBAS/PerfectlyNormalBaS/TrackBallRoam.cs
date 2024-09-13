@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace PerfectlyNormalUnity
+namespace PerfectlyNormalBaS
 {
     //TODO: Double tap shift key to toggle between orbit and 1st person look (reset the shift first tap if they click the mouse in between to reduce the chance of toggling while they are doing standard shift+right drag)
     //TODO: Let them assign constraints, something like MaxRadius_XZ, MaxRadius_Y

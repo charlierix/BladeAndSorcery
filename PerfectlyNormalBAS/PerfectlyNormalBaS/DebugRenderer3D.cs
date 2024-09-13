@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace PerfectlyNormalUnity
+namespace PerfectlyNormalBaS
 {
     /// <summary>
     /// This exposes simple functions that add visuals to the scene

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
-namespace PerfectlyNormalUnity
+namespace PerfectlyNormalBaS
 {
     /// <summary>
     /// This is an easy way to store an HSV color definition

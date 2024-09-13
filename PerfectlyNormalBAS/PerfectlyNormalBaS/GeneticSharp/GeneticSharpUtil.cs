@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace PerfectlyNormalUnity.GeneticSharp
+namespace PerfectlyNormalBaS.GeneticSharp
 {
     public static class GeneticSharpUtil
     {

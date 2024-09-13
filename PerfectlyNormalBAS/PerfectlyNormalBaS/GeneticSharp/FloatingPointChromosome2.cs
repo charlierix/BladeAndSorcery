@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace PerfectlyNormalUnity.GeneticSharp
+namespace PerfectlyNormalBaS.GeneticSharp
 {
     /// <summary>
     /// Floating point chromosome with binary values (0 and 1).

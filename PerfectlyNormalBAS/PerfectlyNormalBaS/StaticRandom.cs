@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 
-namespace PerfectlyNormalUnity
+namespace PerfectlyNormalBaS
 {
     //NOTE: UnityEngine.Random isn't threadsafe
 

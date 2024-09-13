@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace PerfectlyNormalUnity
+namespace PerfectlyNormalBaS
 {
     //NOTE: JsonUtility.ToJson can't handle properties, it needs public variables (and the serializable attribute)
 

@@ -6,7 +6,7 @@ using UnityEditor;
 #endif
 using UnityEngine;
 
-namespace PerfectlyNormalUnity.IK
+namespace PerfectlyNormalBaS.IK
 {
     public class IK_SingleChain_LooseRoot : MonoBehaviour
     {

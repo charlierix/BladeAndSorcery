@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
-namespace PerfectlyNormalUnity
+namespace PerfectlyNormalBaS
 {
     /// <summary>
     /// An instance of Debug_CloneViewer can be placed in the camera game object.  It will show debug visuals in front

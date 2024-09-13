@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace PerfectlyNormalUnity
+namespace PerfectlyNormalBaS
 {
     /// <summary>
     /// This is a helper class for linq statements that want an IEqualityComparer

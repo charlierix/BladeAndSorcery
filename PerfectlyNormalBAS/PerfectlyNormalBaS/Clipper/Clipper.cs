@@ -79,7 +79,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace PerfectlyNormalUnity.Clipper
+namespace PerfectlyNormalBaS.Clipper
 {
     using PolygonClp = List<IntPoint>;
     using PolygonsClp = List<List<IntPoint>>;

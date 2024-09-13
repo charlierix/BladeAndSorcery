@@ -6,7 +6,7 @@ using UnityEditor;
 #endif
 using UnityEngine;
 
-namespace PerfectlyNormalUnity.IK
+namespace PerfectlyNormalBaS.IK
 {
     /// <summary>
     /// This script gets attached to the leaf bone.  The root i

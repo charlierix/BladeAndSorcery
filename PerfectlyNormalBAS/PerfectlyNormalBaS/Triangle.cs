@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace PerfectlyNormalUnity
+namespace PerfectlyNormalBaS
 {
     //NOTE: It can be tempting to use Mesh as a container of triangles for the math classes.
     //But it smoothes the normals out and looks pretty expensive

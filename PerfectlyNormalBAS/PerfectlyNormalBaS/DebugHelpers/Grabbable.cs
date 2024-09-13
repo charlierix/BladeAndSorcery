@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
-namespace PerfectlyNormalUnity.DebugHelpers
+namespace PerfectlyNormalBaS.DebugHelpers
 {
     /// <summary>
     /// Attach this script to an object that you want the player to be able to drag around.  When the left mouse

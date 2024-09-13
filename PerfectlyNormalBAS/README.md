@@ -1,4 +1,4 @@
-# PerfectlyNormalUnity
+# PerfectlyNormalBaS
 Helper classes for unity development
 
 ---------------------------------
@@ -20,10 +20,10 @@ C:\Program Files\Unity\Editor\Data\Managed\UnityEngine\UnityEngine.CoreModule.dl
 C:\Program Files\Unity\Editor\Data\Managed\UnityEngine\UnityEngine.InputLegacyModule.dll
 C:\Program Files\Unity\Editor\Data\Managed\UnityEngine\UnityEngine.PhysicsModule.dll
 
-There is a postbuild command that copies the dll into the bin folder.  So you can copy PerfectlyNormalUnity.dll from either bin, or bin\debug or bin\release
+There is a postbuild command that copies the dll into the bin folder.  So you can copy PerfectlyNormalBaS.dll from either bin, or bin\debug or bin\release
 
 Any class in unity that you want to use this from needs a using statment at the top:
-using PerfectlyNormalUnity;
+using PerfectlyNormalBaS;
 
 Alternatively, you can probably just copy the classes into a folder under Assets and let everything live inside unity
 
