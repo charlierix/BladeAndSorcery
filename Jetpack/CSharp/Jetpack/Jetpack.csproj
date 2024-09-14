@@ -31,15 +31,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="GeneticSharp.Domain">
-      <HintPath>..\lib\GeneticSharp.Domain.dll</HintPath>
-    </Reference>
-    <Reference Include="GeneticSharp.Infrastructure.Framework">
-      <HintPath>..\lib\GeneticSharp.Infrastructure.Framework.dll</HintPath>
-    </Reference>
-    <Reference Include="PerfectlyNormalUnity">
-      <HintPath>..\lib\PerfectlyNormalUnity.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -641,5 +632,15 @@
       <HintPath>D:\SteamLibrary\steamapps\common\Blade &amp; Sorcery\BladeAndSorcery_Data\Managed\VRKB.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\PerfectlyNormalBAS\PerfectlyNormalBaS\PerfectlyNormalBaS.csproj">
+      <Project>{b418ddec-89f6-4e29-b745-688c728b7f11}</Project>
+      <Name>PerfectlyNormalBaS</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>copy /Y "$(TargetPath)" "$(SolutionDir)..\..\!mod_final\Jetpack\$(ProjectName).dll"
+copy /Y "$(TargetDir)PerfectlyNormalBaS.dll" "$(SolutionDir)..\..\!mod_final\Jetpack\PerfectlyNormalBaS.dll"</PostBuildEvent>
+  </PropertyGroup>
 </Project>
