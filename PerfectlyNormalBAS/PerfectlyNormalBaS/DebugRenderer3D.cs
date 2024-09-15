@@ -82,19 +82,19 @@ namespace PerfectlyNormalBaS
             return retVal;
         }
 
-        public DebugItem AddDot(Vector3 position, float radius, Color color, bool isUnlit = true, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        public DebugItem AddDot(Vector3 position, float radius, Color color, bool isLit = false, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
             EnsureContainerExists();
 
-            GameObject obj = GetNewDot(position, radius, color, isUnlit, _container);
+            GameObject obj = GetNewDot(position, radius, color, isLit, _container);
 
-            var retVal = new DebugItem(NextToken(), obj, null, position, relativeToComponent, relativeToGameObject, isUnlit);
+            var retVal = new DebugItem(NextToken(), obj, null, position, relativeToComponent, relativeToGameObject, isLit);
 
             AddItem(retVal);
 
             return retVal;
         }
-        public DebugItem AddDots(IEnumerable<Vector3> positions, float radius, Color color, bool isUnlit = true, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        public DebugItem AddDots(IEnumerable<Vector3> positions, float radius, Color color, bool isLit = false, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
             EnsureContainerExists();
 
@@ -107,9 +107,9 @@ namespace PerfectlyNormalBaS
             Vector3[] posArr = positions.ToArray();
 
             foreach (Vector3 pos in posArr)
-                children.Add(GetNewDot(pos, radius, color, isUnlit, parent));
+                children.Add(GetNewDot(pos, radius, color, isLit, parent));
 
-            var retVal = new DebugItem(NextToken(), parent, children.ToArray(), GetCenter(posArr), relativeToComponent, relativeToGameObject, isUnlit);
+            var retVal = new DebugItem(NextToken(), parent, children.ToArray(), GetCenter(posArr), relativeToComponent, relativeToGameObject, isLit);
 
             //AdjustColor(retVal, color);       // GetNewDot already set the color
 
@@ -149,20 +149,20 @@ namespace PerfectlyNormalBaS
         /// <summary>
         /// This draws a line using a cylinder
         /// </summary>
-        public DebugItem AddLine_Pipe(Vector3 from, Vector3 to, float thickness, Color color, bool isUnlit = true, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        public DebugItem AddLine_Pipe(Vector3 from, Vector3 to, float thickness, Color color, bool isLit = false, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
             EnsureContainerExists();
 
-            GameObject obj = GetNewPipeLine(from, to, thickness, color, isUnlit, _container);
+            GameObject obj = GetNewPipeLine(from, to, thickness, color, isLit, _container);
 
-            var retVal = new DebugItem(NextToken(), obj, null, from, relativeToComponent, relativeToGameObject, isUnlit);
+            var retVal = new DebugItem(NextToken(), obj, null, from, relativeToComponent, relativeToGameObject, isLit);
 
             AddItem(retVal);
 
             return retVal;
         }
 
-        public DebugItem AddCube(Vector3 position, Vector3 size, Color color, bool isUnlit = true, Quaternion? rotation = null, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        public DebugItem AddCube(Vector3 position, Vector3 size, Color color, bool isLit = false, Quaternion? rotation = null, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
             EnsureContainerExists();
 
@@ -178,20 +178,20 @@ namespace PerfectlyNormalBaS
             if (rotation != null)
                 obj.transform.rotation = rotation.Value;
 
-            AdjustColor(obj, color, isUnlit, true);
+            AdjustColor(obj, color, isLit, true);
 
-            var retVal = new DebugItem(NextToken(), obj, null, position, relativeToComponent, relativeToGameObject, isUnlit);
+            var retVal = new DebugItem(NextToken(), obj, null, position, relativeToComponent, relativeToGameObject, isLit);
 
             AddItem(retVal);
 
             return retVal;
         }
 
-        public DebugItem AddPlane(Plane plane, float size, Color color, bool isUnlit = true, int numCells = 12, Vector3? center = null, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        public DebugItem AddPlane(Plane plane, float size, Color color, bool isLit = false, int numCells = 12, Vector3? center = null, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
-            return AddPlane_PointNormal(plane.ClosestPointOnPlane(Vector3.zero), plane.normal, size, color, isUnlit, numCells, center, relativeToComponent, relativeToGameObject);
+            return AddPlane_PointNormal(plane.ClosestPointOnPlane(Vector3.zero), plane.normal, size, color, isLit, numCells, center, relativeToComponent, relativeToGameObject);
         }
-        public DebugItem AddPlane_ThreePoints(Vector3 trianglePt1, Vector3 trianglePt2, Vector3 trianglePt3, float size, Color color, bool isUnlit = true, int numCells = 12, Vector3? center = null, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        public DebugItem AddPlane_ThreePoints(Vector3 trianglePt1, Vector3 trianglePt2, Vector3 trianglePt3, float size, Color color, bool isLit = false, int numCells = 12, Vector3? center = null, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
             //https://galasoft.ch/posts/2016/06/unity-adding-children-to-a-gameobject-in-code-and-retrieving-them
 
@@ -208,9 +208,9 @@ namespace PerfectlyNormalBaS
 
             parent.transform.rotation = Quaternion.FromToRotation(new Vector3(0, 1, 0), Vector3.Cross(trianglePt3 - trianglePt2, trianglePt1 - trianglePt2));
 
-            var children = AddPlane_Children(parent, size, numCells, new Color(color.r, color.g, color.b, color.a * .25f), isUnlit);
+            var children = AddPlane_Children(parent, size, numCells, new Color(color.r, color.g, color.b, color.a * .25f), isLit);
 
-            var retVal = new DebugItem(NextToken(), parent, children, new Vector3(), relativeToComponent, relativeToGameObject, isUnlit);
+            var retVal = new DebugItem(NextToken(), parent, children, new Vector3(), relativeToComponent, relativeToGameObject, isLit);
 
             //NOTE: If this is done here, it will also color the border line
             //AdjustColor(retVal, new Color(color.r, color.g, color.b, color.a * .25f));
@@ -219,19 +219,19 @@ namespace PerfectlyNormalBaS
 
             return retVal;
         }
-        public DebugItem AddPlane_PointNormal(Vector3 pointOnPlane, Vector3 normal, float size, Color color, bool isUnlit = true, int numCells = 12, Vector3? center = null, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        public DebugItem AddPlane_PointNormal(Vector3 pointOnPlane, Vector3 normal, float size, Color color, bool isLit = false, int numCells = 12, Vector3? center = null, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
             Vector3 dir1 = GetArbitraryOrhonganal(normal);
             Vector3 dir2 = Vector3.Cross(dir1, normal);
 
-            return AddPlane_ThreePoints(pointOnPlane + dir1, pointOnPlane, pointOnPlane + dir2, size, color, isUnlit, numCells, center, relativeToComponent, relativeToGameObject);
+            return AddPlane_ThreePoints(pointOnPlane + dir1, pointOnPlane, pointOnPlane + dir2, size, color, isLit, numCells, center, relativeToComponent, relativeToGameObject);
         }
-        public DebugItem AddPlane_PointVectors(Vector3 pointOnPlane, Vector3 direction1, Vector3 direction2, float size, Color color, bool isUnlit = true, int numCells = 12, Vector3? center = null, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        public DebugItem AddPlane_PointVectors(Vector3 pointOnPlane, Vector3 direction1, Vector3 direction2, float size, Color color, bool isLit = false, int numCells = 12, Vector3? center = null, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
-            return AddPlane_ThreePoints(pointOnPlane + direction1, pointOnPlane, pointOnPlane + direction2, size, color, isUnlit, numCells, center, relativeToComponent, relativeToGameObject);
+            return AddPlane_ThreePoints(pointOnPlane + direction1, pointOnPlane, pointOnPlane + direction2, size, color, isLit, numCells, center, relativeToComponent, relativeToGameObject);
         }
 
-        public DebugItem AddCircle(Vector3 position, Vector3 normal, float radius, float thickness, Color color, bool isUnlit = true, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        public DebugItem AddCircle(Vector3 position, Vector3 normal, float radius, float thickness, Color color, bool isLit = false, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
             Quaternion quat = Quaternion.FromToRotation(new Vector3(0, 0, 1), normal);
 
@@ -279,11 +279,11 @@ namespace PerfectlyNormalBaS
 
         public static void AdjustColor(DebugItem item, Color color)
         {
-            AdjustColor(item.Object, color, item.IsUnlit, false);
+            AdjustColor(item.Object, color, item.IsLit, false);
 
             if (item.ChildObjects != null)
                 foreach (GameObject child in item.ChildObjects)
-                    AdjustColor(child, color, item.IsUnlit, false);
+                    AdjustColor(child, color, item.IsLit, false);
         }
 
         public static (float dot, float line) GetDrawSizes(float maxRadius)
@@ -359,12 +359,12 @@ namespace PerfectlyNormalBaS
                 _stationary.Add(item);
         }
 
-        private static void AdjustColor(GameObject obj, Color color, bool isUnlit, bool isNewItem)
+        private static void AdjustColor(GameObject obj, Color color, bool isLit, bool isNewItem)
         {
             MeshRenderer mesh = obj.GetComponent<MeshRenderer>();
             if (mesh != null)
             {
-                AdjustColor(mesh, color, isUnlit, isNewItem);
+                AdjustColor(mesh, color, isLit, isNewItem);
                 return;
             }
 
@@ -382,18 +382,17 @@ namespace PerfectlyNormalBaS
 
             // Just exit silently
         }
-        private static void AdjustColor(MeshRenderer renderer, Color color, bool isUnlit, bool isNewItem)
+        private static void AdjustColor(MeshRenderer renderer, Color color, bool isLit, bool isNewItem)
         {
             if (renderer == null)
                 return;
 
             if (isNewItem)
             {
-                if (isUnlit)
-                {
-                    renderer.material.shader = Shader.Find("Sprites/Default");      // BREAD — the default shader that's applied isn't in the game, need to change it
-                }
-                else
+
+                // TODO: figure out Lit mode (only unlit is working)
+
+                if (isLit)
                 {
                     string[] keys = new[]
                     {
@@ -422,12 +421,16 @@ namespace PerfectlyNormalBaS
                         renderer.material.shader = results[0].shader;
                     }
                 }
+                else
+                {
+                    renderer.material.shader = Shader.Find("Sprites/Default");      // BREAD — the default shader that's applied isn't in the game, need to change it
+                }
             }
 
-            //if (isUnlit)
-            renderer.material.color = color;
-            //else
+            //if (isLit)
             //renderer.material.SetColor("_BaseColor", color);        // also try _Color
+            //else
+            renderer.material.color = color;
 
             if (color.a < 1f)       // default is an opaque mode (if the opacity goes back to 1, just leave it as transparent mode)
             {
@@ -444,7 +447,7 @@ namespace PerfectlyNormalBaS
             }
         }
 
-        private static GameObject[] AddPlane_Children(GameObject parent, float size, int numCells, Color color, bool isUnlit)
+        private static GameObject[] AddPlane_Children(GameObject parent, float size, int numCells, Color color, bool isLit)
         {
             // Tiles
             Quaternion cellRotation_up = Quaternion.Euler(90, 0, 0);
@@ -459,7 +462,7 @@ namespace PerfectlyNormalBaS
             }
 
             foreach (GameObject obj in objects)
-                AdjustColor(obj, color, isUnlit, true);
+                AdjustColor(obj, color, isLit, true);
 
             // Lines
             float halfSize = size / 2f;
@@ -491,7 +494,7 @@ namespace PerfectlyNormalBaS
             return retVal;
         }
 
-        private static GameObject GetNewDot(Vector3 position, float radius, Color color, bool isUnlit, GameObject parent = null)
+        private static GameObject GetNewDot(Vector3 position, float radius, Color color, bool isLit, GameObject parent = null)
         {
             GameObject retVal = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             retVal.name = PREFIX + "dot";
@@ -504,7 +507,7 @@ namespace PerfectlyNormalBaS
             retVal.transform.position = position;
             retVal.transform.localScale = new Vector3(radius * 2, radius * 2, radius * 2);
 
-            AdjustColor(retVal, color, isUnlit, true);
+            AdjustColor(retVal, color, isLit, true);
 
             return retVal;
         }
@@ -541,7 +544,7 @@ namespace PerfectlyNormalBaS
 
             return retVal;
         }
-        private GameObject GetNewPipeLine(Vector3 from, Vector3 to, float thickness, Color color, bool isUnlit, GameObject parent = null)
+        private GameObject GetNewPipeLine(Vector3 from, Vector3 to, float thickness, Color color, bool isLit, GameObject parent = null)
         {
             GameObject retVal = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             retVal.name = PREFIX + "line (pipe)";
@@ -551,7 +554,7 @@ namespace PerfectlyNormalBaS
 
             RemoveCollider(retVal);
             AdjustLinePositions(retVal, from, to, thickness);
-            AdjustColor(retVal, color, isUnlit, true);
+            AdjustColor(retVal, color, isLit, true);
 
             return retVal;
         }
@@ -667,7 +670,7 @@ namespace PerfectlyNormalBaS
 
     public class DebugItem
     {
-        public DebugItem(long token, GameObject obj, GameObject[] childObjects, Vector3 position, Component relativeToComponent, GameObject relativeToGameObject, bool isUnlit)
+        public DebugItem(long token, GameObject obj, GameObject[] childObjects, Vector3 position, Component relativeToComponent, GameObject relativeToGameObject, bool isLit)
         {
             Token = token;
             Object = obj;
@@ -675,7 +678,7 @@ namespace PerfectlyNormalBaS
             Position = position;
             RelativeToComponent = relativeToComponent;
             RelativeToGameObject = relativeToGameObject;
-            IsUnlit = isUnlit;
+            IsLit = isLit;
         }
 
         public long Token { get; }
@@ -686,7 +689,7 @@ namespace PerfectlyNormalBaS
         public Component RelativeToComponent { get; }
         public GameObject RelativeToGameObject { get; }
 
-        public bool IsUnlit { get; }
+        public bool IsLit { get; }
     }
 
     #endregion

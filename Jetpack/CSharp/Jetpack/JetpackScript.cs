@@ -188,15 +188,15 @@ namespace Jetpack
 
         private FlightTransitionWatcher _transitions = new FlightTransitionWatcher();
 
-        private DebugRenderer3D _renderer = null;
+        //private DebugRenderer3D _renderer = null;
 
         public override void ScriptLoaded(ModManager.ModData modData)
         {
             base.ScriptLoaded(modData);
 
-            Debug.Log("Wiring up DebugRenderer3D");
-            _renderer = Player.local.gameObject.AddComponent<DebugRenderer3D>();
-            Debug.Log("Wired up DebugRenderer3D");
+            //Debug.Log("Wiring up DebugRenderer3D");
+            //_renderer = Player.local.gameObject.AddComponent<DebugRenderer3D>();
+            //Debug.Log("Wired up DebugRenderer3D");
 
             ReportResourceMaterials2();
         }
@@ -418,7 +418,7 @@ namespace Jetpack
             //SpawnDot3();
 
             // Uses debug renderer to spawn a static dot
-            SpawnDot4();
+            //SpawnDot4();
         }
         private void DeactivateFly()
         {
@@ -590,42 +590,49 @@ namespace Jetpack
         }
         private void SpawnDot4()
         {
-            Vector3 pos = Player.local.transform.position;
-            Debug.Log($"Adding debug dot: {pos.ToStringSignificantDigits(2)}");
+            //Vector3 pos = Player.local.transform.position;
+            //Debug.Log($"Adding debug graphics: {pos.ToStringSignificantDigits(2)}");
 
-            Vector3 offset_y = new Vector3(0, 3, 0);
-            Vector3 offset_x = new Vector3(1, 0, 0);
-            Vector3 offset_z = new Vector3(0, 0, 2);
-
-
-            Color color = StaticRandom.ColorHSV();
-
-            // Lit / Unlit
-
-            // Opaque / Semitransparent
-
-            _renderer.AddDot(pos - offset_z, 1, color, true);
-            _renderer.AddDot(pos + offset_z, 1, color, false);      // draws as magenta, left eye only
-
-            pos += offset_y;
-
-            _renderer.AddCube(pos - offset_z, new Vector3(.25f, .5f, 1f), color, true);
-            _renderer.AddCube(pos + offset_z, new Vector3(.25f, .5f, 1f), color, false);
-
-            pos += offset_y;
-
-            _renderer.AddLine_Pipe(pos - offset_x - offset_z, pos + offset_x - offset_z, 0.05f, color, true);
-            _renderer.AddLine_Pipe(pos - offset_x + offset_z, pos + offset_x + offset_z, 0.05f, color, false);
+            //Vector3 offset_y = new Vector3(0, 3, 0);
+            //Vector3 offset_x = new Vector3(1, 0, 0);
+            //Vector3 offset_z = new Vector3(0, 0, 2);
 
 
-            //_renderer.AddAxisLines();
-            //_renderer.AddCircle();
-            //_renderer.AddLine_Basic();
-            //_renderer.AddPlane_PointNormal();
+            //Color color = StaticRandom.ColorHSV();
+            //Color color_half = new Color(color.r, color.g, color.b, 0.5f);
 
 
+            //_renderer.AddDot(pos - offset_z, 1, color);
+            ////_renderer.AddDot(pos + offset_z, 1, color, true);     // lit shader can't be found (search for litmoss in DebugRenderer3D)
+            //_renderer.AddDot(pos + offset_z, 1, color_half);
 
-            Debug.Log($"Added debug dot: {pos.ToStringSignificantDigits(2)}");
+            //pos += offset_y;
+
+            //_renderer.AddCube(pos - offset_z, new Vector3(.25f, .5f, 1f), color);
+            ////_renderer.AddCube(pos + offset_z, new Vector3(.25f, .5f, 1f), color, true);
+            //_renderer.AddCube(pos + offset_z, new Vector3(.25f, .5f, 1f), color_half);
+
+            //pos += offset_y;
+
+            //_renderer.AddLine_Pipe(pos - offset_x - offset_z, pos + offset_x - offset_z, 0.05f, color);
+            ////_renderer.AddLine_Pipe(pos - offset_x + offset_z, pos + offset_x + offset_z, 0.05f, color, true);
+            //_renderer.AddLine_Pipe(pos - offset_x + offset_z, pos + offset_x + offset_z, 0.05f, color_half);
+
+            //pos += offset_y;
+
+            //_renderer.AddAxisLines(100, 1);
+
+            //_renderer.AddCircle(pos, Vector3.up, 1, 0.05f, color);
+
+            //pos += offset_y;
+
+            //_renderer.AddLine_Basic(pos - offset_x, pos + offset_x, 0.05f, color);
+
+            //pos += offset_y;
+
+            //_renderer.AddPlane_PointNormal(pos, Vector3.up, 1, color);
+
+            //Debug.Log($"Added debug added: {pos.ToStringSignificantDigits(2)}");
         }
 
         private static void ReportResourceMaterials()
