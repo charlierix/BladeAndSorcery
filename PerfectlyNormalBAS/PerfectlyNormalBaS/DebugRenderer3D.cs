@@ -390,12 +390,44 @@ namespace PerfectlyNormalBaS
             if (isNewItem)
             {
                 if (isUnlit)
+                {
                     renderer.material.shader = Shader.Find("Sprites/Default");      // BREAD — the default shader that's applied isn't in the game, need to change it
+                }
                 else
-                    renderer.material.shader = Shader.Find("ThunderRoad/LitMoss");
+                {
+                    string[] keys = new[]
+                    {
+                        "LitMoss",
+                        "ThunderRoad/LitMoss",
+                        "ASshader/LitMoss",
+                        "ThunderRoad/ASshader/LitMoss",
+                    };
+
+                    var results = keys.
+                        Select(o => new
+                        {
+                            key = o,
+                            shader = Shader.Find(o),
+                        }).
+                        Where(o => o.shader != null).
+                        ToArray();
+
+                    if (results.Length == 0)
+                    {
+                        Debug.Log("Couldn't find LitMoss");     // this is the message that fires
+                    }
+                    else
+                    {
+                        Debug.Log($"Found LitMoss: {results.Select(o => $"'{o.key}'").ToJoin(", ")}");
+                        renderer.material.shader = results[0].shader;
+                    }
+                }
             }
 
+            //if (isUnlit)
             renderer.material.color = color;
+            //else
+            //renderer.material.SetColor("_BaseColor", color);        // also try _Color
 
             if (color.a < 1f)       // default is an opaque mode (if the opacity goes back to 1, just leave it as transparent mode)
             {

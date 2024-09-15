@@ -593,14 +593,29 @@ namespace Jetpack
             Vector3 pos = Player.local.transform.position;
             Debug.Log($"Adding debug dot: {pos.ToStringSignificantDigits(2)}");
 
+            Vector3 offset_y = new Vector3(0, 3, 0);
+            Vector3 offset_x = new Vector3(1, 0, 0);
+            Vector3 offset_z = new Vector3(0, 0, 2);
+
+
+            Color color = StaticRandom.ColorHSV();
+
             // Lit / Unlit
 
             // Opaque / Semitransparent
 
-            _renderer.AddDot(pos, 9, StaticRandom.ColorHSV(), true);
+            _renderer.AddDot(pos - offset_z, 1, color, true);
+            _renderer.AddDot(pos + offset_z, 1, color, false);      // draws as magenta, left eye only
 
-            //_renderer.AddCube();
-            //_renderer.AddLine_Pipe();
+            pos += offset_y;
+
+            _renderer.AddCube(pos - offset_z, new Vector3(.25f, .5f, 1f), color, true);
+            _renderer.AddCube(pos + offset_z, new Vector3(.25f, .5f, 1f), color, false);
+
+            pos += offset_y;
+
+            _renderer.AddLine_Pipe(pos - offset_x - offset_z, pos + offset_x - offset_z, 0.05f, color, true);
+            _renderer.AddLine_Pipe(pos - offset_x + offset_z, pos + offset_x + offset_z, 0.05f, color, false);
 
 
             //_renderer.AddAxisLines();
