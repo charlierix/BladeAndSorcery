@@ -188,15 +188,15 @@ namespace Jetpack
 
         private FlightTransitionWatcher _transitions = new FlightTransitionWatcher();
 
-        //private DebugRenderer3D _renderer = null;
+        private DebugRenderer3D _renderer = null;
 
         public override void ScriptLoaded(ModManager.ModData modData)
         {
             base.ScriptLoaded(modData);
 
-            //Debug.Log("Wiring up DebugRenderer3D");
-            //_renderer = Player.local.gameObject.AddComponent<DebugRenderer3D>();
-            //Debug.Log("Wired up DebugRenderer3D");
+            Debug.Log("Wiring up DebugRenderer3D");
+            _renderer = Player.local.gameObject.AddComponent<DebugRenderer3D>();
+            Debug.Log("Wired up DebugRenderer3D");
 
             ReportResourceMaterials2();
         }
@@ -416,6 +416,9 @@ namespace Jetpack
 
             // Creates a dot that stays with transform.pos as the player flies around (on the floor, center of the irl room that player walks around)
             //SpawnDot3();
+
+            // Uses debug renderer to spawn a static dot
+            SpawnDot4();
         }
         private void DeactivateFly()
         {
@@ -584,6 +587,30 @@ namespace Jetpack
             instance.Play();
 
             Debug.Log($"Added VizDot");
+        }
+        private void SpawnDot4()
+        {
+            Vector3 pos = Player.local.transform.position;
+            Debug.Log($"Adding debug dot: {pos.ToStringSignificantDigits(2)}");
+
+            // Lit / Unlit
+
+            // Opaque / Semitransparent
+
+            _renderer.AddDot(pos, 9, StaticRandom.ColorHSV(), true);
+
+            //_renderer.AddCube();
+            //_renderer.AddLine_Pipe();
+
+
+            //_renderer.AddAxisLines();
+            //_renderer.AddCircle();
+            //_renderer.AddLine_Basic();
+            //_renderer.AddPlane_PointNormal();
+
+
+
+            Debug.Log($"Added debug dot: {pos.ToStringSignificantDigits(2)}");
         }
 
         private static void ReportResourceMaterials()
