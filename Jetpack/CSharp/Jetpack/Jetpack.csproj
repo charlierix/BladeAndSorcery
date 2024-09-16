@@ -41,18 +41,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="JetpackScript.cs" />
+    <Compile Include="PlaySounds.cs" />
+    <Compile Include="DebugCode\DebugVisuals.cs" />
     <Compile Include="DebugCode\MaterialShaderFinder.cs" />
+    <Compile Include="FlightProcessing\FlightJetpack.cs" />
     <Compile Include="InputWatchers\FlightTransitionWatcher.cs" />
     <Compile Include="InputWatchers\HoldGestureTracker.cs" />
     <Compile Include="InputWatchers\HoldUpTracker.cs" />
     <Compile Include="InputWatchers\InputUtil.cs" />
-    <Compile Include="JetpackScript.cs" />
     <Compile Include="InputWatchers\KeyDoublePressTracker.cs" />
     <Compile Include="Models\FlightData.cs" />
-    <Compile Include="PlaySounds.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="DebugCode\DebugVisuals.cs" />
-    <Compile Include="Flight_Jetpack\Flight_Jetpack.cs" />
+    <Compile Include="Scanning\ConfinedArea.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="SteamVR, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">

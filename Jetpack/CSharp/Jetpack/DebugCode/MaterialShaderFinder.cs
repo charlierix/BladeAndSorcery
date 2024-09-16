@@ -103,5 +103,22 @@ namespace Jetpack.DebugCode
             else
                 Debug.Log($"Shader.Find(\"Sprites/Default\") returned {shader.name}");
         }
+
+        private static void TryThisFromSDK()
+        {
+            // This code will print out the names of all shaders in your project, including those that are not included in the build. However, you should note that this code requires UnityEditor namespace and can only be used in editor scripts, as AssetDatabase is part of the Unity Editor scripting API and cannot be used in player builds.
+
+            /*
+using UnityEditor;
+...
+string[] guids = AssetDatabase.FindAssets("t:Shader"); // Finds all shaders in the project
+foreach (string guid in guids)
+{
+    string path = AssetDatabase.GUIDToAssetPath(guid);
+    Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(path);
+    Debug.Log($"shader: {shader.name}");
+}
+            */
+        }
     }
 }

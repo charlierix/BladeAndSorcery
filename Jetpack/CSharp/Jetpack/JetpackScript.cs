@@ -1,5 +1,5 @@
 ﻿using Jetpack.DebugCode;
-using Jetpack.Flight_Jetpack;
+using Jetpack.FlightProcessing;
 using Jetpack.InputWatchers;
 using Jetpack.Models;
 using PerfectlyNormalBaS;
@@ -11,7 +11,6 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using ThunderRoad;
 using UnityEngine;
-using static ThunderRoad.EffectModuleMesh;
 
 
 

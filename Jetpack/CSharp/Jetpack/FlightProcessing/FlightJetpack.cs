@@ -2,9 +2,8 @@ using Jetpack.InputWatchers;
 using Jetpack.Models;
 using ThunderRoad;
 using UnityEngine;
-using static Unity.Collections.AllocatorManager;
 
-namespace Jetpack.Flight_Jetpack
+namespace Jetpack.FlightProcessing
 {
     public class FlightJetpack
     {
@@ -58,6 +57,13 @@ namespace Jetpack.Flight_Jetpack
                 loco.physicBody.drag = drag;
                 _last_applied_drag = drag;
             }
+
+
+
+            // TODO: detect if in a confined space and reduce accelerations
+
+
+
 
             DestabilizeHeldNPC(Player.local.handLeft);
             DestabilizeHeldNPC(Player.local.handRight);
