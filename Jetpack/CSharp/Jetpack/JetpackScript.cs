@@ -1,4 +1,6 @@
-﻿using Jetpack.InputWatchers;
+﻿using Jetpack.DebugCode;
+using Jetpack.Flight_Jetpack;
+using Jetpack.InputWatchers;
 using Jetpack.Models;
 using PerfectlyNormalBaS;
 using System;
@@ -121,13 +123,13 @@ namespace Jetpack
         [ModOptionSlider]
         [ModOption(name: "Horizontal Accel", tooltip: "How hard to accelerate horizontally", order = 0)]
         [ModOptionFloatValues(0, 24, 0.25f)]
-        public static float HorizontalSpeed = 9;
+        public static float HorizontalAccel = 9;
 
         [ModOptionCategory(CATEGORY_FLIGHTPROPS, -99)]
         [ModOptionSlider]
         [ModOption(name: "Vertical Accel", tooltip: "How hard to accelerate vertically", order = 1)]
         [ModOptionFloatValues(0, 12, 0.25f)]
-        public static float VerticalForce = 6;     // discussion on discord was saying defaultValueIndex is ignored in 1.0.3, need to explicitely set a value
+        public static float VerticalAccel = 6;
 
         [ModOptionCategory(CATEGORY_FLIGHTPROPS, -99)]
         [ModOptionSlider]
@@ -187,16 +189,16 @@ namespace Jetpack
         private float _last_applied_drag = -1;
 
         private FlightTransitionWatcher _transitions = new FlightTransitionWatcher();
+        private FlightJetpack _flight_jetpack = new FlightJetpack();
 
-        private DebugCode.DebugVisuals _debugVisuals = null;
+        private DebugVisuals _debugVisuals = null;
 
         public override void ScriptLoaded(ModManager.ModData modData)
         {
             base.ScriptLoaded(modData);
 
-            ReportResourceMaterials2();
+            MaterialShaderFinder.Report();
         }
-
         public override void ScriptUpdate()
         {
             base.ScriptUpdate();
@@ -228,14 +230,7 @@ namespace Jetpack
 
             if (_markedToFly && !Player.local.locomotion.isGrounded)
                 ActivateFly();
-
-            if (_isFlying && _last_applied_drag != Drag)
-            {
-                _loco.physicBody.drag = Drag;
-                _last_applied_drag = Drag;
-            }
         }
-
         public override void ScriptFixedUpdate()
         {
             base.ScriptFixedUpdate();
@@ -243,73 +238,11 @@ namespace Jetpack
             if (Player.currentCreature)
             {
                 if (_isFlying && !Player.local.locomotion.isGrounded)
-                {
-                    DestabilizeHeldNPC(Player.local.handLeft);
-                    DestabilizeHeldNPC(Player.local.handRight);
-
-                    // TODO: make an option for horiztonal control mode (direct or accel)
-                    //_loco.horizontalAirSpeed = horizontalSpeed / 100f;
-
-                    AccelHorz(InputUtil.GetLeftStick());
-                    AccelUp(InputUtil.GetRightStick());
-                }
+                    _flight_jetpack.Update(Drag, HorizontalAccel, VerticalAccel, GravitySetting);
             }
             else
             {
                 _isFlying = false;
-            }
-        }
-
-        private void AccelHorz(Vector2 axis)
-        {
-            if (axis.x == 0 && axis.y == 0)
-                return;
-
-            var transform = Player.local.transform;
-
-            // TODO: may need to project transform's forward and right to horizontal plane
-
-            _loco.physicBody.AddForce(transform.forward * HorizontalSpeed * axis.y, ForceMode.Acceleration);
-            _loco.physicBody.AddForce(transform.right * HorizontalSpeed * axis.x, ForceMode.Acceleration);
-        }
-        private void AccelUp(Vector2 axis)
-        {
-            float up_accel = 0f;
-
-            float axis_y = axis.y;
-
-            if (axis_y != 0.0 && (!Pointer.GetActive() || !Pointer.GetActive().isPointingUI))
-            {
-                up_accel = VerticalForce * axis_y;
-
-                if (axis_y > 0)
-                    up_accel += GravitySetting;     // when pushing up, cancel out gravity.  When pushing down, it's accelerating down in addition to gravity
-            }
-
-            up_accel -= GravitySetting;
-
-            _loco.physicBody.AddForce(Vector3.up * up_accel, ForceMode.Acceleration);
-        }
-
-        private static void DestabilizeHeldNPC(PlayerHand side)
-        {
-            if (side.ragdollHand.grabbedHandle)
-            {
-                Creature grabbedCreature = side.ragdollHand.grabbedHandle.gameObject.GetComponentInParent<Creature>();
-                if (grabbedCreature)
-                {
-                    if (grabbedCreature.ragdoll.state != Ragdoll.State.Inert)
-                        grabbedCreature.ragdoll.SetState(Ragdoll.State.Destabilized);
-                }
-                else
-                {
-                    foreach (RagdollHand ragdollHand in side.ragdollHand.grabbedHandle.handlers)
-                    {
-                        Creature creature = ragdollHand.gameObject.GetComponentInParent<Creature>();
-                        if (creature && creature != Player.currentCreature)
-                            ragdollHand.TryRelease();
-                    }
-                }
             }
         }
 
@@ -323,113 +256,22 @@ namespace Jetpack
                 return;
             }
 
-            _loco = Player.local.locomotion;
-
-
-
-            // TODO: it's risky storing these in flight activate.  If this function is called twice before deactivating flight, the values will be corrupt
-
-            // STORE ORIGINAL STATS
-            _old = new FlightData()
-            {
-                HorizontalSpeed = _loco.horizontalAirSpeed,
-                VerticalSpeed = _loco.verticalAirSpeed,
-                MaxAngle = _loco.groundAngle,
-                Drag = _loco.physicBody.drag,
-                Mass = _loco.physicBody.mass,
-                FallDamage = Player.fallDamage,
-                CrouchOnJump = Player.crouchOnJump,
-                StickJump = GameManager.options.allowStickJump,
-
-                Height = Player.local.creature.GetHeight(),
-                Morphology = Player.local.creature.morphology.Clone(),
-                HeadLocalPosition = Player.local.headOffsetTransform.localPosition,     // this is zero
-            };
-
-
-
-            // ENABLE FLIGHT STATS
             _isFlying = true;
-            _loco.groundAngle = -359f;
-            _loco.physicBody.useGravity = false;        // this mod will do its own gravity, if the slider is non zero
-            //_loco.physicBody.mass = 100000f;
 
-            _loco.physicBody.drag = Drag;
-            _last_applied_drag = Drag;
-
-            _loco.velocity = Vector3.zero;
-            Player.fallDamage = false;
-            Player.crouchOnJump = false;
-            //GameManager.options.allowStickJump = false;       // this doesn't seem to affect anything
-
-            //ApplyScale();
-
-
-            //PlaySounds.Play(SoundName.Jetpack_Activate);
-
-            //Debug.Log($"Activating Flight:\r\n{JsonUtility.ToJson(_old, true)}");
-            /*
-{{
-    "Drag": 0.30000001192092898,
-    "Mass": 70.0,
-    "HorizontalSpeed": 0.03999999910593033,
-    "VerticalSpeed": 0.0,
-    "MaxAngle": 2.7823486328125,
-    "FallDamage": true,
-    "CrouchOnJump": true,
-    "StickJump": true,
-    "Height": 1.895983338356018,
-    "Morphology": {{
-        "eyesHeight": 1.9534728527069092,
-        "eyesForward": 0.11809086799621582,
-        "headHeight": 1.8641363382339478,
-        "headForward": 0.031885743141174319,
-        "chestHeight": 1.2766860723495484,
-        "spineHeight": 1.0798486471176148,
-        "hipsHeight": 1.0564287900924683,
-        "armsSpacing": 0.36119115352630618,
-        "armsLength": 0.6440020799636841,
-        "armsHeight": 1.6500314474105836,
-        "armsToEyesHeight": 0.0,
-        "height": 2.0837044715881349,
-        "legsLength": 1.01776123046875,
-        "legsSpacing": 0.2640935182571411,
-        "upperLegsHeight": 1.1216603517532349,
-        "lowerLegsHeight": 0.5887104272842407,
-        "footHeight": 0.1138991191983223
-    }},
-    "HeadLocalPosition": {{
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.0
-    }}
-}}
-            */
+            _flight_jetpack.Activate(Drag);
 
             _debugVisuals.AddVisuals();
+
+            //PlaySounds.Play(SoundName.Jetpack_Activate);
         }
         private void DeactivateFly()
         {
             _isFlying = false;
 
-            if (_old != null)
-            {
-                _loco.groundAngle = _old.MaxAngle;
-                _loco.physicBody.drag = _old.Drag;
-                _loco.physicBody.useGravity = true;
-                _loco.physicBody.mass = _old.Mass;
-                _loco.horizontalAirSpeed = _old.HorizontalSpeed;
-                _loco.verticalAirSpeed = _old.VerticalSpeed;
-                Player.fallDamage = _old.FallDamage;
-                Player.crouchOnJump = _old.CrouchOnJump;
-                GameManager.options.allowStickJump = _old.StickJump;
-
-                //RevertScale();
-            }
+            _flight_jetpack.Deactivate();
 
             //PlaySounds.Play(SoundName.Jetpack_Deactivate);
         }
-
 
         private void ApplyScale()
         {
@@ -485,68 +327,5 @@ namespace Jetpack
             // TODO: _old.Morphology was set in activate flight, change this to some kind of startup event
             Player.local.creature.morphology = _old.Morphology;
         }
-
-
-
-        private static void ReportResourceMaterials()
-        {
-            Material[] materials = Resources.LoadAll<Material>(""); // The empty string "" means it will load all materials from the "Resources" folder and its subfolders.
-
-            string[] paths = materials.
-                //Select(o => AssetDatabase.GetAssetPath(o)).
-                //Select(o => "AssetDatabase is only available in UnityEditor").
-                Select(o => o.name).
-                SelectMany(o => SplitExtension(o)).
-                SelectMany(o => GetAltPaths(o)).
-                ToArray();
-
-            var found = paths.
-                Select(o => new
-                {
-                    path = o,
-                    mat = Resources.Load<Material>(o),
-                }).
-                Where(o => o.mat != null).
-                ToArray();
-
-            //string report = string.Join("\n", found.Select(o => o.path));
-
-            foreach (var item in found)
-                Debug.Log(item.path);
-        }
-        private static string[] SplitExtension(string path)
-        {
-            Match match = Regex.Match(path, @"\.\w+$");
-
-            if (!match.Success)
-                return new[] { path };
-
-            return new[]
-            {
-                path,
-                path.Substring(0, match.Index),
-            };
-        }
-        private static string[] GetAltPaths(string path)
-        {
-            string[] name_split = path.Split('/');
-
-            string[] retVal = new string[name_split.Length];
-
-            for (int i = 0; i < name_split.Length; i++)
-                retVal[i] = string.Join("/", Enumerable.Range(i, name_split.Length - i).Select(o => name_split[o]));
-            return retVal;
-        }
-
-        private static void ReportResourceMaterials2()
-        {
-            Material[] materials = Resources.LoadAll<Material>(""); // The empty string "" means it will load all materials from the "Resources" folder and its subfolders.
-
-            Debug.Log("Resources.LoadAll<Material>(\"\");");
-
-            foreach (Material material in materials)
-                Debug.Log(material.name);
-        }
-
     }
 }
