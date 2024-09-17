@@ -68,7 +68,7 @@ namespace PerfectlyNormalBaS
 
                 color = color == null ?
                     null :
-                    UtilityUnity.ColorToHex(color.Value, true, false),
+                    UtilityColor.ToHex(color.Value, true, false),
 
                 size_mult = size_mult,
             });
@@ -95,7 +95,7 @@ namespace PerfectlyNormalBaS
 
                 back_color = back_color == null ?
                     null :
-                    UtilityUnity.ColorToHex(back_color.Value, true, false),
+                    UtilityColor.ToHex(back_color.Value, true, false),
 
                 items = new ItemBase[0],
                 text = new Text[0],
@@ -115,7 +115,7 @@ namespace PerfectlyNormalBaS
 
                 color = color == null ?
                     null :
-                    UtilityUnity.ColorToHex(color.Value, true, false),
+                    UtilityColor.ToHex(color.Value, true, false),
 
                 size_mult = size_mult,
                 tooltip = tooltip,
@@ -134,7 +134,7 @@ namespace PerfectlyNormalBaS
 
                 color = color == null ?
                     null :
-                    UtilityUnity.ColorToHex(color.Value, true, false),
+                    UtilityColor.ToHex(color.Value, true, false),
 
                 size_mult = size_mult,
                 tooltip = tooltip,
@@ -155,7 +155,7 @@ namespace PerfectlyNormalBaS
 
                 color = color == null ?
                     null :
-                    UtilityUnity.ColorToHex(color.Value, true, false),
+                    UtilityColor.ToHex(color.Value, true, false),
 
                 size_mult = size_mult,
                 tooltip = tooltip,
@@ -176,7 +176,7 @@ namespace PerfectlyNormalBaS
 
                 color = color == null ?
                     null :
-                    UtilityUnity.ColorToHex(color.Value, true, false),
+                    UtilityColor.ToHex(color.Value, true, false),
 
                 size_mult = size_mult,
                 tooltip = tooltip,
@@ -221,7 +221,7 @@ namespace PerfectlyNormalBaS
 
                 color = color == null ?
                     null :
-                    UtilityUnity.ColorToHex(color.Value, true, false),
+                    UtilityColor.ToHex(color.Value, true, false),
 
                 fontsize_mult = fontsize_mult,
             });
@@ -240,7 +240,7 @@ namespace PerfectlyNormalBaS
 
                 color = color == null ?
                     null :
-                    UtilityUnity.ColorToHex(color.Value, true, false),
+                    UtilityColor.ToHex(color.Value, true, false),
 
                 fontsize_mult = fontsize_mult,
             });

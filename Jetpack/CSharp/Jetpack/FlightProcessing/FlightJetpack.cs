@@ -1,5 +1,8 @@
 using Jetpack.InputWatchers;
 using Jetpack.Models;
+using Jetpack.Scanning;
+using PerfectlyNormalBaS;
+using System;
 using ThunderRoad;
 using UnityEngine;
 
@@ -8,6 +11,7 @@ namespace Jetpack.FlightProcessing
     public class FlightJetpack
     {
         private FlightData _standardState = null;
+        private ConfinedArea _confinedScanner = null;
 
         private float _last_applied_drag = -1;
 
@@ -29,6 +33,12 @@ namespace Jetpack.FlightProcessing
             Player.fallDamage = false;
             Player.crouchOnJump = false;
             //GameManager.options.allowStickJump = false;       // this doesn't seem to affect anything
+
+            // Reset scanner
+            if (_confinedScanner == null)
+                _confinedScanner = new ConfinedArea();
+
+            _confinedScanner.Clear();
         }
         public void Deactivate()
         {
@@ -58,12 +68,8 @@ namespace Jetpack.FlightProcessing
                 _last_applied_drag = drag;
             }
 
-
-
-            // TODO: detect if in a confined space and reduce accelerations
-
-
-
+            _confinedScanner.Update(12, 1, 1.75f);
+            float percent_accel = UtilityMath.GetScaledValue_Capped(0.25f, 1f, 1f, 0f, _confinedScanner.ConfinedPercent);
 
             DestabilizeHeldNPC(Player.local.handLeft);
             DestabilizeHeldNPC(Player.local.handRight);
@@ -71,8 +77,8 @@ namespace Jetpack.FlightProcessing
             // TODO: make an option for horiztonal control mode (direct or accel)
             //loco.horizontalAirSpeed = horizontalSpeed / 100f;
 
-            AccelHorz(InputUtil.GetLeftStick(), loco, horz_accel);
-            AccelUp(InputUtil.GetRightStick(), loco, vert_accel, gravity);
+            AccelHorz(InputUtil.GetLeftStick(), loco, horz_accel * percent_accel);
+            AccelUp(InputUtil.GetRightStick(), loco, vert_accel * percent_accel, gravity);
         }
 
         private void AccelHorz(Vector2 axis, Locomotion loco, float horz_accel)
@@ -127,7 +133,7 @@ namespace Jetpack.FlightProcessing
             }
         }
 
-        private static FlightData GetCurrentState() 
+        private static FlightData GetCurrentState()
         {
             Locomotion loco = Player.local.locomotion;
 

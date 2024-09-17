@@ -64,15 +64,15 @@ namespace PerfectlyNormalBaS
 
             if (isBasic)
             {
-                children.Add(GetNewBasicLine(new[] { new Vector3(0, 0, 0), new Vector3(length, 0, 0) }, thickness, UtilityUnity.ColorFromHex(AXISCOLOR_X), 0, 4, false, parent));
-                children.Add(GetNewBasicLine(new[] { new Vector3(0, 0, 0), new Vector3(0, length, 0) }, thickness, UtilityUnity.ColorFromHex(AXISCOLOR_Y), 0, 4, false, parent));
-                children.Add(GetNewBasicLine(new[] { new Vector3(0, 0, 0), new Vector3(0, 0, length) }, thickness, UtilityUnity.ColorFromHex(AXISCOLOR_Z), 0, 4, false, parent));
+                children.Add(GetNewBasicLine(new[] { new Vector3(0, 0, 0), new Vector3(length, 0, 0) }, thickness, UtilityColor.FromHex(AXISCOLOR_X), 0, 4, false, parent));
+                children.Add(GetNewBasicLine(new[] { new Vector3(0, 0, 0), new Vector3(0, length, 0) }, thickness, UtilityColor.FromHex(AXISCOLOR_Y), 0, 4, false, parent));
+                children.Add(GetNewBasicLine(new[] { new Vector3(0, 0, 0), new Vector3(0, 0, length) }, thickness, UtilityColor.FromHex(AXISCOLOR_Z), 0, 4, false, parent));
             }
             else
             {
-                children.Add(GetNewPipeLine(new Vector3(0, 0, 0), new Vector3(length, 0, 0), thickness, UtilityUnity.ColorFromHex(AXISCOLOR_X), parent));
-                children.Add(GetNewPipeLine(new Vector3(0, 0, 0), new Vector3(0, length, 0), thickness, UtilityUnity.ColorFromHex(AXISCOLOR_Y), parent));
-                children.Add(GetNewPipeLine(new Vector3(0, 0, 0), new Vector3(0, 0, length), thickness, UtilityUnity.ColorFromHex(AXISCOLOR_Z), parent));
+                children.Add(GetNewPipeLine(new Vector3(0, 0, 0), new Vector3(length, 0, 0), thickness, UtilityColor.FromHex(AXISCOLOR_X), parent));
+                children.Add(GetNewPipeLine(new Vector3(0, 0, 0), new Vector3(0, length, 0), thickness, UtilityColor.FromHex(AXISCOLOR_Y), parent));
+                children.Add(GetNewPipeLine(new Vector3(0, 0, 0), new Vector3(0, 0, length), thickness, UtilityColor.FromHex(AXISCOLOR_Z), parent));
             }
 
             var retVal = new DebugItem(NextToken(), parent, children.ToArray(), new Vector3(), relativeToComponent, relativeToGameObject, true);

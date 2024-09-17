@@ -41,7 +41,7 @@ namespace Jetpack.DebugCode
             //Debug.Log($"Player.local.transform.TransformPoint: {pos}");
 
             Debug.Log($"Adding debug dot: {pos.ToStringSignificantDigits(2)}");
-            //_renderer.AddDot(pos, 1f, UtilityUnity.ColorFromHex("FF0"));
+            //_renderer.AddDot(pos, 1f, UtilityColor.FromHex("FF0"));
 
 
 

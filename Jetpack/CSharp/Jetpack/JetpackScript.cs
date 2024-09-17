@@ -16,15 +16,6 @@ using UnityEngine;
 
 // TODOS:
 
-// Make a Flying class to handle actual flying
-
-
-// Change when player stats are stored.  Move it from flight activate to higher up like a startup.  Or maybe just store
-// on first activation, then keep from that point on
-
-
-// Figure out how to make debug graphics
-
 
 // Options to reduce accel if in confined space (probably just a checkbox, the raycast dist and % reduction can probably be hardcoded - it may not be linear)
 //  Physics.OverlapSphere

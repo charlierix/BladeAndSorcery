@@ -88,13 +88,13 @@ namespace PerfectlyNormalBaS
                     continue;
 
                 var debug_items = new List<(DebugItem, bool)>();
-                debug_items.Add((_renderer.AddDot(new Vector3(), DOT_SIZE * tracked_item.Size_Scale, UtilityUnity.ColorFromHex(tracked_item.Color)), false));
+                debug_items.Add((_renderer.AddDot(new Vector3(), DOT_SIZE * tracked_item.Size_Scale, UtilityColor.FromHex(tracked_item.Color)), false));
 
                 if (tracked_item.ShowAxisLines)
                     debug_items.Add((_renderer.AddAxisLines(AXISLINE_LENGTH * tracked_item.Size_Scale, AXISLINE_THICKNESS * tracked_item.Size_Scale), false));
 
                 if (tracked_item.ShowLineToParent && tracked_item.transform.parent?.gameObject != null)
-                    debug_items.Add((_renderer.AddLine_Basic(new Vector3(), new Vector3(), PARENTLINE_THICKNESS * tracked_item.Size_Scale, UtilityUnity.ColorFromHex(tracked_item.Color)), true));
+                    debug_items.Add((_renderer.AddLine_Basic(new Vector3(), new Vector3(), PARENTLINE_THICKNESS * tracked_item.Size_Scale, UtilityColor.FromHex(tracked_item.Color)), true));
 
                 _items.Add(new TrackedItem()
                 {

@@ -769,7 +769,7 @@ namespace PerfectlyNormalBaS
 
         public static Color ColorHSV(this System.Random rand, string hex, float driftH = 0, float driftS = 0, float driftV = 0, float driftA = 0)
         {
-            ColorHSV color = UtilityUnity.ColorFromHex(hex).ToHSV();
+            ColorHSV color = UtilityColor.FromHex(hex).ToHSV();
 
             Color retVal = Color.HSVToRGB
             (

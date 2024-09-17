@@ -43,41 +43,5 @@ namespace PerfectlyNormalBaS
 
             return coneCastHitList.ToArray();
         }
-
-        /// <summary>
-        /// Takes RGB, RGBA, RRGGBB, RRGGBBAA.  # in front is optional
-        /// </summary>
-        public static Color ColorFromHex(string hexRGBA)
-        {
-            string final = hexRGBA;
-
-            if (!final.StartsWith("#"))
-            {
-                final = "#" + final;
-            }
-
-            if (final.Length == 5)     // compressed format, has alpha
-            {
-                // #RGBA -> #RRGGBBAA
-                final = new string(new[] { '#', final[1], final[1], final[2], final[2], final[3], final[3], final[4], final[4] });
-            }
-
-            if (!ColorUtility.TryParseHtmlString(final, out Color retVal))
-            {
-                retVal = Color.magenta;
-            }
-
-            return retVal;
-        }
-        public static string ColorToHex(Color color, bool includeAlpha = true, bool includePound = true)
-        {
-            // I think color.ToString does the same thing, but this is explicit
-            return string.Format("{0}{1}{2}{3}{4}",
-                includePound ? "#" : "",
-                includeAlpha ? ((int)(color.a * 255)).ToString("X2") : "",      //  throws an exception with float (must be int)
-                ((int)(color.r * 255)).ToString("X2"),
-                ((int)(color.g * 255)).ToString("X2"),
-                ((int)(color.b * 255)).ToString("X2"));
-        }
     }
 }
