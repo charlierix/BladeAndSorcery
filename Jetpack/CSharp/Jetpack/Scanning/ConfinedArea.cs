@@ -35,41 +35,7 @@ namespace Jetpack.Scanning
         /// These are randomly rotated icosahedrons with the rays pointing down removed
         /// </summary>
         private static Lazy<Ray[][]> _icos = new Lazy<Ray[][]>(() => GetIcosahedrons());
-        // https://kospy.github.io/BasSDK/Components/Guides/SDK-HowTo/Layers.html
-        private static Lazy<int> _layerMask = new Lazy<int>(() => LayerMask.GetMask(
-            "Default",      // lots of static objects were this
-            "TransparentFX",
-            "Ignore Raycast",
-            "Reflections",
-            "Water",
-            //"UI",
-            "PhysicObject",
-            "Mirror",
-            //"LightProbeVolume",
-            //"Touch",
-            //"DroppedItem",
-            //"MovingItem",
-            //"PlayerLocomotionObject",
-            //"Ragdoll",
-            //"LiquidFlow",
-            //"LocomotionOnly",     // this is invisible barriers, like the invisible ceiling of a map
-            "SpectatorHide",
-            "NoLocomotion",     // various environment items where this (rocks, walls)
-            //"Highlighter",
-            //"LoadingCamera",
-            //"SkyDome",
-            "MovingObjectOnly",
-            //"PlayerLocomotion",
-            //"BodyLocomotion",
-            "ItemAndRagdollOnly"
-            //"TouchObject"
-            //"Avatar",
-            //"NPC",
-            //"FPVHide",
-            //"Zone"
-            //"ObjectViewer"
-            //"PlayerHandAndFoot"
-            ));
+        private static Lazy<int> _layerMask = new Lazy<int>(() => GetLayerMask());
 
         private DateTime _prev_tick = DateTime.UtcNow;
 
@@ -180,6 +146,12 @@ namespace Jetpack.Scanning
                 min = 0;
 
             return (min, max);
+        }
+
+        private static Ray[] GetRandomRayBall()
+        {
+            var balls = _icos.Value;
+            return balls[StaticRandom.Next(balls.Length)];
         }
 
         #endregion
@@ -333,7 +305,7 @@ namespace Jetpack.Scanning
             {
                 if (items[index].Object == null)
                 {
-                    Debug.Log($"Removing despawned visual: {items[index].Token}");
+                    //Debug.Log($"Removing despawned visual: {items[index].Token}");
                     items.RemoveAt(index);
                 }
                 else
@@ -344,12 +316,45 @@ namespace Jetpack.Scanning
         }
 
         #endregion
-        #region Private Methods - icosahedron
+        #region Private Methods - init
 
-        private static Ray[] GetRandomRayBall()
+        // https://kospy.github.io/BasSDK/Components/Guides/SDK-HowTo/Layers.html
+        private static int GetLayerMask()
         {
-            var balls = _icos.Value;
-            return balls[StaticRandom.Next(balls.Length)];
+            return LayerMask.GetMask(
+                "Default",      // lots of static objects were this
+                //"TransparentFX",
+                //"Ignore Raycast",
+                "Reflections",
+                "Water",
+                //"UI",
+                "PhysicObject",
+                "Mirror",
+                //"LightProbeVolume",
+                //"Touch",
+                //"DroppedItem",
+                //"MovingItem",
+                //"PlayerLocomotionObject",
+                //"Ragdoll",
+                //"LiquidFlow",
+                //"LocomotionOnly",     // this is invisible barriers, like the invisible ceiling of a map
+                "SpectatorHide",
+                "NoLocomotion",     // various environment items where this (rocks, walls)
+                //"Highlighter",
+                //"LoadingCamera",
+                //"SkyDome",
+                "MovingObjectOnly",
+                //"PlayerLocomotion",
+                //"BodyLocomotion",
+                "ItemAndRagdollOnly"
+                //"TouchObject"
+                //"Avatar",
+                //"NPC",
+                //"FPVHide",
+                //"Zone"
+                //"ObjectViewer"
+                //"PlayerHandAndFoot"
+                );
         }
 
         private static Ray[][] GetIcosahedrons()

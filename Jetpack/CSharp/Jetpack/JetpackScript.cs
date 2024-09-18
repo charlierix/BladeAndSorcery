@@ -181,7 +181,8 @@ namespace Jetpack
         private FlightTransitionWatcher _transitions = new FlightTransitionWatcher();
         private FlightJetpack _flight_jetpack = new FlightJetpack();
 
-        private DebugVisuals _debugVisuals = null;
+        private DebugVisuals _debugVisuals = new DebugVisuals();
+        private VisualizePlayerPoints _visualizePlayerPoints = new VisualizePlayerPoints();
 
         public override void ScriptLoaded(ModManager.ModData modData)
         {
@@ -192,6 +193,8 @@ namespace Jetpack
         public override void ScriptUpdate()
         {
             base.ScriptUpdate();
+
+            _visualizePlayerPoints.Update();
 
             bool should_switch = _transitions.Update(_flightActivation_cast, RequireBothHands, DeactivateOnGround, _isFlying);
 
