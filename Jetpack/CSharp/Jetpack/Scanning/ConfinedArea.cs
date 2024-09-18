@@ -21,7 +21,7 @@ namespace Jetpack.Scanning
     /// </remarks>
     public class ConfinedArea
     {
-        private const bool SHOULD_DRAW = true;
+        private const bool SHOULD_DRAW = false;
 
         /// <summary>
         /// Calling Update on a regular basis will set this property
@@ -35,6 +35,41 @@ namespace Jetpack.Scanning
         /// These are randomly rotated icosahedrons with the rays pointing down removed
         /// </summary>
         private static Lazy<Ray[][]> _icos = new Lazy<Ray[][]>(() => GetIcosahedrons());
+        // https://kospy.github.io/BasSDK/Components/Guides/SDK-HowTo/Layers.html
+        private static Lazy<int> _layerMask = new Lazy<int>(() => LayerMask.GetMask(
+            "Default",      // lots of static objects were this
+            "TransparentFX",
+            "Ignore Raycast",
+            "Reflections",
+            "Water",
+            //"UI",
+            "PhysicObject",
+            "Mirror",
+            //"LightProbeVolume",
+            //"Touch",
+            //"DroppedItem",
+            //"MovingItem",
+            //"PlayerLocomotionObject",
+            //"Ragdoll",
+            //"LiquidFlow",
+            //"LocomotionOnly",     // this is invisible barriers, like the invisible ceiling of a map
+            "SpectatorHide",
+            "NoLocomotion",     // various environment items where this (rocks, walls)
+            //"Highlighter",
+            //"LoadingCamera",
+            //"SkyDome",
+            "MovingObjectOnly",
+            //"PlayerLocomotion",
+            //"BodyLocomotion",
+            "ItemAndRagdollOnly"
+            //"TouchObject"
+            //"Avatar",
+            //"NPC",
+            //"FPVHide",
+            //"Zone"
+            //"ObjectViewer"
+            //"PlayerHandAndFoot"
+            ));
 
         private DateTime _prev_tick = DateTime.UtcNow;
 
@@ -44,6 +79,7 @@ namespace Jetpack.Scanning
         private int _hit_index = -1;
         private List<DebugItem> _rayvisual_lines = null;
         private List<DebugItem> _rayvisual_hits = null;
+        private Dictionary<int, Color> _rayHitColors = null;
 
         public void Update(float ray_length, float player_scale, float gain_factor)
         {
@@ -77,7 +113,8 @@ namespace Jetpack.Scanning
 
         private float GetHowBlocked(float min_len, float max_len)
         {
-            Ray[] rays = _icos.Value[0];        // TODO: pick a random one once this code is more proven
+            //Ray[] rays = _icos.Value[0];
+            Ray[] rays = GetRandomRayBall();
 
             float sum_score = 0;
 
@@ -103,14 +140,14 @@ namespace Jetpack.Scanning
             const float GAUSS_PINCH = 1.6f;
             const float CLAMP_POW = 2;
 
-            if (Physics.Raycast(pos + ray.origin, ray.direction, out RaycastHit hit, max_len))
+            if (Physics.Raycast(pos + ray.origin, ray.direction, out RaycastHit hit, max_len, _layerMask.Value, QueryTriggerInteraction.Ignore))
             {
                 float dist_sqr = (hit.point - pos).sqrMagnitude;      // don't want to use hit.distance, since the ray is from pos + ray.origin
 
                 if (dist_sqr <= min_len * min_len)
                     return 1;
 
-                float dist = math.sqrt(dist_sqr);
+                float dist = math.sqrt(dist_sqr) / max_len;     // need to make it between 0 and 1
 
                 float mx = GAUSS_PINCH * dist;
                 float gauss = math.exp(-(mx * mx));
@@ -118,9 +155,10 @@ namespace Jetpack.Scanning
                 float clamp = 1 - math.pow(dist, CLAMP_POW);
 
                 if (SHOULD_DRAW)
-                    DrawRay(pos + ray.origin, ray.direction, max_len, hit, gauss * clamp);
+                    //DrawRay(pos + ray.origin, ray.direction, max_len, hit, gauss * clamp);
+                    DrawRay2(pos + ray.origin, ray.direction, max_len, hit, gauss * clamp);
 
-                Debug.Log($"FireRay dist: {dist.ToStringSignificantDigits(2)}, retVal: {(gauss * clamp).ToStringSignificantDigits(3)}");
+                //Debug.Log($"FireRay dist: {dist.ToStringSignificantDigits(2)}, retVal: {(gauss * clamp).ToStringSignificantDigits(3)}");
 
                 return gauss * clamp;
             }
@@ -168,6 +206,9 @@ namespace Jetpack.Scanning
 
             if (_rayvisual_hits == null)
                 _rayvisual_hits = new List<DebugItem>();
+
+            if (_rayHitColors == null)
+                _rayHitColors = new Dictionary<int, Color>();
         }
 
         private void StartDrawingRays()
@@ -182,6 +223,9 @@ namespace Jetpack.Scanning
 
             if (_rayvisual_hits == null)
                 _rayvisual_hits = new List<DebugItem>();
+
+            RemoveDespawned(_rayvisual_lines);
+            RemoveDespawned(_rayvisual_hits);
         }
         private void FinishedDrawingRays()
         {
@@ -192,11 +236,13 @@ namespace Jetpack.Scanning
                 _rayvisual_hits[i].Object.SetActive(i <= _hit_index);
         }
 
+        // TODO: Make a DrawRay2 that does its own ray that returns all matches.  Color the hits by layer (keep a dictionary)
+        // As layers get added to the dictionary, log them
         private void DrawRay(Vector3 pos, Vector3 direction, float len, RaycastHit? hit, float percent)
         {
             Color color = hit == null ?
                 UtilityColor.FromHex("A32B29") :
-                UtilityColor.LERP_RGB(UtilityColor.FromHex("33E733"), UtilityColor.FromHex("385E38"), percent);
+                UtilityColor.LERP_RGB(UtilityColor.FromHex("33E733"), UtilityColor.FromHex("2F4A2F"), percent);
 
             Vector3 pos_to = pos + direction * len;
 
@@ -228,9 +274,83 @@ namespace Jetpack.Scanning
                 }
             }
         }
+        private void DrawRay2(Vector3 pos, Vector3 direction, float len, RaycastHit? hit, float percent)
+        {
+            Color color = hit == null ?
+                UtilityColor.FromHex("A32B29") :
+                UtilityColor.LERP_RGB(UtilityColor.FromHex("33E733"), UtilityColor.FromHex("2F4A2F"), percent);
+
+            Vector3 pos_to = pos + direction * len;
+
+            // Line
+            _line_index++;
+            if (_line_index < _rayvisual_lines.Count)
+            {
+                DebugRenderer3D.AdjustLinePositions(_rayvisual_lines[_line_index], pos, pos_to);
+                DebugRenderer3D.AdjustColor(_rayvisual_lines[_line_index], color);
+            }
+            else
+            {
+                _rayvisual_lines.Add(_renderer.AddLine_Basic(pos, pos_to, 0.02f, color));
+            }
+
+            // Hit Dots
+            if (hit != null)
+            {
+                var hits = Physics.RaycastAll(pos, direction, len, _layerMask.Value, QueryTriggerInteraction.Ignore);
+
+                foreach (var hit2 in hits)
+                {
+                    int layer = hit2.transform.gameObject.layer;
+
+                    if (!_rayHitColors.TryGetValue(layer, out Color hit_color))
+                    {
+                        hit_color = UtilityColor.RandomHSV();
+                        _rayHitColors.Add(layer, hit_color);
+                        Debug.Log($"Layer Hit: {layer}, '{LayerMask.LayerToName(layer)}', {UtilityColor.ToHex(hit_color, false, false)}");
+                    }
+
+                    _hit_index++;
+
+                    if (_hit_index < _rayvisual_hits.Count)
+                    {
+                        _rayvisual_hits[_hit_index].Object.transform.position = hit2.point;
+                        DebugRenderer3D.AdjustColor(_rayvisual_hits[_hit_index], hit_color);
+                    }
+                    else
+                    {
+                        _rayvisual_hits.Add(_renderer.AddDot(hit2.point, 0.1f, hit_color));
+                    }
+                }
+            }
+        }
+
+        private static void RemoveDespawned(List<DebugItem> items)
+        {
+            int index = 0;
+
+            while(index < items.Count)
+            {
+                if (items[index].Object == null)
+                {
+                    Debug.Log($"Removing despawned visual: {items[index].Token}");
+                    items.RemoveAt(index);
+                }
+                else
+                {
+                    index++;
+                }
+            }
+        }
 
         #endregion
         #region Private Methods - icosahedron
+
+        private static Ray[] GetRandomRayBall()
+        {
+            var balls = _icos.Value;
+            return balls[StaticRandom.Next(balls.Length)];
+        }
 
         private static Ray[][] GetIcosahedrons()
         {
