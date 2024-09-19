@@ -41,8 +41,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DebugCode\RagdollVisibility.cs" />
+    <Compile Include="DebugCode\ScaleAdjuster.cs" />
     <Compile Include="DebugCode\VisualizePlayerPoints.cs" />
     <Compile Include="JetpackScript.cs" />
+    <Compile Include="Models\ScaleData.cs" />
     <Compile Include="PlaySounds.cs" />
     <Compile Include="DebugCode\DebugVisuals.cs" />
     <Compile Include="DebugCode\MaterialShaderFinder.cs" />

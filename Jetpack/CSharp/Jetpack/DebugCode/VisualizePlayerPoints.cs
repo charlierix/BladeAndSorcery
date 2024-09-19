@@ -14,7 +14,7 @@ namespace Jetpack.DebugCode
     /// </summary>
     public class VisualizePlayerPoints
     {
-        private const bool SHOULD_DRAW = true;
+        //private const bool SHOULD_DRAW = true;
 
         private DebugRenderer3D _renderer = null;
 
@@ -33,9 +33,10 @@ namespace Jetpack.DebugCode
         private DebugItem _head_line1 = null;
         private DebugItem _head_line2 = null;
 
-        public void Update()
+        public void Update(bool should_draw, float scale)
         {
-            if (!SHOULD_DRAW)
+            //if (!SHOULD_DRAW)
+            if (!should_draw)
                 return;
 
             if (_renderer == null)
@@ -44,10 +45,10 @@ namespace Jetpack.DebugCode
             // --------------- room ---------------
 
             // These are not the player's feet, but the centerpoint of the floor of the living room in game (the player can walk around this point)
-            UpdateDot(ref _player_pos, Player.local.transform.position, Color.white);
+            UpdateDot(ref _player_pos, Player.local.transform.position, Color.white, scale);
 
             // Waist height, but above transform instead of tied to the player
-            UpdateDot(ref _waist_pos, Player.local.waist.ikAnchor.position, UtilityColor.FromHex("DBA746"));
+            UpdateDot(ref _waist_pos, Player.local.waist.ikAnchor.position, UtilityColor.FromHex("DBA746"), scale);
 
             // I'm guessing these are configured offsets - zero by default
             //UpdateDot(ref _globalOffset_pos, Player.local.globalOffsetTransform.position, Color.blue);      // this is the same as transform
@@ -65,39 +66,45 @@ namespace Jetpack.DebugCode
             // When the player rotates around, these rotate with
 
             // These two are active during the character selection scene.  The others (feet, waist, head) are probably null
-            UpdateDot(ref _lefthand_pos, Player.local.handLeft.root.position, Color.red);
-            UpdateDot(ref _righthand_pos, Player.local.handRight.root.position, Color.green);
+            UpdateDot(ref _lefthand_pos, Player.local.handLeft.root.position, Color.red, scale);
+            UpdateDot(ref _righthand_pos, Player.local.handRight.root.position, Color.green, scale);
 
             // These two appear to be the same point (center of where the feet are)
             // The legs animate, but this stays stable
             // Maybe they would be different if wearing trackers
-            UpdateDot(ref _leftfoot_pos, Player.local.footLeft.ragdollFoot.root.position, UtilityColor.FromHex("B14A47"));
-            UpdateDot(ref _rightfoot_pos, Player.local.footRight.ragdollFoot.root.position, UtilityColor.FromHex("59FF7D"));
+            UpdateDot(ref _leftfoot_pos, Player.local.footLeft.ragdollFoot.root.position, UtilityColor.FromHex("B14A47"), scale);
+            UpdateDot(ref _rightfoot_pos, Player.local.footRight.ragdollFoot.root.position, UtilityColor.FromHex("59FF7D"), scale);
 
             //UpdateDot(ref _head_pos, Player.local.head.anchor.position, UtilityColor.FromHex("C0CCD9"));      // this would block the view, using lines instead
-            UpdateLine(ref _head_line1, Player.local.handLeft.root.position, Player.local.head.anchor.position, UtilityColor.FromHex("C0CCD9"));
-            UpdateLine(ref _head_line2, Player.local.handRight.root.position, Player.local.head.anchor.position, UtilityColor.FromHex("C0CCD9"));
+            UpdateLine(ref _head_line1, Player.local.handLeft.root.position, Player.local.head.anchor.position, UtilityColor.FromHex("C0CCD9"), scale);
+            UpdateLine(ref _head_line2, Player.local.handRight.root.position, Player.local.head.anchor.position, UtilityColor.FromHex("C0CCD9"), scale);
         }
 
-        private void UpdateDot(ref DebugItem item, Vector3 pos, Color color)
+        private void UpdateDot(ref DebugItem item, Vector3 pos, Color color, float scale)
         {
+            const float SIZE = 0.1f * 2;
+
             if (item != null && item.Object == null)
                 item = null;
 
             if (item == null)
-                item = _renderer.AddDot(pos, 0.15f, color);
+                item = _renderer.AddDot(pos, 1f, color);
             else
                 item.Object.transform.position = pos;
+
+            item.Object.transform.localScale = new Vector3(SIZE * scale, SIZE * scale, SIZE * scale);
         }
-        private void UpdateLine(ref DebugItem item, Vector3 pos1, Vector3 pos2, Color color)
+        private void UpdateLine(ref DebugItem item, Vector3 pos1, Vector3 pos2, Color color, float scale)
         {
+            const float THICKNESS = 0.01f;
+
             if (item != null && item.Object == null)
                 item = null;
 
             if (item == null)
-                item = _renderer.AddLine_Basic(pos1, pos2, 0.02f, color);
+                item = _renderer.AddLine_Basic(pos1, pos2, THICKNESS * scale, color);
             else
-                DebugRenderer3D.AdjustLinePositions(item, pos1, pos2);
+                DebugRenderer3D.AdjustLinePositions(item, pos1, pos2, THICKNESS * scale);
         }
     }
 }

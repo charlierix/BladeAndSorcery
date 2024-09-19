@@ -148,9 +148,9 @@ namespace Jetpack.FlightProcessing
                 CrouchOnJump = Player.crouchOnJump,
                 StickJump = GameManager.options.allowStickJump,
 
-                Height = Player.local.creature.GetHeight(),
-                Morphology = Player.local.creature.morphology.Clone(),
-                HeadLocalPosition = Player.local.headOffsetTransform.localPosition,     // this is zero
+                //Height = Player.local.creature.GetHeight(),
+                //Morphology = Player.local.creature.morphology.Clone(),
+                //HeadLocalPosition = Player.local.headOffsetTransform.localPosition,     // this is zero
             };
 
             //Debug.Log($"Activating Flight:\r\n{JsonUtility.ToJson(retVal, true)}");

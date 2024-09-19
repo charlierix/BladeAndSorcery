@@ -57,6 +57,13 @@ namespace Jetpack
         private const string CATEGORY_FLIGHTPROPS = "Flight Properties";
         private const string CATEGORY_SOUNDS = "Sounds";        // TODO: add this
         private const string CATEGORY_SCALE = "Player Size";
+        private const string CATEGORY_DEBUGDRAWING = "Debug Drawing";
+
+        private const int ORDER_ACTIVATE = 1;
+        private const int ORDER_FLIGHTPROPS = 2;
+        private const int ORDER_SOUNDS = 3;
+        private const int ORDER_SCALE = 4;
+        private const int ORDER_DEBUGDRAWING = 5;
 
         //[ModOptionTextDisplay("description of section", null)]
         //[ModOption("Info")]
@@ -82,7 +89,7 @@ namespace Jetpack
         private static string _flightActivation = FlightActivationType.HoldUp.ToString();
         private static FlightActivationType _flightActivation_cast = FlightActivationType.HoldUp;
 
-        [ModOptionCategory(CATEGORY_ACTIVATE, -99)]
+        [ModOptionCategory(CATEGORY_ACTIVATE, ORDER_ACTIVATE)]
         [ModOption(name: "Flight Activation/Deactivation", tooltip: "How to activate flight (some options will also be used to deactivate)\n\nThe hold options are for controllers that have finger tracking", valueSourceName: nameof(FlightActivation_Options), order = 0)]
         public static string FlightActivation
         {
@@ -99,35 +106,35 @@ namespace Jetpack
             }
         }
 
-        [ModOptionCategory(CATEGORY_ACTIVATE, -99)]
+        [ModOptionCategory(CATEGORY_ACTIVATE, ORDER_ACTIVATE)]
         [ModOption(name: "Stop flying on ground", tooltip: "Whether to stop flight when on the ground", order = 1)]
         public static bool DeactivateOnGround = true;
 
-        [ModOptionCategory(CATEGORY_ACTIVATE, -99)]
+        [ModOptionCategory(CATEGORY_ACTIVATE, ORDER_ACTIVATE)]
         [ModOption(name: "Require Both Hands", tooltip: "Options that are double click or gestures can be required to be done at the same time by both hands or just one\n\nSingle hand is easier but may cause misreads", order = 2)]
         public static bool RequireBothHands = true;
 
         // ******************** Flight Properties ********************
 
-        [ModOptionCategory(CATEGORY_FLIGHTPROPS, -99)]
+        [ModOptionCategory(CATEGORY_FLIGHTPROPS, ORDER_FLIGHTPROPS)]
         [ModOptionSlider]
         [ModOption(name: "Horizontal Accel", tooltip: "How hard to accelerate horizontally", order = 0)]
         [ModOptionFloatValues(0, 24, 0.25f)]
         public static float HorizontalAccel = 9;
 
-        [ModOptionCategory(CATEGORY_FLIGHTPROPS, -99)]
+        [ModOptionCategory(CATEGORY_FLIGHTPROPS, ORDER_FLIGHTPROPS)]
         [ModOptionSlider]
         [ModOption(name: "Vertical Accel", tooltip: "How hard to accelerate vertically", order = 1)]
         [ModOptionFloatValues(0, 12, 0.25f)]
         public static float VerticalAccel = 6;
 
-        [ModOptionCategory(CATEGORY_FLIGHTPROPS, -99)]
+        [ModOptionCategory(CATEGORY_FLIGHTPROPS, ORDER_FLIGHTPROPS)]
         [ModOptionSlider]
         [ModOption(name: "Drag", tooltip: "Wind resistance", order = 2)]
         [ModOptionFloatValues(0, 2, 0.05f)]
         public static float Drag = 0.9f;
 
-        [ModOptionCategory(CATEGORY_FLIGHTPROPS, -99)]
+        [ModOptionCategory(CATEGORY_FLIGHTPROPS, ORDER_FLIGHTPROPS)]
         [ModOptionSlider]
         [ModOption(name: "Gravity", tooltip: "0 is no gravity.  9.8 is standard", order = 3)]
         [ModOptionFloatValues(0, 18, 0.1f)]
@@ -135,37 +142,52 @@ namespace Jetpack
 
         // ******************** Player Size ********************
 
-        [ModOptionCategory(CATEGORY_SCALE, -99)]
+        [ModOptionCategory(CATEGORY_SCALE, ORDER_SCALE)]
         [ModOptionSlider]
-        [ModOption(name: "Player Size %", tooltip: "Can shrink the player so there is more room to fly")]
-        [ModOptionFloatValues(0, 100, 1f)]
+        [ModOption(name: "Player Size %", tooltip: "Can shrink the player so there is more room to fly", order = 1)]
+        [ModOptionFloatValues(0, 300, 1f)]
         public static float playerScale = 100;
 
+        [ModOptionCategory(CATEGORY_SCALE, ORDER_SCALE)]
+        [ModOption(name: "Use Morphology", tooltip: "Whether to apply a scaled morphology -- needs to be true", order = 2)]
+        public static bool ScaleSetMorphology = true;
+
+        [ModOptionCategory(CATEGORY_SCALE, ORDER_SCALE)]
+        [ModOption(name: "Set Ragdoll Scale", tooltip: "Whether to apply a scaled ragdoll -- needs to be false", order = 3)]
+        public static bool ScaleSetRagdoll = false;
+
+        // NOTE: these OnClick functions always get called when the mod first loads
         public static ModOptionString[] scaleApplyButtonLabel = new[]
         {
-            new ModOptionString("Apply Scale", "Apply Scale")
+            new ModOptionString("Apply Scale", "ApplyScale")
         };
 
-        [ModOptionCategory(CATEGORY_SCALE, -99)]
+        [ModOptionCategory(CATEGORY_SCALE, ORDER_SCALE)]
         [ModOptionButton]
-        [ModOption("Set scale to current settings", null, nameof(scaleApplyButtonLabel))]      // "Push the button" is the label to the left of the button
+        [ModOption("Set scale to current settings", null, nameof(scaleApplyButtonLabel), order = 4)]
         public static void OnApplyScale(string value)
         {
-            Debug.Log("OnApplyScale Pressed");
+            ScaleAdjuster.ApplyScale(playerScale / 100, ScaleSetMorphology, ScaleSetRagdoll);
         }
 
         public static ModOptionString[] scaleRevertButtonLabel = new[]
         {
-            new ModOptionString("Default Scale", "Default Scale")
+            new ModOptionString("Default Scale", "DefaultScale")
         };
 
-        [ModOptionCategory(CATEGORY_SCALE, -99)]
+        [ModOptionCategory(CATEGORY_SCALE, ORDER_SCALE)]
         [ModOptionButton]
-        [ModOption("Put scale back to normal", null, nameof(scaleRevertButtonLabel))]      // "Push the button" is the label to the left of the button
+        [ModOption("Put scale back to normal", null, nameof(scaleRevertButtonLabel), order = 5)]
         public static void OnRevertScale(string value)
         {
-            Debug.Log("OnRevertScale Pressed");
+            ScaleAdjuster.RevertScale();
         }
+
+        // ******************** Debug Drawing ********************
+
+        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
+        [ModOption(name: "Visualize Player Points", tooltip: "Shows points/lines on various transforms of the player avatar", order = 1)]
+        public static bool VisualizePlayerPoints = false;
 
         #endregion
 
@@ -183,6 +205,7 @@ namespace Jetpack
 
         private DebugVisuals _debugVisuals = new DebugVisuals();
         private VisualizePlayerPoints _visualizePlayerPoints = new VisualizePlayerPoints();
+        private ScaleAdjuster _scaleAdjuster = new ScaleAdjuster();
 
         public override void ScriptLoaded(ModManager.ModData modData)
         {
@@ -194,7 +217,7 @@ namespace Jetpack
         {
             base.ScriptUpdate();
 
-            _visualizePlayerPoints.Update();
+            _visualizePlayerPoints.Update(VisualizePlayerPoints, playerScale / 100);
 
             bool should_switch = _transitions.Update(_flightActivation_cast, RequireBothHands, DeactivateOnGround, _isFlying);
 
@@ -264,61 +287,6 @@ namespace Jetpack
             _flight_jetpack.Deactivate();
 
             //PlaySounds.Play(SoundName.Jetpack_Deactivate);
-        }
-
-        private void ApplyScale()
-        {
-            float scale = Mathf.Clamp(playerScale / 100f, 0.05f, 1);
-            Player.local.transform.localScale = new Vector3(scale, scale, scale);
-            Player.local.headOffsetTransform.localScale = new Vector3(scale, scale, scale);     // this helps, but the head slowly drifts forward
-
-            //Player.local.handOffsetTransform.localScale = new Vector3(scale, scale, scale);       // transform and headOffsetTransform are pretty good, but handOffsetTransform makes the hands extra large as the scale gets small
-
-
-
-            //Player.local.headOffsetTransform.localPosition =      // maybe
-
-
-            Player.local.creature.morphology = new Morphology(_old.Morphology.eyesHeight * scale)
-            {
-                eyesHeight = _old.Morphology.eyesHeight * scale,
-                eyesForward = _old.Morphology.eyesForward * scale,
-                headHeight = _old.Morphology.headHeight * scale,
-                headForward = _old.Morphology.headForward * scale,
-                chestHeight = _old.Morphology.chestHeight * scale,
-                spineHeight = _old.Morphology.spineHeight * scale,
-                hipsHeight = _old.Morphology.hipsHeight * scale,
-                armsSpacing = _old.Morphology.armsSpacing * scale,
-                armsLength = _old.Morphology.armsLength * scale,
-                armsHeight = _old.Morphology.armsHeight * scale,
-                armsToEyesHeight = _old.Morphology.armsToEyesHeight * scale,
-                height = _old.Morphology.height * scale,
-                legsLength = _old.Morphology.legsLength * scale,
-                legsSpacing = _old.Morphology.legsSpacing * scale,
-                upperLegsHeight = _old.Morphology.upperLegsHeight * scale,
-                lowerLegsHeight = _old.Morphology.lowerLegsHeight * scale,
-                footHeight = _old.Morphology.footHeight * scale,
-            };
-
-
-            // I think the next step should be to look at the player model carefully.  See what all these transforms, creature, etc look like
-
-
-            // This causes the hands to go nuts
-            //Player.local.creature.SetHeight(_old.Height * scale);
-
-        }
-        private void RevertScale()
-        {
-            Player.local.transform.localScale = new Vector3(1, 1, 1);
-            //Player.local.handOffsetTransform.localScale = new Vector3(1, 1, 1);
-            Player.local.headOffsetTransform.localScale = new Vector3(1, 1, 1);
-
-            //Player.local.creature.SetHeight(_old.Height);
-
-
-            // TODO: _old.Morphology was set in activate flight, change this to some kind of startup event
-            Player.local.creature.morphology = _old.Morphology;
         }
     }
 }

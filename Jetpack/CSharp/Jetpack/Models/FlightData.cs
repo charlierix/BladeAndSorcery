@@ -17,8 +17,9 @@ namespace Jetpack.Models
         public bool CrouchOnJump;
         public bool StickJump;
 
-        public float Height;
-        public Morphology Morphology;
-        public Vector3 HeadLocalPosition;
+        // These were used when playing with scale
+        //public float Height;
+        //public Morphology Morphology;
+        //public Vector3 HeadLocalPosition;
     }
 }
