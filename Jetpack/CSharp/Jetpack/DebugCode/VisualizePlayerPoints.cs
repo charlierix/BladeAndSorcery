@@ -35,7 +35,7 @@ namespace Jetpack.DebugCode
 
         public void Update(bool should_draw, float scale)
         {
-            //if (!SHOULD_DRAW)
+            // TODO: remove currently drawn objects?  if so, store in a wrapper object so there is only a single null check when they aren't there
             if (!should_draw)
                 return;
 

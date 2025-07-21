@@ -57,13 +57,15 @@ namespace Jetpack
         private const string CATEGORY_FLIGHTPROPS = "Flight Properties";
         private const string CATEGORY_SOUNDS = "Sounds";        // TODO: add this
         private const string CATEGORY_SCALE = "Player Size";
+        private const string CATEGORY_VISIBILITY = "Player Visibility";
         private const string CATEGORY_DEBUGDRAWING = "Debug Drawing";
 
         private const int ORDER_ACTIVATE = 1;
         private const int ORDER_FLIGHTPROPS = 2;
         private const int ORDER_SOUNDS = 3;
         private const int ORDER_SCALE = 4;
-        private const int ORDER_DEBUGDRAWING = 5;
+        private const int ORDER_VISIBILITY = 5;
+        private const int ORDER_DEBUGDRAWING = 6;
 
         //[ModOptionTextDisplay("description of section", null)]
         //[ModOption("Info")]
@@ -145,7 +147,7 @@ namespace Jetpack
         [ModOptionCategory(CATEGORY_SCALE, ORDER_SCALE)]
         [ModOptionSlider]
         [ModOption(name: "Player Size %", tooltip: "Can shrink the player so there is more room to fly", order = 1)]
-        [ModOptionFloatValues(0, 300, 1f)]
+        [ModOptionFloatValues(0, 600, 1f)]
         public static float playerScale = 100;
 
         [ModOptionCategory(CATEGORY_SCALE, ORDER_SCALE)]
@@ -156,12 +158,12 @@ namespace Jetpack
         [ModOption(name: "Set Ragdoll Scale", tooltip: "Whether to apply a scaled ragdoll -- needs to be false", order = 3)]
         public static bool ScaleSetRagdoll = false;
 
-        // NOTE: these OnClick functions always get called when the mod first loads
         public static ModOptionString[] scaleApplyButtonLabel = new[]
         {
             new ModOptionString("Apply Scale", "ApplyScale")
         };
 
+        // NOTE: these OnClick functions always get called when the mod first loads
         [ModOptionCategory(CATEGORY_SCALE, ORDER_SCALE)]
         [ModOptionButton]
         [ModOption("Set scale to current settings", null, nameof(scaleApplyButtonLabel), order = 4)]
@@ -181,6 +183,35 @@ namespace Jetpack
         public static void OnRevertScale(string value)
         {
             ScaleAdjuster.RevertScale();
+        }
+
+        // ******************** Player Visibility ********************
+
+        public static ModOptionString[] visibilityInvisibleButtonLabel = new[]
+        {
+            new ModOptionString("Make Invisible", "MakeInvisible")
+        };
+
+        // NOTE: these OnClick functions always get called when the mod first loads
+        [ModOptionCategory(CATEGORY_VISIBILITY, ORDER_VISIBILITY)]
+        [ModOptionButton]
+        [ModOption("Make Invisible", null, nameof(visibilityInvisibleButtonLabel), order = 4)]
+        public static void OnMakeInvisible(string value)
+        {
+            PlayerVisibility.MakeInvisible();
+        }
+
+        public static ModOptionString[] visibilityVisibleButtonLabel = new[]
+        {
+            new ModOptionString("Make Visible", "MakeVisible")
+        };
+
+        [ModOptionCategory(CATEGORY_VISIBILITY, ORDER_VISIBILITY)]
+        [ModOptionButton]
+        [ModOption("Make Visible", null, nameof(visibilityVisibleButtonLabel), order = 5)]
+        public static void OnMakeVisible(string value)
+        {
+            PlayerVisibility.MakeVisible();
         }
 
         // ******************** Debug Drawing ********************
@@ -211,7 +242,7 @@ namespace Jetpack
         {
             base.ScriptLoaded(modData);
 
-            MaterialShaderFinder.Report();
+            //MaterialShaderFinder.Report();
         }
         public override void ScriptUpdate()
         {
@@ -277,6 +308,12 @@ namespace Jetpack
             _flight_jetpack.Activate(Drag);
 
             _debugVisuals.AddVisuals();
+
+
+            // TODO: look at scale/visibility settings and apply if checked
+            // though it may be better to leave scale alone and turn off collision detection.  make the player hidden and show a small avatar instead
+
+
 
             //PlaySounds.Play(SoundName.Jetpack_Activate);
         }

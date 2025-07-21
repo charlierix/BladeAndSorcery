@@ -88,7 +88,8 @@ namespace Jetpack.FlightProcessing
 
             var transform = Player.local.transform;
 
-            // TODO: need to project transform's forward and right to horizontal plane
+            // TODO: need to project transform's forward and right to horizontal plane (needed when player's up isn't Z)
+            // this would make sense for jetpack hovering type of flight, not for a bird
 
             loco.physicBody.AddForce(transform.forward * horz_accel * axis.y, ForceMode.Acceleration);
             loco.physicBody.AddForce(transform.right * horz_accel * axis.x, ForceMode.Acceleration);
