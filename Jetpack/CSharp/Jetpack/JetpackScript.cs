@@ -54,6 +54,7 @@ namespace Jetpack
         #region Mod Options
 
         private const string CATEGORY_ACTIVATE = "Activation / Deactivation";
+        private const string CATEGORY_OBSTACLEAVOIDANCE = "Obstacle Avoidance";
         private const string CATEGORY_FLIGHTPROPS = "Flight Properties";
         private const string CATEGORY_SOUNDS = "Sounds";        // TODO: add this
         private const string CATEGORY_SCALE = "Player Size";
@@ -61,11 +62,12 @@ namespace Jetpack
         private const string CATEGORY_DEBUGDRAWING = "Debug Drawing";
 
         private const int ORDER_ACTIVATE = 1;
-        private const int ORDER_FLIGHTPROPS = 2;
-        private const int ORDER_SOUNDS = 3;
-        private const int ORDER_SCALE = 4;
-        private const int ORDER_VISIBILITY = 5;
-        private const int ORDER_DEBUGDRAWING = 6;
+        private const int ORDER_OBSTACLEAVOIDANCE = 2;
+        private const int ORDER_FLIGHTPROPS = 3;
+        private const int ORDER_SOUNDS = 4;
+        private const int ORDER_SCALE = 5;
+        private const int ORDER_VISIBILITY = 6;
+        private const int ORDER_DEBUGDRAWING = 7;
 
         //[ModOptionTextDisplay("description of section", null)]
         //[ModOption("Info")]
@@ -115,6 +117,67 @@ namespace Jetpack
         [ModOptionCategory(CATEGORY_ACTIVATE, ORDER_ACTIVATE)]
         [ModOption(name: "Require Both Hands", tooltip: "Options that are double click or gestures can be required to be done at the same time by both hands or just one\n\nSingle hand is easier but may cause misreads", order = 2)]
         public static bool RequireBothHands = true;
+
+        // ******************** Obstacle Avoidance ********************
+
+
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOption(name: "Should Repel Ground", tooltip: "Will push the player upward from the ground requiring deliberate down pressure on the thumstick to touch the ground", order = 0)]
+        public static bool ShouldRepelGround = true;
+
+
+        // for now, just treat this like a percent against the other accels
+        /// <summary>
+        /// This isn't a simple accel.  It will only apply upward accel when velocity is downward.  There's also a dropoff
+        /// distance based on player's size
+        /// </summary>
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Repel Ground Strength", tooltip: "How strong the ground repel should be", order = 1)]
+        [ModOptionFloatValues(0, 100, 1)]
+        public static float RepelGroundStrength = 0;
+
+
+        // figure out which of these to expose, or maybe a single slider that affects several at the same time (one for dist, and make strength directly affect the other values directly)
+
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Repel Ground Max Distance", tooltip: "relative to height * scale, taken from foot pos", order = 2)]
+        [ModOptionFloatValues(0, 4, 0.25f)]
+        public static float RepelGround_MaxDistance = 1;
+
+        // Linear
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Repel Ground Max Accel [linear]", tooltip: "a linear gradient where there is zero force at max distance and max force at zero distance", order = 3)]
+        [ModOptionFloatValues(0, 12, 0.25f)]
+        public static float RepelGround_Linear_MaxAccel = 5;
+
+        // 1/x
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Repel Ground Max Accel [1/(cx)]", tooltip: "the distance is normalized, where x is 0 to 1", order = 4)]
+        [ModOptionFloatValues(0, 18, 0.25f)]
+        public static float RepelGround_Inverse_MaxAccel = 9;
+
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Repel Ground Inverse C [1/(cx)]", tooltip: "any value less than 4 is meaningless (plot it in desmos for easy visualization/manipulation)", order = 5)]
+        [ModOptionFloatValues(4, 24, 0.25f)]
+        public static float RepelGround_Inverse_C = 8;
+
+        // 1/x^2
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Repel Ground Max Accel [1/(cx)^2]", tooltip: "the distance is normalized, where x is 0 to 1", order = 6)]
+        [ModOptionFloatValues(0, 36, 0.25f)]
+        public static float RepelGround_InverseSqr_MaxAccel = 18;
+
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Repel Ground Inverse^2 C [1/(cx)^2]", tooltip: "any value less than 4 is meaningless (plot it in desmos for easy visualization/manipulation)", order = 7)]
+        [ModOptionFloatValues(4, 60, 0.25f)]
+        public static float RepelGround_InverseSqr_C = 20;
 
         // ******************** Flight Properties ********************
 

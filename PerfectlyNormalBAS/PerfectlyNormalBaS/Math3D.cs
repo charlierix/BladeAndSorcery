@@ -285,9 +285,7 @@ namespace PerfectlyNormalBaS
         public static Vector3 GetCenter(IEnumerable<Vector3> points)
         {
             if (points == null)
-            {
                 return new Vector3(0, 0, 0);
-            }
 
             float x = 0f;
             float y = 0f;
@@ -305,9 +303,7 @@ namespace PerfectlyNormalBaS
             }
 
             if (length == 0)
-            {
                 return new Vector3(0, 0, 0);
-            }
 
             float oneOverLen = 1f / (float)length;
 

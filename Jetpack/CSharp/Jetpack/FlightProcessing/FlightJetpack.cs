@@ -12,6 +12,7 @@ namespace Jetpack.FlightProcessing
     {
         private FlightData _standardState = null;
         private ConfinedArea _confinedScanner = null;
+        private ObstacleAvoidance _obstacleAvoidance = null;
 
         private float _last_applied_drag = -1;
 
@@ -39,6 +40,10 @@ namespace Jetpack.FlightProcessing
                 _confinedScanner = new ConfinedArea();
 
             _confinedScanner.Clear();
+
+            // Obstacle Avoidance
+            if (_obstacleAvoidance == null)
+                _obstacleAvoidance = new ObstacleAvoidance();
         }
         public void Deactivate()
         {
@@ -73,6 +78,8 @@ namespace Jetpack.FlightProcessing
 
             DestabilizeHeldNPC(Player.local.handLeft);
             DestabilizeHeldNPC(Player.local.handRight);
+
+            AvoidObstacles(loco);
 
             // TODO: make an option for horiztonal control mode (direct or accel)
             //loco.horizontalAirSpeed = horizontalSpeed / 100f;
@@ -110,6 +117,13 @@ namespace Jetpack.FlightProcessing
             up_accel -= gravity;
 
             loco.physicBody.AddForce(Vector3.up * up_accel, ForceMode.Acceleration);
+        }
+
+        private void AvoidObstacles(Locomotion loco)
+        {
+            Vector3? accel = _obstacleAvoidance.GetGroundAccel(loco);
+            if (accel != null)
+                loco.physicBody.AddForce(accel.Value, ForceMode.Acceleration);
         }
 
         private static void DestabilizeHeldNPC(PlayerHand side)

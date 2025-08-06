@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ThunderRoad;
 using UnityEngine;
+using UnityEngine.UI;       // NOTE: had to dig to find this, it's not with the other unity dlls that this project references - also difficulty with netstandard2.0 vs 2.1
 
 namespace PerfectlyNormalBaS
 {
@@ -30,6 +32,8 @@ namespace PerfectlyNormalBaS
         private const string AXISCOLOR_Y = "00C000";
         private const string AXISCOLOR_Z = "6060FF";
 
+        private const int FONTSIZE = 12;
+
         private static long _token = 0;
 
         private GameObject _container = null;
@@ -47,6 +51,7 @@ namespace PerfectlyNormalBaS
             {
                 if (item.RelativeToComponent != null)
                     item.Object.transform.position = item.RelativeToComponent.transform.position + item.Position;
+
                 else if (item.RelativeToGameObject != null)
                     item.Object.transform.position = item.RelativeToGameObject.transform.position + item.Position;
             }
@@ -221,7 +226,7 @@ namespace PerfectlyNormalBaS
         }
         public DebugItem AddPlane_PointNormal(Vector3 pointOnPlane, Vector3 normal, float size, Color color, bool isLit = false, int numCells = 12, Vector3? center = null, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
-            Vector3 dir1 = GetArbitraryOrhonganal(normal);
+            Vector3 dir1 = GetArbitraryOrthonganal(normal);
             Vector3 dir2 = Vector3.Cross(dir1, normal);
 
             return AddPlane_ThreePoints(pointOnPlane + dir1, pointOnPlane, pointOnPlane + dir2, size, color, isLit, numCells, center, relativeToComponent, relativeToGameObject);
@@ -242,6 +247,35 @@ namespace PerfectlyNormalBaS
                 points[i] = position + (quat * (new Vector3(unit_circle[i].x, unit_circle[i].y, 0) * radius));
 
             return AddLine_Basic(points, true, thickness, color, relativeToComponent, relativeToGameObject);
+        }
+
+        public DebugItem AddText(string text, Vector3 pos, Vector3 normal, Color back_color, Color fore_color, float world_height, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        {
+            var (canvasObj, canvas) = AddText_CreateCanvas(pos, normal);
+            GameObject image = AddText_CreateImage(canvas.transform, back_color);
+            var (textObj, textComp) = AddText_CreateText(canvas.transform, text, fore_color);
+
+            // Apply results to text and image
+            textComp.fontSize = FONTSIZE;
+            textComp.font = Resources.GetBuiltinResource<Font>("Arial.ttf") ??
+                                   Font.CreateDynamicFontFromOSFont("Arial", FONTSIZE);
+
+            // Calculate scale and dimensions
+            var dimensions = AddText_CalculateImageDimensions(textComp, world_height, canvas.GetComponent<CanvasScaler>(), FONTSIZE);
+
+            // Apply scale to text
+            RectTransform textRect = textComp.rectTransform;
+            textRect.localScale = Vector3.one * dimensions.textScale;
+
+            // Apply image dimensions
+            image.GetComponent<RectTransform>().sizeDelta = new Vector2(dimensions.imageWidth, world_height);
+
+            // NOTE: if the array of child objects changes, be sure to also change the indices in AdjustText()
+            var retVal = new DebugItem(NextToken(), canvasObj, new[] { image, textObj }, pos, relativeToComponent, relativeToGameObject, false);
+
+            AddItem(retVal);
+
+            return retVal;
         }
 
         public static void AdjustLinePositions(DebugItem item, Vector3 from, Vector3 to, float? thickness = null)
@@ -275,7 +309,70 @@ namespace PerfectlyNormalBaS
             }
         }
 
-        //TODO: public static void AdjustPlane(DebugItem item, Plane plane) -- and the other three
+        // TODO: public static void AdjustPlane(DebugItem item, Plane plane) -- and the other three
+
+        public static void AdjustText(DebugItem item, string new_text = null, Color? new_backcolor = null, Color? new_forecolor = null, float? new_worldheight = null)
+        {
+            const int INDEX_IMAGE = 0;
+            const int INDEX_TEXT = 1;
+
+            bool recalc_size = false;
+
+            Text textComp = null;
+            Image imageComp = null;
+
+            // Set text string
+            if (new_text != null)
+            {
+                recalc_size = true;
+
+                if (textComp == null)
+                    textComp = item.ChildObjects[INDEX_TEXT].GetComponent<Text>();
+
+                textComp.text = new_text;
+            }
+
+            // Set back color
+            if (new_backcolor != null)
+            {
+                if (imageComp == null)
+                    imageComp = item.ChildObjects[INDEX_IMAGE].GetComponent<Image>();
+
+                imageComp.color = new_backcolor.Value;
+            }
+
+            // Set fore color
+            if (new_forecolor != null)
+            {
+                if (textComp == null)
+                    textComp = item.ChildObjects[INDEX_TEXT].GetComponent<Text>();
+
+                textComp.color = new_forecolor.Value;
+            }
+
+            // See if world height changed
+            if (new_worldheight != null)
+                recalc_size = true;
+
+            // Change size of image and text
+            if (recalc_size)
+            {
+                if (textComp == null)
+                    textComp = item.ChildObjects[INDEX_TEXT].GetComponent<Text>();
+
+                if (imageComp == null)
+                    imageComp = item.ChildObjects[INDEX_IMAGE].GetComponent<Image>();
+
+                RectTransform image_rect = item.ChildObjects[INDEX_IMAGE].GetComponent<RectTransform>();
+
+                float world_height = new_worldheight ?? image_rect.sizeDelta.y;
+
+                var dimensions = AddText_CalculateImageDimensions(textComp, world_height, item.Object.GetComponent<CanvasScaler>(), FONTSIZE);      // item.Object is the gameobject of the canvas
+
+                textComp.rectTransform.localScale = Vector3.one * dimensions.textScale;
+                image_rect.sizeDelta = new Vector2(dimensions.imageWidth, world_height);
+            }
+        }
 
         public static void AdjustColor(DebugItem item, Color color)
         {
@@ -595,12 +692,92 @@ namespace PerfectlyNormalBaS
             }
         }
 
+        private (GameObject obj, Canvas canvas) AddText_CreateCanvas(Vector3 position, Vector3 normal)
+        {
+            // Creates a world-space Canvas
+
+            GameObject canvas = new GameObject("DynamicCanvas");
+
+            canvas.AddComponent<Canvas>().renderMode = RenderMode.WorldSpace;
+
+            canvas.AddComponent<CanvasScaler>().dynamicPixelsPerUnit = 12;     //100;
+
+            canvas.AddComponent<GraphicRaycaster>();
+            canvas.transform.position = position;
+            canvas.transform.rotation = Quaternion.LookRotation(normal, Player.local.head.transform.up);
+
+
+            canvas.GetComponent<RectTransform>().sizeDelta = new Vector2(1, 1);     // sets width and height of the canvas to 1 (instead of default of 100).  it doesn't matter much since it's not visible and children overflow, but 100 seems excessive
+
+            return (canvas, canvas.GetComponent<Canvas>());
+        }
+        private GameObject AddText_CreateImage(Transform parent, Color color)
+        {
+            // Creates a textured background Image
+
+            GameObject image = new GameObject("Image", typeof(Image));
+
+            Image imageComp = image.GetComponent<Image>();
+            imageComp.color = color;
+
+            RectTransform rect = image.GetComponent<RectTransform>();
+
+            // These statements set anchor to center
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+
+            image.transform.SetParent(parent, false);
+
+            return image;
+        }
+        private (GameObject obj, Text comp) AddText_CreateText(Transform parent, string text, Color color)
+        {
+            // Creates a Text component
+
+            GameObject textObject = new GameObject("Text", typeof(Text));
+
+            Text textComp = textObject.GetComponent<Text>();
+            textComp.text = text;
+            textComp.color = color;
+            textComp.alignment = TextAnchor.MiddleCenter;
+            textComp.horizontalOverflow = HorizontalWrapMode.Overflow;
+            textComp.verticalOverflow = VerticalWrapMode.Overflow;
+
+            RectTransform rect = textComp.rectTransform;
+
+            // These statements set anchor to center
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+
+            rect.localScale = Vector3.one;
+
+            textObject.transform.SetParent(parent, false);
+
+            return (textObject, textComp);
+        }
+        private static (float textScale, float imageWidth) AddText_CalculateImageDimensions(Text textComponent, float desiredWorldHeight, CanvasScaler canvasScaler, float baseFontSize)
+        {
+            // Force layout update to get accurate preferred dimensions
+            LayoutRebuilder.ForceRebuildLayoutImmediate(textComponent.rectTransform);
+
+            // Calculate required scale factor
+            float scale = desiredWorldHeight / textComponent.preferredHeight;
+
+            // Now get the measured string width at the new scale to see how wide the image should be
+            float imageWidth = textComponent.preferredWidth * scale;
+
+            // Make text's scale slightly smaller so there are margins
+            scale *= 0.9f;
+
+            return (scale, imageWidth);
+        }
+
         #endregion
         #region Private Methods - utils
 
         //TODO: Move these into dedicated classes
 
-        private static Vector3 GetArbitraryOrhonganal(Vector3 vector)
+        private static Vector3 GetArbitraryOrthonganal(Vector3 vector)
         {
             if (IsInvalid(vector) || Mathf.Approximately(vector.sqrMagnitude, 0f))
                 return new Vector3(float.NaN, float.NaN, float.NaN);
