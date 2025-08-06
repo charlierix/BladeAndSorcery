@@ -26,40 +26,28 @@ namespace PerfectlyNormalBaS
                 foundOne = true;        // it's too expensive to look at points.Count()
 
                 if (point.x < minX)
-                {
                     minX = point.x;
-                }
 
                 if (point.y < minY)
-                {
                     minY = point.y;
-                }
 
                 if (point.z < minZ)
-                {
                     minZ = point.z;
-                }
 
                 if (point.x > maxX)
-                {
                     maxX = point.x;
-                }
 
                 if (point.y > maxY)
-                {
                     maxY = point.y;
-                }
 
                 if (point.z > maxZ)
-                {
                     maxZ = point.z;
-                }
             }
 
             if (!foundOne)
             {
                 // There were no points passed in
-                //TODO: May want an exception
+                // TODO: May want an exception
                 return (new Vector3(0, 0, 0), new Vector3(0, 0, 0));
             }
 
@@ -141,9 +129,7 @@ namespace PerfectlyNormalBaS
             foreach (Vector3 candidate in points)
             {
                 if (candidate.IsNearValue(findPoint))
-                {
                     return index;
-                }
 
                 index++;
             }
@@ -173,16 +159,11 @@ namespace PerfectlyNormalBaS
             Vector3 toNormalUnit = Vector3.Cross(to.Standard, to.Orth).normalized;
 
             if (fromNormalUnit.IsInvalid() || toNormalUnit.IsInvalid())     // if the normals are invalid, then the two directions are colinear (or one is zero length, or invalid)
-            {
-                //TODO: May want to throw an exception instead
-                return Quaternion.identity;
-            }
+                return Quaternion.identity;     // TODO: May want to throw an exception instead
 
             // Detect Parallel
             if (Math.Abs(Vector3.Dot(fromNormalUnit, toNormalUnit)).IsNearValue(1f))
-            {
                 return Quaternion.FromToRotation(from.Standard, to.Standard);
-            }
 
             // Figure out how to rotate the planes onto each other
             Quaternion planeRotation = Quaternion.FromToRotation(fromNormalUnit, toNormalUnit);
@@ -385,31 +366,19 @@ namespace PerfectlyNormalBaS
             float dmin = 0f;
 
             if (center.x < min.x)
-            {
                 dmin += (center.x - min.x) * (center.x - min.x);
-            }
             else if (center.x > max.x)
-            {
                 dmin += (center.x - max.x) * (center.x - max.x);
-            }
 
             if (center.y < min.y)
-            {
                 dmin += (center.y - min.y) * (center.y - min.y);
-            }
             else if (center.y > max.y)
-            {
                 dmin += (center.y - max.y) * (center.y - max.y);
-            }
 
             if (center.z < min.z)
-            {
                 dmin += (center.z - min.z) * (center.z - min.z);
-            }
             else if (center.z > max.z)
-            {
                 dmin += (center.z - max.z) * (center.z - max.z);
-            }
 
             return dmin <= r2;
         }
@@ -420,17 +389,11 @@ namespace PerfectlyNormalBaS
         public static bool IsIntersecting_AABB_AABB(Vector3 min1, Vector3 max1, Vector3 min2, Vector3 max2)
         {
             if (min1.x > max2.x || min2.x > max1.x)
-            {
                 return false;
-            }
             else if (min1.y > max2.y || min2.y > max1.y)
-            {
                 return false;
-            }
             else if (min1.z > max2.z || min2.z > max1.z)
-            {
                 return false;
-            }
 
             return true;
         }
@@ -446,41 +409,25 @@ namespace PerfectlyNormalBaS
         public static bool IsInside_Planes(IEnumerable<Plane> planes, Vector3 testPoint)
         {
             foreach (Plane plane in planes)
-            {
                 if (plane.GetSide(testPoint))        // this needs the normals to point out
-                {
                     return false;
-                }
-            }
 
             return true;
         }
         public static bool IsInside_AABB(Vector3 min, Vector3 max, Vector3 testPoint)
         {
             if (testPoint.x < min.x)
-            {
                 return false;
-            }
             else if (testPoint.x > max.x)
-            {
                 return false;
-            }
             else if (testPoint.y < min.y)
-            {
                 return false;
-            }
             else if (testPoint.y > max.y)
-            {
                 return false;
-            }
             else if (testPoint.z < min.z)
-            {
                 return false;
-            }
             else if (testPoint.z > max.z)
-            {
                 return false;
-            }
 
             return true;
         }
@@ -515,9 +462,7 @@ namespace PerfectlyNormalBaS
         {
             Vector3? retVal = GetIntersection_Plane_Line(plane, new Ray(testPoint, plane.normal));
             if (retVal == null)
-            {
                 throw new ApplicationException("Intersection between a plane and its normal should never be null");
-            }
 
             return retVal.Value;
         }
@@ -529,24 +474,15 @@ namespace PerfectlyNormalBaS
             Vector2 bary = ToBarycentric(triangle, pointOnPlane);
 
             if (bary.x >= 0 && bary.y >= 0 && bary.x + bary.y <= 1)
-            {
-                // It's inside the triangle
-                return pointOnPlane;
-            }
+                return pointOnPlane;        // It's inside the triangle
 
             // Cap to one of the edges
             if (bary.x < 0)
-            {
                 return GetClosestPoint_LineSegment_Point(triangle.Point0, triangle.Point1, testPoint);      // see the comments in ToBarycentric for how to know which points to use
-            }
             else if (bary.y < 0)
-            {
                 return GetClosestPoint_LineSegment_Point(triangle.Point0, triangle.Point2, testPoint);
-            }
             else
-            {
                 return GetClosestPoint_LineSegment_Point(triangle.Point1, triangle.Point2, testPoint);
-            }
         }
         public static float GetClosestDistance_Triangle_Point(ITriangle triangle, Vector3 testPoint)
         {
@@ -565,7 +501,7 @@ namespace PerfectlyNormalBaS
             //dist = (a - c) dot (b cross d).ToUnit
             //dist = (point1 - point2) dot (dir1 cross dir2).ToUnit
 
-            //TODO: Detect if they are parallel and return the distance
+            // TODO: Detect if they are parallel and return the distance
 
             Vector3 cross1_2 = Vector3.Cross(line1.direction, line2.direction).normalized;
             Vector3 sub1_2 = line1.origin - line2.origin;
@@ -603,15 +539,11 @@ namespace PerfectlyNormalBaS
             Vector3 p43 = p4 - p3;
 
             //if (IsNearZero(p43.LengthSquared))
-            //{
             //    return false;
-            //}
 
             Vector3 p21 = p2 - p1;
             //if (IsNearZero(p21.LengthSquared))
-            //{
             //    return false;
-            //}
 
             float d1343 = (p13.x * p43.x) + (p13.y * p43.y) + (p13.z * p43.z);
             float d4321 = (p43.x * p21.x) + (p43.y * p21.y) + (p43.z * p21.z);
@@ -621,16 +553,12 @@ namespace PerfectlyNormalBaS
 
             float denom = (d2121 * d4343) - (d4321 * d4321);
             //if (IsNearZero(denom))
-            //{
             //    return false;
-            //}
             float numer = (d1343 * d4321) - (d1321 * d4343);
 
             float mua = numer / denom;
             if (float.IsNaN(mua))
-            {
                 return false;
-            }
 
             float mub = (d1343 + d4321 * (mua)) / d4343;
 
@@ -639,13 +567,9 @@ namespace PerfectlyNormalBaS
 
             if (float.IsNaN(resultPoint1.Value.x) || float.IsNaN(resultPoint1.Value.y) || float.IsNaN(resultPoint1.Value.z) ||
                 float.IsNaN(resultPoint2.Value.x) || float.IsNaN(resultPoint2.Value.y) || float.IsNaN(resultPoint2.Value.z))
-            {
                 return false;
-            }
             else
-            {
                 return true;
-            }
         }
         public static bool GetClosestPoints_Line_LineSegment(out Vector3[] resultPointsLine, out Vector3[] resultPointsLineSegment, Ray line, Vector3 lineSegmentStart, Vector3 lineSegmentStop)
         {
@@ -654,7 +578,7 @@ namespace PerfectlyNormalBaS
                 // If line/line fails, it's because they are parallel.  If the lines coincide, then return the segment start and stop
 
 
-                //TODO: Finish this
+                // TODO: Finish this
 
 
 
@@ -702,20 +626,16 @@ namespace PerfectlyNormalBaS
             Vector3 returnDir = retVal - segmentStart;
 
             if (Vector3.Dot(lineDir, returnDir) < 0)
-            {
                 // It's going in the wrong direction, so start point is the closest
                 return (segmentStart, LocationOnLineSegment.Start);
-            }
+
             else if (returnDir.sqrMagnitude > lineDir.sqrMagnitude)
-            {
                 // It's past the segment stop
                 return (segmentStop, LocationOnLineSegment.Stop);
-            }
+
             else
-            {
                 // The return point is sitting somewhere on the line segment
                 return (retVal, LocationOnLineSegment.Middle);
-            }
         }
 
         public static Vector3? GetClosestPoint_Circle_Point(Plane circlePlane, Vector3 circleCenter, float circleRadius, Vector3 testPoint)
@@ -724,10 +644,8 @@ namespace PerfectlyNormalBaS
             Vector3 planePoint = GetClosestPoint_Plane_Point(circlePlane, testPoint);
 
             if (planePoint.IsNearValue(circleCenter))
-            {
                 // The test point is directly over the center of the circle (or is the center of the circle)
                 return null;
-            }
 
             // Get the line from the circle's center to that point
             Vector3 line = planePoint - circleCenter;
@@ -745,10 +663,8 @@ namespace PerfectlyNormalBaS
             Vector3 line = testPoint - nearestAxisPoint;
 
             if (line.IsNearZero())
-            {
                 // The test point is sitting on the axis
                 return null;
-            }
 
             // Project out to the radius of the cylinder
             return nearestAxisPoint + (line.normalized * radius);
@@ -757,10 +673,8 @@ namespace PerfectlyNormalBaS
         public static Vector3? GetClosestPoint_Sphere_Point(Vector3 centerPoint, float radius, Vector3 testPoint)
         {
             if (centerPoint.IsNearValue(testPoint))
-            {
                 // The test point is the center of the sphere
                 return null;
-            }
 
             // Get the line from the center to the test point
             Vector3 line = testPoint - centerPoint;
@@ -798,9 +712,7 @@ namespace PerfectlyNormalBaS
             // Call the overload
             bool retVal = GetClosestPointsBetweenLineCircle(out circlePoints, out linePoints, args);
             if (returnWhich == RayCastReturn.AllPoints || !retVal || circlePoints.Length == 1)
-            {
                 return retVal;
-            }
 
             switch (returnWhich)
             {
@@ -993,9 +905,7 @@ namespace PerfectlyNormalBaS
         {
             // Get the line of intersection of the two planes
             if (!GetIntersection_Plane_Plane(out Ray line, plane, triangle.ToPlane()))
-            {
                 return null;
-            }
 
             // Cap to the triangle
             return GetIntersection_Line_Triangle_sameplane(line, triangle);
@@ -1004,25 +914,19 @@ namespace PerfectlyNormalBaS
         {
             // Get the line of intersection of the two planes
             if (!GetIntersection_Plane_Plane(out Ray line, triangle1.ToPlane(), triangle2.ToPlane()))
-            {
                 return null;
-            }
 
             // Cap to the triangles
             Vector3[] segment1 = GetIntersection_Line_Triangle_sameplane(line, triangle1);
             if (segment1 == null)
-            {
                 return null;
-            }
 
             Vector3[] segment2 = GetIntersection_Line_Triangle_sameplane(line, triangle2);
             if (segment2 == null)
-            {
                 return null;
-            }
 
             // Cap the line segments
-            Vector3? point1_A = GetIntersection_LineSegment_Point_colinear(segment1[0], segment1[segment1.Length - 1], segment2[0]);        //TODO: change to segment1[^1] when c# 8 is supported
+            Vector3? point1_A = GetIntersection_LineSegment_Point_colinear(segment1[0], segment1[segment1.Length - 1], segment2[0]);        // TODO: change to segment1[^1] when c# 8 is supported
             Vector3? point1_B = GetIntersection_LineSegment_Point_colinear(segment1[0], segment1[segment1.Length - 1], segment2[segment2.Length - 1]);
 
             Vector3? point2_A = GetIntersection_LineSegment_Point_colinear(segment2[0], segment2[segment2.Length - 1], segment1[0]);
@@ -1036,23 +940,18 @@ namespace PerfectlyNormalBaS
             AddIfUnique(retVal, point2_B);
 
             if (retVal.Count == 0)
-            {
                 // The triangles aren't touching
                 return null;
-            }
+
             else if (retVal.Count == 1)
-            {
                 // The triangles are touching at a point, just consider that a non touch
                 return null;
-            }
+
             else if (retVal.Count == 2)
-            {
                 return retVal.ToArray();
-            }
+
             else
-            {
                 throw new ApplicationException($"Didn't expect more than 2 unique points.  Got {retVal.Count} unique points");
-            }
         }
         public static Vector3[] GetIntersection_Face_Triangle(Face3D face, ITriangle triangle, float rayLength = 1000)
         {
@@ -1065,9 +964,7 @@ namespace PerfectlyNormalBaS
                 ToArray();
 
             if (intersections.Length == 0)
-            {
                 return null;
-            }
 
             // Turn them into a single segment
             //NOTE: This will fail if face.GetPolygonTriangles returns a non continuous chain of triangles
@@ -1077,21 +974,16 @@ namespace PerfectlyNormalBaS
             for (int cntr = 1; cntr < intersections.Length; cntr++)
             {
                 if (end1.IsNearValue(intersections[cntr].Item1))
-                {
                     end1 = intersections[cntr].Item2;
-                }
+
                 else if (end2.IsNearValue(intersections[cntr].Item1))
-                {
                     end2 = intersections[cntr].Item2;
-                }
+
                 else if (end1.IsNearValue(intersections[cntr].Item2))
-                {
                     end1 = intersections[cntr].Item1;
-                }
+
                 else if (end2.IsNearValue(intersections[cntr].Item2))
-                {
                     end2 = intersections[cntr].Item1;
-                }
             }
 
             return new[] { end1, end2 };
@@ -1136,37 +1028,25 @@ namespace PerfectlyNormalBaS
         {
             Vector3? retVal = GetIntersection_Plane_Line(plane.normal.normalized, new Vector3[] { ray.origin, ray.origin + ray.direction }, plane.distance, EdgeType.Line);
             if (retVal == null)
-            {
                 return null;
-            }
             else
-            {
                 return retVal.Value;
-            }
         }
         public static Vector3? GetIntersection_Plane_Ray(Plane plane, Ray ray)
         {
             Vector3? retVal = GetIntersection_Plane_Line(plane.normal.normalized, new Vector3[] { ray.origin, ray.origin + ray.direction }, plane.distance, EdgeType.Ray);
             if (retVal == null)
-            {
                 return null;
-            }
             else
-            {
                 return retVal.Value;
-            }
         }
         public static Vector3? GetIntersection_Plane_LineSegment(Plane plane, Vector3 lineStart, Vector3 lineStop)
         {
             Vector3? retVal = GetIntersection_Plane_Line(plane.normal.normalized, new Vector3[] { lineStart, lineStop }, plane.distance, EdgeType.Segment);
             if (retVal == null)
-            {
                 return null;
-            }
             else
-            {
                 return retVal.Value;
-            }
         }
 
         public static Vector3[] GetIntersection_Face_Sphere(Face3D face, Vector3 sphereCenter, float sphereRadius)
@@ -1176,9 +1056,7 @@ namespace PerfectlyNormalBaS
 
             var circleIntersect = Math3D.GetIntersection_Plane_Sphere(plane, sphereCenter, sphereRadius);
             if (!circleIntersect.intersects)
-            {
                 return new Vector3[0];
-            }
 
             // There is an intersection, edge intersections need to be done in 2D
             var transform2D = Math2D.GetTransformTo2D(plane);
@@ -1317,18 +1195,14 @@ namespace PerfectlyNormalBaS
             float distFromPlane = plane.GetDistanceToPoint(sphereCenter);
 
             if (Math.Abs(distFromPlane) > sphereRadius)     // returned distance could be negative (distFromPlane is negative if the normal is pointing the wrong direction)
-            {
                 return (false, new Vector3(), 0);
-            }
 
             Vector3 circleCenter = sphereCenter + (plane.normal.normalized * distFromPlane);
 
             // Can't blindly trust the normal to know what direction to go
             float distFromPlane2 = plane.GetDistanceToPoint(circleCenter);
             if (!distFromPlane2.IsNearZero())
-            {
                 circleCenter = sphereCenter - (plane.normal.normalized * distFromPlane);
-            }
 
             // Figure out the circle radius.  Look at the diagram here:
             //http://math.stackexchange.com/questions/943383/determine-circle-of-intersection-of-plane-and-sphere
@@ -1345,16 +1219,12 @@ namespace PerfectlyNormalBaS
             // Plane
             Vector3? retVal = GetIntersection_Plane_Line(triangle.ToPlane(), line);
             if (retVal == null)
-            {
                 return null;
-            }
 
             // Constrain to triangle
             Vector2 bary = ToBarycentric(triangle, retVal.Value);
             if (bary.x < 0 || bary.y < 0 || bary.x + bary.y > 1)
-            {
                 return null;
-            }
 
             // The return point is inside the triangle
             return retVal.Value;
@@ -1364,16 +1234,12 @@ namespace PerfectlyNormalBaS
             // Plane
             Vector3? retVal = GetIntersection_Plane_Ray(triangle.ToPlane(), ray);
             if (retVal == null)
-            {
                 return null;
-            }
 
             // Constrain to triangle
             Vector2 bary = ToBarycentric(triangle, retVal.Value);
             if (bary.x < 0 || bary.y < 0 || bary.x + bary.y > 1)
-            {
                 return null;
-            }
 
             // The return point is inside the triangle
             return retVal.Value;
@@ -1383,16 +1249,12 @@ namespace PerfectlyNormalBaS
             // Plane
             Vector3? retVal = GetIntersection_Plane_LineSegment(triangle.ToPlane(), lineStart, lineStop);
             if (retVal == null)
-            {
                 return null;
-            }
 
             // Constrain to triangle
             Vector2 bary = ToBarycentric(triangle, retVal.Value);
             if (bary.x < 0 || bary.y < 0 || bary.x + bary.y > 1)
-            {
                 return null;
-            }
 
             // The return point is inside the triangle
             return retVal.Value;
@@ -1423,9 +1285,7 @@ namespace PerfectlyNormalBaS
                 Vector3? hit = GetIntersection_Triangle_Ray(t, r);
 
                 if (hit == null)
-                {
                     return (false, new Vector3(), i, 0f);
-                }
 
                 float distance = (hit.Value - r.origin).magnitude;
 
@@ -1591,10 +1451,8 @@ namespace PerfectlyNormalBaS
                 Vector3 normal = Vector3.Cross(point0 - point1, point2 - point1);
 
                 if (Vector3.Dot(normal, point - point0) > 0d)
-                {
                     // This point is outside
                     return false;
-                }
             }
 
             return true;
@@ -1739,9 +1597,7 @@ namespace PerfectlyNormalBaS
         public static Vector3 GetArbitraryOrthonganal(Vector3 vector)
         {
             if (vector.IsInvalid() || vector.IsNearZero())
-            {
                 return new Vector3(float.NaN, float.NaN, float.NaN);
-            }
 
             Vector3 rand = UnityEngine.Random.onUnitSphere;
 
@@ -1750,13 +1606,9 @@ namespace PerfectlyNormalBaS
                 Vector3 retVal = Vector3.Cross(vector, rand);
 
                 if (retVal.IsInvalid())
-                {
                     rand = UnityEngine.Random.onUnitSphere;
-                }
                 else
-                {
                     return retVal;
-                }
             }
 
             throw new ApplicationException("Infinite loop detected");
@@ -1850,18 +1702,14 @@ namespace PerfectlyNormalBaS
             {
                 case EdgeType.Ray:
                     if (dist < 0f)
-                    {
                         // This is outside of the ray
                         return null;
-                    }
                     break;
 
                 case EdgeType.Segment:
                     if (dist < 0f || dist > 1f)
-                    {
                         // This is outside of the line segment
                         return null;
-                    }
                     break;
             }
 
@@ -1905,14 +1753,10 @@ namespace PerfectlyNormalBaS
             foreach (TriangleEdge edge in Triangle.Edges)
             {
                 if (!GetClosestPoints_Line_LineSegment(out Vector3[] resultsLine, out Vector3[] resultsLineSegment, line, triangle.GetPoint(edge, true), triangle.GetPoint(edge, false)))
-                {
                     continue;
-                }
 
                 if (resultsLine.Length != resultsLineSegment.Length)
-                {
                     throw new ApplicationException("The line vs line segments have a different number of matches");
-                }
 
                 // This method is dealing with lines that are in the same plane, so if the result point for the plane/plane line is different
                 // than the triangle edge, then throw out this match
@@ -1927,59 +1771,45 @@ namespace PerfectlyNormalBaS
                 }
 
                 if (!allMatched)
-                {
                     continue;
-                }
 
                 retval.AddRange(resultsLineSegment);
 
                 if (retval.Count >= 2)
-                {
                     // No need to keep looking, there will only be up to two points of intersection
                     break;
-                }
             }
 
             // Exit Function
             if (retval.Count == 0)
-            {
                 return null;
-            }
+
             else if (retval.Count.In(1, 2))
-            {
                 // 1 match is just touching a vertex
                 // 2 matches is a standard result
                 return retval.ToArray();
-            }
+
             else
-            {
                 throw new ApplicationException("Found more than two intersection points");
-            }
         }
 
         private static Vector3? GetIntersection_LineSegment_Point_colinear(Vector3 segmentStart, Vector3 segmentStop, Vector3 point)
         {
             if (segmentStart.IsNearValue(point) || segmentStop.IsNearValue(point))
-            {
                 // It's touching one of the endpoints
                 return point;
-            }
 
             // Make sure the point isn't beyond the line segment
             Vector3 segmentDir = segmentStop - segmentStart;
             Vector3 testDir = point - segmentStart;
 
             if (!Vector3.Dot(segmentDir.normalized, testDir.normalized).IsNearValue(1f))
-            {
                 // It's the other direction (beyond segment start)
                 return null;
-            }
 
             if (testDir.sqrMagnitude > segmentDir.sqrMagnitude)
-            {
                 // It's beyond segment stop
                 return null;
-            }
 
             // It's somewhere inside the segment
             return point;
@@ -1988,14 +1818,10 @@ namespace PerfectlyNormalBaS
         private static void AddIfUnique(List<Vector3> list, Vector3? test)
         {
             if (test == null)
-            {
                 return;
-            }
 
             if (list.Any(o => o.IsNearValue(test.Value)))
-            {
                 return;
-            }
 
             list.Add(test.Value);
         }
@@ -2181,22 +2007,16 @@ namespace PerfectlyNormalBaS
             // Detect perpendicular
             float dot = Vector3.Dot(args.CirclePlane.normal.normalized, args.Line.direction.normalized);
             if (Math.Abs(dot).IsNearValue(1f))
-            {
                 return GetClosestPointsBetweenLineCircle_Perpendicular(out circlePoints, out linePoints, args);
-            }
 
             // Project the line onto the circle's plane
             CirclePlaneIntersectProps planeIntersect = GetClosestPointsBetweenLineCircle_PlaneIntersect(args);
 
             // There's less to do if the line is parallel
             if (dot.IsNearZero())
-            {
                 GetClosestPointsBetweenLineCircle_Parallel(out circlePoints, out linePoints, args, planeIntersect);
-            }
             else
-            {
                 GetClosestPointsBetweenLineCircle_Other(out circlePoints, out linePoints, args, planeIntersect);
-            }
 
             return true;
         }
@@ -2326,9 +2146,7 @@ namespace PerfectlyNormalBaS
             }
 
             if (circlePointList.Count == 0)
-            {
                 throw new ApplicationException("Couldn't find a return point");
-            }
 
             // Return the result
             circlePoints = circlePointList.ToArray();
@@ -2343,9 +2161,7 @@ namespace PerfectlyNormalBaS
 
             // Use that slice plane to project the line onto the circle's plane
             if (!GetIntersection_Plane_Plane(out retVal.Line, args.CirclePlane, slicePlane))
-            {
                 throw new ApplicationException("The slice plane should never be parallel to the circle's plane");       // it was defined as perpendicular
-            }
 
             // Find the closest point between the circle's center to this intersection line
             retVal.NearestToCenter = GetClosestPoint_Line_Point(retVal.Line, args.CircleCenter);
@@ -2470,9 +2286,7 @@ namespace PerfectlyNormalBaS
             }
 
             if (minIndex < 0)
-            {
                 throw new ApplicationException("Should always find a closest point");
-            }
 
             #endregion
 
@@ -2517,9 +2331,7 @@ namespace PerfectlyNormalBaS
 
             // Use that slice plane to project the line onto the circle's plane
             if (!GetIntersection_Plane_Plane(out retVal.Line, args.CirclePlane, slicePlane))
-            {
                 throw new ApplicationException("The slice plane should never be parallel to the circle's plane");       // it was defined as perpendicular
-            }
 
             // Store what was passed in (the circle/line intersect waits till now to do this, but for cylinder, this was done previously)
             retVal.NearestToCenter = nearestLinePoint;
@@ -2542,13 +2354,10 @@ namespace PerfectlyNormalBaS
 
             // p1 and p2 are the same, p3 and p4 are the same (p2 and p4 were later changed to _)
             if (p1 == null || p3 == null)
-            {
                 cylinderPoints = new Vector3[] { circlePoints2D[0], circlePoints2D[1] };
-            }
             else
-            {
                 cylinderPoints = new Vector3[] { p1.Value, p3.Value };
-            }
+
             linePoints = cylinderPoints;
         }
 
@@ -2607,7 +2416,7 @@ namespace PerfectlyNormalBaS
 
         public Face3D(int[] edges, Edge3D[] allEdges)
         {
-            //TODO: May want to validate that the points are coplanar
+            // TODO: May want to validate that the points are coplanar
 
             this.AllEdges = allEdges;
 
@@ -2641,9 +2450,7 @@ namespace PerfectlyNormalBaS
                 lock (_lock)
                 {
                     if (_token == null)
-                    {
                         _token = TokenGenerator.NextToken();
-                    }
 
                     return _token.Value;
                 }
@@ -2659,13 +2466,9 @@ namespace PerfectlyNormalBaS
         public (int[] indices, Vector3[] allPoints) GetPolygon(float rayLength = 1000f)
         {
             if (this.IsClosed)
-            {
                 return GetPolygon_Closed(this.Edges);
-            }
             else
-            {
                 return GetPolygon_Open(this.Edges, rayLength);
-            }
         }
 
         /// <summary>
@@ -2695,15 +2498,11 @@ namespace PerfectlyNormalBaS
         public Plane GetPlane()
         {
             if (this.Edges.Length < 2)
-            {
                 throw new ApplicationException("There needs to be at least two edges");
-            }
 
             int common = Edge3D.GetCommonIndex(this.Edges[0], this.Edges[1]);
             if (common < 0)
-            {
                 throw new ApplicationException(string.Format("Non touching edges: {0} - {1}", this.Edges[0].ToString(), this.Edges[1].ToString()));
-            }
 
             Vector3 point0 = Edge3D.GetOtherPointExt(this.Edges[0], this.Edges[1]);
             Vector3 point1 = this.Edges[0].GetPoint(common);
@@ -2722,14 +2521,10 @@ namespace PerfectlyNormalBaS
 #if DEBUG
 
             if (edges.Length < 3)
-            {
                 throw new ArgumentException("Must have at least three edges: " + edges.Length.ToString());
-            }
 
             if (!edges.All(o => o.EdgeType == EdgeType.Segment))
-            {
                 throw new ArgumentException("All edges must be segments when calling the closed method");
-            }
 
 #endif
             #endregion
@@ -2747,14 +2542,10 @@ namespace PerfectlyNormalBaS
                 // Add the point from edge1 that is shared with edge2
                 int commonIndex = Edge3D.GetCommonIndex(pair.Item1, pair.Item2);
                 if (commonIndex < 0)
-                {
                     // While in this main loop, there can't be any breaks
                     throw new ApplicationException("Didn't find common point between edges");
-                }
                 else
-                {
                     indices.Add(commonIndex);
-                }
             }
 
             return (indices.ToArray(), points);
@@ -2765,19 +2556,13 @@ namespace PerfectlyNormalBaS
 #if DEBUG
 
             if (edges.Length < 2)
-            {
                 throw new ArgumentException("Must have at least two edges: " + edges.Length.ToString());
-            }
 
             if (edges[0].EdgeType != EdgeType.Ray || edges[edges.Length - 1].EdgeType != EdgeType.Ray)
-            {
                 throw new ArgumentException("First and last edges must be rays when calling the open method");
-            }
 
             if (Enumerable.Range(1, edges.Length - 2).Any(o => edges[o].EdgeType != EdgeType.Segment))
-            {
                 throw new ArgumentException("Middle edges must be segments when calling the open method");
-            }
 
 #endif
             #endregion
@@ -2796,14 +2581,10 @@ namespace PerfectlyNormalBaS
                 // Add the point from edge1 that is shared with edge2
                 int commonIndex = Edge3D.GetCommonIndex(pair.Item1, pair.Item2);
                 if (commonIndex < 0)
-                {
                     // While in this main loop, there can't be any breaks
                     throw new ApplicationException("Didn't find common point between edges");
-                }
                 else
-                {
                     indices.Add(commonIndex);
-                }
             }
 
             // The end of the last ray
@@ -2854,9 +2635,7 @@ namespace PerfectlyNormalBaS
         public Edge3D(EdgeType edgeType, int index0, Vector3 direction, Vector3[] allEdgePoints)
         {
             if (edgeType == EdgeType.Segment)
-            {
                 throw new ArgumentException("This overload requires edge type to be Ray or Line, not Segment");
-            }
 
             this.EdgeType = edgeType;
             this.Index0 = index0;
@@ -2895,13 +2674,9 @@ namespace PerfectlyNormalBaS
             get
             {
                 if (this.Direction != null)
-                {
                     return this.Direction.Value;
-                }
                 else
-                {
                     return this.Point1.Value - this.Point0;
-                }
             }
         }
 
@@ -2917,9 +2692,7 @@ namespace PerfectlyNormalBaS
             get
             {
                 if (this.Index1 == null)
-                {
                     return null;
-                }
 
                 return this.AllEdgePoints[this.Index1.Value];
             }
@@ -2933,13 +2706,9 @@ namespace PerfectlyNormalBaS
             get
             {
                 if (this.Point1 != null)
-                {
                     return this.Point1.Value;
-                }
                 else
-                {
                     return this.Point0 + this.Direction.Value;
-                }
             }
         }
 
@@ -2953,9 +2722,7 @@ namespace PerfectlyNormalBaS
                 lock (_lock)
                 {
                     if (_token == null)
-                    {
                         _token = TokenGenerator.NextToken();
-                    }
 
                     return _token.Value;
                 }
@@ -2967,17 +2734,11 @@ namespace PerfectlyNormalBaS
         public Vector3 GetPoint(int index)
         {
             if (Index0 == index)
-            {
                 return Point0;
-            }
             else if (Index1 != null && Index1.Value == index)
-            {
                 return Point1.Value;
-            }
             else
-            {
                 throw new ArgumentOutOfRangeException("index", index, "Index not found");
-            }
         }
 
         /// <summary>
@@ -3031,23 +2792,17 @@ namespace PerfectlyNormalBaS
                 if (index1[cntr] != null)
                 {
                     if (edges[cntr].EdgeType != EdgeType.Segment)
-                    {
                         throw new ApplicationException(string.Format("Invalid segment type: {0}.  Expected {1}", edges[cntr].EdgeType, EdgeType.Segment));
-                    }
 
                     retVal[cntr] = new Edge3D(index0[cntr], index1[cntr].Value, allPointArr);
                 }
                 else
                 {
                     if (edges[cntr].EdgeType == EdgeType.Segment)
-                    {
                         throw new ApplicationException(string.Format("Invalid segment type: {0}", edges[cntr].EdgeType, EdgeType.Segment));
-                    }
 
                     if (edges[cntr].Direction == null)
-                    {
                         throw new ApplicationException(string.Format("Direction shouldn't be null for {0}", edges[cntr].EdgeType));
-                    }
 
                     retVal[cntr] = new Edge3D(edges[cntr].EdgeType, index0[cntr], edges[cntr].Direction.Value, allPointArr);
                 }
@@ -3065,9 +2820,7 @@ namespace PerfectlyNormalBaS
         public static ((int, int)[] lines, Vector3[] allPoints) GetUniqueLines(Edge3D[] edges, float? rayLength = null)
         {
             if (edges.Length == 0)
-            {
                 return (new (int, int)[0], new Vector3[0]);
-            }
 
             // Dedupe the edges
             Edge3D[] uniqueEdges = GetUniqueLines(edges);
@@ -3079,9 +2832,7 @@ namespace PerfectlyNormalBaS
             foreach (Edge3D segment in uniqueEdges.Where(o => o.EdgeType == EdgeType.Segment))
             {
                 if (points.Count == 0)
-                {
                     points.AddRange(segment.AllEdgePoints);
-                }
 
                 segments.Add((segment.Index0, segment.Index1.Value));
             }
@@ -3146,13 +2897,9 @@ namespace PerfectlyNormalBaS
             else
             {
                 if (rayLength == null)
-                {
                     return this.Point0 + this.Direction.Value;
-                }
                 else
-                {
                     return this.Point0 + (this.Direction.Value.normalized * rayLength.Value);
-                }
             }
         }
 
@@ -3169,13 +2916,9 @@ namespace PerfectlyNormalBaS
             int common = GetCommonIndex(edge, otherEdge);
 
             if (edge.Index0 == common)
-            {
                 return edge.GetPoint1Ext(rayLength);
-            }
             else
-            {
                 return edge.Point0;
-            }
         }
 
         /// <summary>
@@ -3193,14 +2936,10 @@ namespace PerfectlyNormalBaS
                 for (int inner = 0; inner < edges.Length; inner++)
                 {
                     if (outer == inner)
-                    {
                         continue;
-                    }
 
                     if (IsTouching(edges[outer], edges[inner]))
-                    {
                         touching.Add(inner);
-                    }
                 }
 
                 retVal[outer] = touching.ToArray();
@@ -3221,38 +2960,28 @@ namespace PerfectlyNormalBaS
         {
             //  All edge types have an index 0, so get that comparison out of the way
             if (edge0.Index0 == edge1.Index0)
-            {
                 return edge0.Index0;
-            }
 
             if (edge0.EdgeType == EdgeType.Segment)
             {
                 //  Extra check, since edge0 is a segment
                 if (edge0.Index1.Value == edge1.Index0)
-                {
                     return edge0.Index1.Value;
-                }
 
                 //  If edge1 is also a segment, then compare its endpoint to edge0's points
                 if (edge1.EdgeType == EdgeType.Segment)
                 {
                     if (edge1.Index1.Value == edge0.Index0)
-                    {
                         return edge1.Index1.Value;
-                    }
                     else if (edge1.Index1.Value == edge0.Index1.Value)
-                    {
                         return edge1.Index1.Value;
-                    }
                 }
             }
             else if (edge1.EdgeType == EdgeType.Segment)
             {
                 //  Edge1 is a segment, but edge0 isn't, so just need the single compare
                 if (edge1.Index1.Value == edge0.Index0)
-                {
                     return edge1.Index1.Value;
-                }
             }
 
             //  No more compares needed (this method doesn't bother with projecting rays/lines to see if they intersect, that's left up to the caller if they need it)
@@ -3271,15 +3000,11 @@ namespace PerfectlyNormalBaS
         public static (Vector3 point, Vector3 direction1, Vector3 direction2) GetRays(Edge3D edge0, Edge3D edge1)
         {
             if (edge0.EdgeType == EdgeType.Line || edge1.EdgeType == EdgeType.Line)
-            {
                 throw new ArgumentException("This method doesn't allow lines, only segments and rays");
-            }
 
             int common = GetCommonIndex(edge0, edge1);
             if (common < 0)
-            {
                 throw new ArgumentException("The edges passed in don't share a common point");
-            }
 
             return
             (
@@ -3304,9 +3029,7 @@ namespace PerfectlyNormalBaS
                     #region Ray
 
                     if (edge.Index0 != index)
-                    {
                         throw new ArgumentException("The index passed in doesn't belong to this edge");
-                    }
 
                     return edge.Direction.Value;
 
@@ -3316,17 +3039,11 @@ namespace PerfectlyNormalBaS
                     #region Segment
 
                     if (edge.Index0 == index)
-                    {
                         return edge.Point1.Value - edge.Point0;
-                    }
                     else if (edge.Index1.Value == index)
-                    {
                         return edge.Point0 - edge.Point1.Value;
-                    }
                     else
-                    {
                         throw new ArgumentException("The index passed in doesn't belong to this edge");
-                    }
 
                 #endregion
 

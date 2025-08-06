@@ -11,6 +11,9 @@ using UnityEngine.UIElements;
 
 namespace Jetpack.Scanning
 {
+
+    // TODO: make separates classes for hover vs obstacle avoidance
+
     public class ObstacleAvoidance
     {
         private const bool SHOWDEBUG = true;
