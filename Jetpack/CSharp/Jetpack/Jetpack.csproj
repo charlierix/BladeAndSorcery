@@ -59,6 +59,7 @@
     <Compile Include="Models\FlightData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Scanning\ConfinedArea.cs" />
+    <Compile Include="Scanning\ScanningUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="SteamVR, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using ThunderRoad;
 using UnityEngine;
 using UnityEngine.UI;       // NOTE: had to dig to find this, it's not with the other unity dlls that this project references - also difficulty with netstandard2.0 vs 2.1
@@ -392,10 +393,11 @@ namespace PerfectlyNormalBaS
             );
         }
 
-        public void Remove(DebugItem item)
+        public bool Remove(DebugItem item)
         {
-            var removeMatches = new Action<List<DebugItem>>(list =>
+            var removeMatches = new Func<List<DebugItem>, bool>(list =>
             {
+                bool was_removed = false;
                 int index = 0;
                 while (index < list.Count)
                 {
@@ -403,21 +405,32 @@ namespace PerfectlyNormalBaS
                     {
                         Destroy(list[index].Object);
                         list.RemoveAt(index);
+                        was_removed = true;
                     }
                     else
                     {
                         index++;
                     }
                 }
+
+                return was_removed;
             });
 
-            removeMatches(_stationary);
-            removeMatches(_relativeTo);
+            bool retVal = false;
+
+            retVal |= removeMatches(_stationary);
+            retVal |= removeMatches(_relativeTo);
+
+            return retVal;
         }
-        public void Remove(IEnumerable<DebugItem> items)
+        public bool Remove(IEnumerable<DebugItem> items)
         {
+            bool retVal = false;
+
             foreach (DebugItem item in items)
-                Remove(item);
+                retVal |= Remove(item);
+
+            return retVal;
         }
         public void Clear()
         {
@@ -426,6 +439,14 @@ namespace PerfectlyNormalBaS
 
             _stationary.Clear();
             _relativeTo.Clear();
+        }
+
+        public string ReportCurrentTokens()
+        {
+            string stationary = string.Join(", ", _stationary.Select(o => o.Token.ToString()));
+            string relative = string.Join(", ", _relativeTo.Select(o => o.Token.ToString()));
+
+            return $"stationary: {stationary}{Environment.NewLine}relative: {relative}";
         }
 
         #region Private Methods

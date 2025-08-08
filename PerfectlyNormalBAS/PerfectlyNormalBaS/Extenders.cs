@@ -23,13 +23,9 @@ namespace PerfectlyNormalBaS
         public static string ToProper(this string text, bool convertToLowerFirst = true)
         {
             if (convertToLowerFirst)
-            {
                 return Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase(text.ToLower());
-            }
             else
-            {
                 return Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase(text);
-            }
         }
 
         public static string ToInvert(this string text)
@@ -41,13 +37,9 @@ namespace PerfectlyNormalBaS
                 if (char.IsLetter(inverted[cntr]))
                 {
                     if (char.IsUpper(inverted[cntr]))
-                    {
                         inverted[cntr] = char.ToLower(inverted[cntr]);
-                    }
                     else
-                    {
                         inverted[cntr] = char.ToUpper(inverted[cntr]);
-                    }
                 }
             }
 
@@ -69,13 +61,9 @@ namespace PerfectlyNormalBaS
         public static bool In_ignorecase(this string value, params string[] compare)
         {
             if (compare == null)
-            {
                 return false;
-            }
             else if (value == null)
-            {
                 return compare.Any(o => o == null);
-            }
 
             return compare.Any(o => value.Equals(o, StringComparison.OrdinalIgnoreCase));
         }
@@ -89,12 +77,8 @@ namespace PerfectlyNormalBaS
         //    yield return head;
 
         //    foreach (var node in childrenFunc(head))
-        //    {
         //        foreach (var child in Descendants_DepthFirst(node, childrenFunc))
-        //        {
         //            yield return child;
-        //        }
-        //    }
         //}
         //public static IEnumerable<T> Descendants_BreadthFirst<T>(this T head, Func<T, IEnumerable<T>> childrenFunc)
         //{
@@ -133,15 +117,9 @@ namespace PerfectlyNormalBaS
 
         //    var children = childrenFunc(head);
         //    if (children != null)
-        //    {
         //        foreach (var node in childrenFunc(head))
-        //        {
         //            foreach (var child in Descendants(node, childrenFunc))
-        //            {
         //                yield return child;
-        //            }
-        //        }
-        //    }
         //}
 
         public static IEnumerable<TSource> Distinct<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
@@ -184,9 +162,7 @@ namespace PerfectlyNormalBaS
             foreach (T candidate in source)
             {
                 if (comparer(candidate, item))
-                {
                     return index;
-                }
 
                 index++;
             }
@@ -201,12 +177,8 @@ namespace PerfectlyNormalBaS
         public static bool Contains<T>(this IEnumerable<T> source, T item, Func<T, T, bool> comparer)
         {
             foreach (T candidate in source)
-            {
                 if (comparer(candidate, item))
-                {
                     return true;
-                }
-            }
 
             return false;
         }
@@ -273,21 +245,15 @@ namespace PerfectlyNormalBaS
             //    FirstOrDefault(o => predicate(o.Value));
 
             foreach (TSource item in source)
-            {
                 if (predicate(item))
-                {
                     return item;
-                }
-            }
 
             return null;
         }
         public static TSource? FirstOrDefault_val<TSource>(this IEnumerable<TSource> source) where TSource : struct
         {
             foreach (TSource item in source)
-            {
                 return item;
-            }
 
             return null;
         }
@@ -300,24 +266,18 @@ namespace PerfectlyNormalBaS
         public static IEnumerable<object> AsEnumerabIe(this IList list)
         {
             foreach (object item in list)
-            {
                 yield return item;
-            }
         }
         public static IEnumerable<T> AsEnumerabIe<T>(this IList<T> list)
         {
             foreach (T item in list)
-            {
                 yield return item;
-            }
         }
 
         public static void AddRange<T>(this IList<T> list, IEnumerable<T> items)
         {
             foreach (T item in items)
-            {
                 list.Add(item);
-            }
         }
 
         /// <summary>
@@ -327,12 +287,8 @@ namespace PerfectlyNormalBaS
         public static void AddRangeUnique<T>(this IList<T> list, IEnumerable<T> items)
         {
             foreach (T item in items.Distinct())
-            {
                 if (!list.Contains(item))
-                {
                     list.Add(item);
-                }
-            }
         }
         /// <summary>
         /// This only adds the items that aren't already in list
@@ -356,9 +312,7 @@ namespace PerfectlyNormalBaS
                 for (int cntr = 0; cntr < list.Count; cntr++)
                 {
                     if (keys.Count <= cntr)
-                    {
                         keys.Add(keySelector(list[cntr]));
-                    }
 
                     if (keys[cntr].Equals(key))
                     {
@@ -460,9 +414,7 @@ namespace PerfectlyNormalBaS
         public static IEnumerable<Match> AsEnumerable(this MatchCollection matches)
         {
             foreach (Match match in matches)
-            {
                 yield return match;
-            }
         }
 
         #endregion
@@ -486,13 +438,9 @@ namespace PerfectlyNormalBaS
         public static bool In<T>(this T value, params T[] compare)
         {
             if (compare == null)
-            {
                 return false;
-            }
             else if (value == null)
-            {
                 return compare.Any(o => o == null);
-            }
 
             return compare.Any(o => value.Equals(o));
         }
@@ -538,15 +486,11 @@ namespace PerfectlyNormalBaS
             float actualPercent = 1f + (useRandomPercent ? percent * (float)rand.NextDouble() : percent);
 
             if (rand.Next(2) == 0)
-            {
                 // Add
                 return midPoint * actualPercent;
-            }
             else
-            {
                 // Remove
                 return midPoint / actualPercent;
-            }
         }
         /// <summary>
         /// Returns between: (mid - drift) to (mid + drift)
@@ -560,15 +504,11 @@ namespace PerfectlyNormalBaS
             float actualDrift = useRandomDrift ? drift * (float)rand.NextDouble() : drift;
 
             if (rand.Next(2) == 0)
-            {
                 // Add
                 return midPoint + actualDrift;
-            }
             else
-            {
                 // Remove
                 return midPoint - actualDrift;
-            }
         }
 
         /// <summary>
@@ -603,20 +543,14 @@ namespace PerfectlyNormalBaS
             float retVal = random * maxValue;
 
             if (!isPlusMinus)
-            {
                 // They only want positive
                 return retVal;
-            }
 
             // They want - to +
             if (rand.Next(2) == 0)
-            {
                 return retVal;
-            }
             else
-            {
                 return -retVal;
-            }
         }
 
         public static bool NextBool(this System.Random rand)
@@ -877,13 +811,9 @@ namespace PerfectlyNormalBaS
             int numDecimals = GetNumDecimals(value);
 
             if (numDecimals < 0)
-            {
                 return ToStringSignificantDigits_PossibleScientific(value, significantDigits);
-            }
             else
-            {
                 return ToStringSignificantDigits_Standard(value, significantDigits, true);
-            }
         }
 
         #endregion
@@ -944,13 +874,9 @@ namespace PerfectlyNormalBaS
             int numDecimals = GetNumDecimals(value);
 
             if (numDecimals < 0)
-            {
                 return ToStringSignificantDigits_PossibleScientific(value, significantDigits);
-            }
             else
-            {
                 return ToStringSignificantDigits_Standard(value, significantDigits, true);
-            }
         }
 
         #endregion
@@ -969,13 +895,9 @@ namespace PerfectlyNormalBaS
             int numDecimals = GetNumDecimals(value);
 
             if (numDecimals < 0)
-            {
                 return ToStringSignificantDigits_PossibleScientific(value, significantDigits);
-            }
             else
-            {
                 return ToStringSignificantDigits_Standard(value, significantDigits, true);
-            }
         }
 
         #endregion
@@ -1074,21 +996,26 @@ namespace PerfectlyNormalBaS
             // c = (a dot unit(b)) * unit(b)
 
             if (vector.IsNearZero() || alongVector.IsNearZero())
-            {
                 return new Vector3(0, 0, 0);
-            }
 
             Vector3 alongVectorUnit = alongVector.normalized;
 
             float length = Vector3.Dot(vector, alongVectorUnit);
 
             if (!eitherDirection && length < 0)
-            {
                 // It's in the oppositie direction, and that isn't allowed
                 return new Vector3(0, 0, 0);
-            }
 
             return alongVectorUnit * length;
+        }
+        public static Vector3 GetProjectedVector(this Vector3 vector, ITriangle alongPlane)
+        {
+            // Get a line that is parallel to the plane, but along the direction of the vector
+            Vector3 planeNormal = alongPlane.Normal;
+            var alongLine = Vector3.Cross(planeNormal, Vector3.Cross(vector, planeNormal));
+
+            // Use the other overload to get the portion of the vector along this line
+            return vector.GetProjectedVector(alongLine);
         }
 
         #endregion
@@ -1148,7 +1075,6 @@ namespace PerfectlyNormalBaS
                     mesh.vertices[mesh.triangles[i + 1]],
                     mesh.vertices[mesh.triangles[i + 2]]
                 );
-
             }
         }
 
@@ -1162,7 +1088,6 @@ namespace PerfectlyNormalBaS
                     mesh.triangles[i + 1],
                     mesh.triangles[i + 2]
                 );
-
             }
         }
 
@@ -1182,9 +1107,12 @@ namespace PerfectlyNormalBaS
         {
             double retVal = value;
 
-            if (retVal < int.MinValue) retVal = int.MinValue;
-            else if (retVal > int.MaxValue) retVal = int.MaxValue;
-            else if (retVal.IsInvalid()) retVal = int.MaxValue;
+            if (retVal < int.MinValue)
+                retVal = int.MinValue;
+            else if (retVal > int.MaxValue)
+                retVal = int.MaxValue;
+            else if (retVal.IsInvalid())
+                retVal = int.MaxValue;
 
             return Convert.ToInt32(retVal);
         }
@@ -1192,9 +1120,12 @@ namespace PerfectlyNormalBaS
         {
             int retVal = ToIntSafe(Math.Ceiling(value));
 
-            if (retVal < 0) retVal = 0;
-            else if (retVal > 255) retVal = 255;
-            else retVal = 255;
+            if (retVal < 0)
+                retVal = 0;
+            else if (retVal > 255)
+                retVal = 255;
+            else
+                retVal = 255;
 
             return Convert.ToByte(retVal);
         }
@@ -1214,23 +1145,17 @@ namespace PerfectlyNormalBaS
         private static int GetNumDecimals_ToString(string text)
         {
             if (Regex.IsMatch(text, "[a-z]", RegexOptions.IgnoreCase))
-            {
                 // This is in exponential notation, just give up (or maybe NaN)
                 return -1;
-            }
 
             int decimalIndex = text.IndexOf(".");
 
             if (decimalIndex < 0)
-            {
                 // It's an integer
                 return 0;
-            }
             else
-            {
                 // Just count the decimals
                 return (text.Length - 1) - decimalIndex;
-            }
         }
 
         private static string ToStringSignificantDigits_PossibleScientific(float value, int significantDigits)
@@ -1258,10 +1183,8 @@ namespace PerfectlyNormalBaS
         {
             Match match = Regex.Match(textInvariant, @"^(?<num>(-|)\d\.\d+)(?<exp>E(-|)\d+)$");
             if (!match.Success)
-            {
                 // Unknown
                 return text;
-            }
 
             string standard = ToStringSignificantDigits_Standard(Convert.ToDouble(match.Groups["num"].Value), significantDigits, false);
 
@@ -1283,50 +1206,32 @@ namespace PerfectlyNormalBaS
             var intPortion = new System.Numerics.BigInteger(Math.Truncate(value));       // ran into a case that didn't fit in a long
             int numInt;
             if (intPortion == 0)
-            {
                 numInt = 0;
-            }
             else
-            {
                 numInt = intPortion.ToString().Length;
-            }
 
             // Limit the number of significant digits
             int numPlaces;
             if (numInt == 0)
-            {
                 numPlaces = significantDigits;
-            }
             else if (numInt >= significantDigits)
-            {
                 numPlaces = 0;
-            }
             else
-            {
                 numPlaces = significantDigits - numInt;
-            }
 
             // I was getting an exception from round, but couldn't recreate it, so I'm just throwing this in to avoid the exception
             if (numPlaces < 0)
-            {
                 numPlaces = 0;
-            }
             else if (numPlaces > 15)
-            {
                 numPlaces = 15;
-            }
 
             // Show a rounded number
             decimal rounded = Math.Round(value, numPlaces);
             int numActualDecimals = GetNumDecimals(rounded);
             if (numActualDecimals < 0 || !useN)
-            {
                 return rounded.ToString();		// it's weird, don't try to make it more readable
-            }
             else
-            {
                 return rounded.ToString("N" + numActualDecimals);
-            }
         }
 
         #endregion

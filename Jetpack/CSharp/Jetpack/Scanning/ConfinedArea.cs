@@ -35,7 +35,6 @@ namespace Jetpack.Scanning
         /// These are randomly rotated icosahedrons with the rays pointing down removed
         /// </summary>
         private static Lazy<Ray[][]> _icos = new Lazy<Ray[][]>(() => GetIcosahedrons());
-        private static Lazy<int> _layerMask = new Lazy<int>(() => GetLayerMask());
 
         private DateTime _prev_tick = DateTime.UtcNow;
 
@@ -106,7 +105,7 @@ namespace Jetpack.Scanning
             const float GAUSS_PINCH = 1.6f;
             const float CLAMP_POW = 2;
 
-            if (Physics.Raycast(pos + ray.origin, ray.direction, out RaycastHit hit, max_len, _layerMask.Value, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(pos + ray.origin, ray.direction, out RaycastHit hit, max_len, ScanningUtil.SolidObject_LayerMask.Value, QueryTriggerInteraction.Ignore))
             {
                 float dist_sqr = (hit.point - pos).sqrMagnitude;      // don't want to use hit.distance, since the ray is from pos + ray.origin
 
@@ -269,7 +268,7 @@ namespace Jetpack.Scanning
             // Hit Dots
             if (hit != null)
             {
-                var hits = Physics.RaycastAll(pos, direction, len, _layerMask.Value, QueryTriggerInteraction.Ignore);
+                var hits = Physics.RaycastAll(pos, direction, len, ScanningUtil.SolidObject_LayerMask.Value, QueryTriggerInteraction.Ignore);
 
                 foreach (var hit2 in hits)
                 {
@@ -317,45 +316,6 @@ namespace Jetpack.Scanning
 
         #endregion
         #region Private Methods - init
-
-        // https://kospy.github.io/BasSDK/Components/Guides/SDK-HowTo/Layers.html
-        private static int GetLayerMask()
-        {
-            return LayerMask.GetMask(
-                "Default",      // lots of static objects were this
-                //"TransparentFX",
-                //"Ignore Raycast",
-                "Reflections",
-                "Water",
-                //"UI",
-                "PhysicObject",
-                "Mirror",
-                //"LightProbeVolume",
-                //"Touch",
-                //"DroppedItem",
-                //"MovingItem",
-                //"PlayerLocomotionObject",
-                //"Ragdoll",
-                //"LiquidFlow",
-                //"LocomotionOnly",     // this is invisible barriers, like the invisible ceiling of a map
-                "SpectatorHide",
-                "NoLocomotion",     // various environment items where this (rocks, walls)
-                //"Highlighter",
-                //"LoadingCamera",
-                //"SkyDome",
-                "MovingObjectOnly",
-                //"PlayerLocomotion",
-                //"BodyLocomotion",
-                "ItemAndRagdollOnly"
-                //"TouchObject"
-                //"Avatar",
-                //"NPC",
-                //"FPVHide",
-                //"Zone"
-                //"ObjectViewer"
-                //"PlayerHandAndFoot"
-                );
-        }
 
         private static Ray[][] GetIcosahedrons()
         {
