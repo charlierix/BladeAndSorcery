@@ -73,6 +73,15 @@ namespace Jetpack.DebugCode
             //Player.characterData.calibration.height
 
 
+            // TODO: this function seems to be doing several sets:
+            //  Player.local.transform.localScale
+            //  Player.local.creature.morphology.height
+            //  Player.local.creature.morphology.<everything else>
+            //
+            // are all three really needed?
+
+
+
             // This is the parent to most of the player
             Player.local.transform.localScale = new Vector3(scale, scale, scale);
 
@@ -91,7 +100,9 @@ namespace Jetpack.DebugCode
                     armsLength = _origScale.Morphology.armsLength * scale,
                     armsHeight = _origScale.Morphology.armsHeight * scale,
                     armsToEyesHeight = _origScale.Morphology.armsToEyesHeight * scale,
+                    
                     height = _origScale.Morphology.height * scale,
+                    
                     legsLength = _origScale.Morphology.legsLength * scale,
                     legsSpacing = _origScale.Morphology.legsSpacing * scale,
                     upperLegsHeight = _origScale.Morphology.upperLegsHeight * scale,

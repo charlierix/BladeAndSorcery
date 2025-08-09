@@ -61,6 +61,9 @@ namespace Jetpack.FlightProcessing
                 Player.crouchOnJump = _standardState.CrouchOnJump;
                 GameManager.options.allowStickJump = _standardState.StickJump;
             }
+
+            _confinedScanner.Clear();
+            _obstacleAvoidance.Clear();
         }
 
         public void Update(float drag, float horz_accel, float vert_accel, float gravity)

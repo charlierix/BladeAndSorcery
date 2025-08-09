@@ -58,8 +58,7 @@ namespace PerfectlyNormalBaS
 
         private void Start()
         {
-            //_renderer = new DebugRenderer3D();
-            _renderer = gameObject.AddComponent<DebugRenderer3D>();
+            _renderer = DebugRenderer3D.GetOrAddDebugRenderer3D();
 
             Refresh();
         }

@@ -1,4 +1,5 @@
 using PerfectlyNormalBaS;
+using System;
 using ThunderRoad;
 using UnityEngine;
 
@@ -18,7 +19,7 @@ namespace Jetpack.DebugCode
             if (_renderer == null)
             {
                 Debug.Log("Wiring up DebugRenderer3D");
-                _renderer = Player.local.gameObject.AddComponent<DebugRenderer3D>();
+                _renderer = DebugRenderer3D.GetOrAddDebugRenderer3D();
                 Debug.Log("Wired up DebugRenderer3D");
             }
 
@@ -30,6 +31,15 @@ namespace Jetpack.DebugCode
 
             // Uses debug renderer to spawn a static dot
             SpawnDot4();
+        }
+
+        public void RemoveVisuals()
+        {
+            if (_renderer != null) 
+            {
+                _renderer.Clear();
+                _renderer = null;
+            }
         }
 
         private void SpawnDot()

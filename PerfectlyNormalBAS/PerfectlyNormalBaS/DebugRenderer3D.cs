@@ -20,7 +20,9 @@ namespace PerfectlyNormalBaS
     /// To use this from one of your scripts:
     ///     DebugRenderer3D _debug;
     ///     _debug = gameObject.AddComponent{DebugRenderer3D}();
-    ///     
+    /// 
+    ///     or use DebugRenderer3D.GetOrAddDebugRenderer3D(Player.local.gameObject);        // use this if multiple mods will possibly try to draw at the same time
+    /// 
     ///     Then just start calling add methods
     /// </remarks>
     public class DebugRenderer3D : MonoBehaviour
@@ -56,6 +58,18 @@ namespace PerfectlyNormalBaS
                 else if (item.RelativeToGameObject != null)
                     item.Object.transform.position = item.RelativeToGameObject.transform.position + item.Position;
             }
+        }
+
+        public static DebugRenderer3D GetOrAddDebugRenderer3D(GameObject gameobject = null)
+        {
+            if (gameobject == null)
+                gameobject = Player.local.gameObject;
+
+            DebugRenderer3D retVal = gameobject.GetComponent<DebugRenderer3D>();
+            if (retVal == null)
+                retVal = gameobject.AddComponent<DebugRenderer3D>();
+
+            return retVal;
         }
 
         public DebugItem AddAxisLines(float length, float thickness, bool isBasic = true, Component relativeToComponent = null, GameObject relativeToGameObject = null)

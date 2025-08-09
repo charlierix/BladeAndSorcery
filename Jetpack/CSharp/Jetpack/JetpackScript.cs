@@ -227,11 +227,19 @@ namespace Jetpack
         };
 
         // NOTE: these OnClick functions always get called when the mod first loads
+        private static bool _onApplyScale_called = false;
+
         [ModOptionCategory(CATEGORY_SCALE, ORDER_SCALE)]
         [ModOptionButton]
         [ModOption("Set scale to current settings", null, nameof(scaleApplyButtonLabel), order = 4)]
         public static void OnApplyScale(string value)
         {
+            if (!_onApplyScale_called)
+            {
+                _onApplyScale_called = true;
+                return;
+            }
+
             ScaleAdjuster.ApplyScale(playerScale / 100, ScaleSetMorphology, ScaleSetRagdoll);
         }
 
@@ -240,11 +248,19 @@ namespace Jetpack
             new ModOptionString("Default Scale", "DefaultScale")
         };
 
+        private static bool _onRevertScale_called = false;
+
         [ModOptionCategory(CATEGORY_SCALE, ORDER_SCALE)]
         [ModOptionButton]
         [ModOption("Put scale back to normal", null, nameof(scaleRevertButtonLabel), order = 5)]
         public static void OnRevertScale(string value)
         {
+            if (!_onRevertScale_called)
+            {
+                _onRevertScale_called = true;
+                return;
+            }
+
             ScaleAdjuster.RevertScale();
         }
 
@@ -256,11 +272,19 @@ namespace Jetpack
         };
 
         // NOTE: these OnClick functions always get called when the mod first loads
+        private static bool _onMakeInvisible_called = false;
+
         [ModOptionCategory(CATEGORY_VISIBILITY, ORDER_VISIBILITY)]
         [ModOptionButton]
         [ModOption("Make Invisible", null, nameof(visibilityInvisibleButtonLabel), order = 4)]
         public static void OnMakeInvisible(string value)
         {
+            if (!_onMakeInvisible_called)
+            {
+                _onMakeInvisible_called = true;
+                return;
+            }
+
             PlayerVisibility.MakeInvisible();
         }
 
@@ -269,11 +293,19 @@ namespace Jetpack
             new ModOptionString("Make Visible", "MakeVisible")
         };
 
+        private static bool _onMakeVisible_called = false;
+
         [ModOptionCategory(CATEGORY_VISIBILITY, ORDER_VISIBILITY)]
         [ModOptionButton]
         [ModOption("Make Visible", null, nameof(visibilityVisibleButtonLabel), order = 5)]
         public static void OnMakeVisible(string value)
         {
+            if (!_onMakeVisible_called)
+            {
+                _onMakeVisible_called = true;
+                return;
+            }
+
             PlayerVisibility.MakeVisible();
         }
 
@@ -301,15 +333,44 @@ namespace Jetpack
         private VisualizePlayerPoints _visualizePlayerPoints = new VisualizePlayerPoints();
         private ScaleAdjuster _scaleAdjuster = new ScaleAdjuster();
 
+        private bool _isPlayerSpawned = false;
+
         public override void ScriptLoaded(ModManager.ModData modData)
         {
             base.ScriptLoaded(modData);
 
             //MaterialShaderFinder.Report();
+
+            Player.onSpawn += Player_onSpawn;
+            Player.onDespawn += Player_onDespawn;
         }
+
+        private void Player_onSpawn(Player player)
+        {
+            _isPlayerSpawned = true;
+
+            if(Player.local != null)
+            {
+                Debug.Log("showing morphology");
+                Player.local.showMorphology = true;
+            }
+        }
+        private void Player_onDespawn(Player player)
+        {
+            _isPlayerSpawned = false;
+
+            _debugVisuals.RemoveVisuals();
+            _visualizePlayerPoints.Clear();
+
+            DeactivateFly();
+        }
+
         public override void ScriptUpdate()
         {
             base.ScriptUpdate();
+
+            if (!_isPlayerSpawned || Player.local == null)
+                return;
 
             _visualizePlayerPoints.Update(VisualizePlayerPoints, playerScale / 100);
 

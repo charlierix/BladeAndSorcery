@@ -24,6 +24,7 @@ namespace Jetpack.Scanning
         private const float TEXT_HEIGHT = 0.06f;
 
         private DebugRenderer3D _renderer = null;
+        private GameObject _gameobject_rendererused = null;
 
         private DebugItem _vel_text = null;
         private DebugItem _vel_line = null;
@@ -52,6 +53,15 @@ namespace Jetpack.Scanning
 
         public Vector3? GetGroundAccel(ThunderRoad.Locomotion loco)
         {
+            if(SHOWDEBUG)
+            {
+                if(_gameobject_rendererused != null && _gameobject_rendererused != Player.local.gameObject)
+                {
+                    Debug.Log("swapping debug renderer");
+                    ClearDebugVisuals();
+                }
+            }
+
             if (!JetpackScript.ShouldRepelGround)
             {
                 if (SHOWDEBUG)
@@ -117,13 +127,20 @@ namespace Jetpack.Scanning
             return accel;
         }
 
+        public void Clear()
+        {
+            ClearDebugVisuals();
+        }
+
         #region Private Methods - Debug Drawing
 
         private void EnsureDebugActive()
         {
             if (_renderer == null)
-                //_renderer = Player.local.gameObject.AddComponent<DebugRenderer3D>();
-                _renderer = new DebugRenderer3D();
+            {
+                _renderer = DebugRenderer3D.GetOrAddDebugRenderer3D();
+                _gameobject_rendererused = Player.local.gameObject;
+            }
         }
 
         private void ClearDebugVisuals()
@@ -191,6 +208,8 @@ namespace Jetpack.Scanning
                 _renderer.Remove(_accel_text);
                 _accel_text = null;
             }
+
+            _renderer = null;
         }
 
         private void DrawVelocity(Vector3 pos, Vector3 velocity)

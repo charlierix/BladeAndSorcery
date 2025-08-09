@@ -10,7 +10,7 @@ namespace Jetpack.DebugCode
 {
     // Will make the player visible / invisible.  Got code from here (Jenix106):
     // https://www.nexusmods.com/bladeandsorcery/mods/8366
-    public class PlayerVisibility
+    public static class PlayerVisibility
     {
         public static void MakeInvisible()
         {

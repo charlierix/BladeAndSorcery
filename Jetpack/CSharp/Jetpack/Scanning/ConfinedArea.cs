@@ -72,6 +72,8 @@ namespace Jetpack.Scanning
         {
             ConfinedPercent = 0.5f;
             _prev_tick = DateTime.UtcNow;
+
+            ClearDebugVisuals();
         }
 
         #region Private Methods - fire rays
@@ -170,7 +172,7 @@ namespace Jetpack.Scanning
         private void EnsureDrawingSetup()
         {
             if (_renderer == null)
-                _renderer = Player.local.gameObject.AddComponent<DebugRenderer3D>();
+                _renderer = DebugRenderer3D.GetOrAddDebugRenderer3D();
 
             if (_rayvisual_lines == null)
                 _rayvisual_lines = new List<DebugItem>();
@@ -180,6 +182,28 @@ namespace Jetpack.Scanning
 
             if (_rayHitColors == null)
                 _rayHitColors = new Dictionary<int, Color>();
+        }
+
+        private void ClearDebugVisuals()
+        {
+            if (_renderer == null)
+                return;
+
+            if (_rayvisual_lines != null)
+            {
+                foreach (var line in _rayvisual_lines)
+                    _renderer.Remove(line);
+
+                _rayvisual_lines.Clear();
+            }
+
+            if(_rayvisual_hits != null)
+            {
+                foreach(var hit in _rayvisual_hits)
+                    _renderer.Remove(hit);
+
+                _rayvisual_hits.Clear();
+            }
         }
 
         private void StartDrawingRays()
@@ -300,7 +324,7 @@ namespace Jetpack.Scanning
         {
             int index = 0;
 
-            while(index < items.Count)
+            while (index < items.Count)
             {
                 if (items[index].Object == null)
                 {

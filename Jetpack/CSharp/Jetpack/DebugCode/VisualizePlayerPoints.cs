@@ -40,7 +40,7 @@ namespace Jetpack.DebugCode
                 return;
 
             if (_renderer == null)
-                _renderer = new DebugRenderer3D();
+                _renderer = DebugRenderer3D.GetOrAddDebugRenderer3D();
 
             // --------------- room ---------------
 
@@ -78,6 +78,57 @@ namespace Jetpack.DebugCode
             //UpdateDot(ref _head_pos, Player.local.head.anchor.position, UtilityColor.FromHex("C0CCD9"));      // this would block the view, using lines instead
             UpdateLine(ref _head_line1, Player.local.handLeft.root.position, Player.local.head.anchor.position, UtilityColor.FromHex("C0CCD9"), scale);
             UpdateLine(ref _head_line2, Player.local.handRight.root.position, Player.local.head.anchor.position, UtilityColor.FromHex("C0CCD9"), scale);
+        }
+
+        public void Clear()
+        {
+            if (_renderer == null)
+                return;
+
+            if (_player_pos != null)
+                _renderer.Remove(_player_pos);
+
+            _player_pos = null;
+
+            if (_lefthand_pos != null)
+                _renderer.Remove(_lefthand_pos);
+
+            _lefthand_pos = null;
+
+            if (_righthand_pos != null)
+                _renderer.Remove(_righthand_pos);
+
+            _righthand_pos = null;
+
+            if (_leftfoot_pos != null)
+                _renderer.Remove(_leftfoot_pos);
+
+            _leftfoot_pos = null;
+
+            if (_rightfoot_pos != null)
+                _renderer.Remove(_rightfoot_pos);
+
+            _rightfoot_pos = null;
+
+            if (_waist_pos != null)
+                _renderer.Remove(_waist_pos);
+
+            _waist_pos = null;
+
+            if (_head_pos != null)
+                _renderer.Remove(_head_pos);
+
+            _head_pos = null;
+
+            if (_head_line1 != null)
+                _renderer.Remove(_head_line1);
+
+            _head_line1 = null;
+
+            if (_head_line2 != null)
+                _renderer.Remove(_head_line2);
+
+            _head_line2 = null;
         }
 
         private void UpdateDot(ref DebugItem item, Vector3 pos, Color color, float scale)
