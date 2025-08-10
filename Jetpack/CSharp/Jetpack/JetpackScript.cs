@@ -179,6 +179,12 @@ namespace Jetpack
         [ModOptionFloatValues(4, 60, 0.25f)]
         public static float RepelGround_InverseSqr_C = 20;
 
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Max Upward Speed", tooltip: "stop accelerating upward beyond this speed (to avoid excessive pop up speeds)", order = 8)]
+        [ModOptionFloatValues(0, 2, 0.05f)]
+        public static float RepelGround_UpSpeed_ZeroAccel = 1;
+
         // ******************** Flight Properties ********************
 
         [ModOptionCategory(CATEGORY_FLIGHTPROPS, ORDER_FLIGHTPROPS)]

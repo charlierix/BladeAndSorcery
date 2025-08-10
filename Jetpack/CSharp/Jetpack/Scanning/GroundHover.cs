@@ -53,9 +53,9 @@ namespace Jetpack.Scanning
 
         public Vector3? GetGroundAccel(ThunderRoad.Locomotion loco)
         {
-            if(SHOWDEBUG)
+            if (SHOWDEBUG)
             {
-                if(_gameobject_rendererused != null && _gameobject_rendererused != Player.local.gameObject)
+                if (_gameobject_rendererused != null && _gameobject_rendererused != Player.local.gameObject)
                 {
                     Debug.Log("swapping debug renderer");
                     ClearDebugVisuals();
@@ -104,7 +104,7 @@ namespace Jetpack.Scanning
             if (SHOWDEBUG)
             {
                 DrawFootPos(foot_pos);
-                DrawVelocity(foot_pos, velocity);
+                DrawVelocity(foot_pos, velocity, vel_horz, vel_vert);
                 DrawHeightScale(height, scale);
                 DrawRays(rays.rays, rays.len, hits);
                 DrawAvgHit(avg_hit.has_hit, avg_hit.avg_from, avg_hit.avg_to, avg_hit.percent);
@@ -116,10 +116,6 @@ namespace Jetpack.Scanning
                     RemoveAccel();
                 return null;
             }
-
-
-            // TODO: reduce to zero at a certain upward speed (don't want it popping the player up).  Also allows the accels to be much stronger and won't make the player fly off
-
 
             // Increase accel based on distance, speed, strength
             Vector3? accel = GetAccel(avg_hit.avg_from, avg_hit.avg_to, avg_hit.percent, vel_vert, rays.len);
@@ -212,14 +208,14 @@ namespace Jetpack.Scanning
             _renderer = null;
         }
 
-        private void DrawVelocity(Vector3 pos, Vector3 velocity)
+        private void DrawVelocity(Vector3 pos, Vector3 velocity, Vector3 vel_horz, Vector3 vel_vert)
         {
             EnsureDebugActive();
 
             if (_vel_line == null)
                 _vel_line = _renderer.AddLine_Basic(pos, pos + velocity, LINE_THICKNESS, Color.yellow);
 
-            string text = $"{velocity.magnitude.ToStringSignificantDigits(3)} - {velocity.ToStringSignificantDigits(1)}";
+            string text = $"vel: {velocity.ToStringSignificantDigits(1)}{Environment.NewLine}speed: {velocity.magnitude.ToStringSignificantDigits(3)}{Environment.NewLine}speed horz: {vel_horz.magnitude.ToStringSignificantDigits(3)}{Environment.NewLine}speed vert: {vel_vert.magnitude.ToStringSignificantDigits(3)}";
 
             #region draw head orientation
 
@@ -244,7 +240,7 @@ namespace Jetpack.Scanning
                 Player.local.head.transform.up * -0.33f;
 
             if (_vel_text == null)
-                _vel_text = _renderer.AddText(text, text_pos, Player.local.head.transform.forward, Color.yellow, Color.black, TEXT_HEIGHT);
+                _vel_text = _renderer.AddText(text, text_pos, Player.local.head.transform.forward, Color.yellow, Color.black, TEXT_HEIGHT * 4);
 
             DebugRenderer3D.AdjustLinePositions(_vel_line, pos, pos + velocity);
             _vel_text.Object.transform.position = text_pos;
@@ -391,7 +387,7 @@ namespace Jetpack.Scanning
             Vector3 text_pos = Player.local.head.anchor.position +
                 Player.local.head.transform.forward * 1.5f +
                 Player.local.head.transform.right * -0.75f; //+
-                //Player.local.head.transform.up * -0.33f;
+                                                            //Player.local.head.transform.up * -0.33f;
 
             Vector3 total = linear + inverse + invsqr;
 
@@ -520,6 +516,13 @@ namespace Jetpack.Scanning
 
         private Vector3? GetAccel(Vector3 ray_origin, Vector3 hit_pos, float percent, Vector3 vel_vert, float max_dist)
         {
+            bool is_up = Vector3.Dot(vel_vert, Vector3.up) > 0;
+
+            float speed_vert = vel_vert.magnitude;      // this should just be velocity.y, but doing it the hard way
+
+            if (is_up && speed_vert > JetpackScript.RepelGround_UpSpeed_ZeroAccel)
+                return null;
+
             Vector3 direction = Vector3.up;
 
             float distance = (hit_pos - ray_origin).magnitude;
@@ -536,7 +539,17 @@ namespace Jetpack.Scanning
             if (SHOWDEBUG)
                 DrawAccel(linear, inverse, invsqr, percent);
 
-            return (linear + inverse + invsqr) * percent;
+            Vector3 retVal = (linear + inverse + invsqr) * percent;
+
+            // Limit the accel when velocity is upward.  The player should land softly near but not touching the ground,
+            // the player shouldn't be flung back up in the air
+            if (is_up)
+            {
+                float up_reduce_perc = UtilityMath.GetScaledValue_Capped(0, 1, max_dist, 0, speed_vert);
+                retVal *= up_reduce_perc;
+            }
+
+            return retVal;
         }
 
         // Force climbs linearly from 0 to max
