@@ -12,7 +12,7 @@ namespace Jetpack.FlightProcessing
     {
         private FlightData _standardState = null;
         private ConfinedArea _confinedScanner = null;
-        private GroundHover _groundHover = null;
+        private RepelGround _groundHover = null;
 
         private float _last_applied_drag = -1;
 
@@ -43,7 +43,7 @@ namespace Jetpack.FlightProcessing
 
             // Obstacle Avoidance
             if (_groundHover == null)
-                _groundHover = new GroundHover();
+                _groundHover = new RepelGround();
         }
         public void Deactivate()
         {

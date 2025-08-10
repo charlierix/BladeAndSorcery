@@ -13,7 +13,7 @@ namespace Jetpack.Scanning
 
     // TODO: make separate classes for hover vs obstacle avoidance
 
-    public class GroundHover
+    public class RepelGround
     {
         #region debug drawing vars
 

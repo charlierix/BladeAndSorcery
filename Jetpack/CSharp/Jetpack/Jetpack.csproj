@@ -44,7 +44,7 @@
     <Compile Include="DebugCode\PlayerVisibility.cs" />
     <Compile Include="DebugCode\ScaleAdjuster.cs" />
     <Compile Include="DebugCode\VisualizePlayerPoints.cs" />
-    <Compile Include="Scanning\GroundHover.cs" />
+    <Compile Include="Scanning\RepelGround.cs" />
     <Compile Include="JetpackScript.cs" />
     <Compile Include="Models\ScaleData.cs" />
     <Compile Include="PlaySounds.cs" />
