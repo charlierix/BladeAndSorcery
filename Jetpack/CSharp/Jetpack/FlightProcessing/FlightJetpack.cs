@@ -12,7 +12,7 @@ namespace Jetpack.FlightProcessing
     {
         private FlightData _standardState = null;
         private ConfinedArea _confinedScanner = null;
-        private ObstacleAvoidance _obstacleAvoidance = null;
+        private GroundHover _groundHover = null;
 
         private float _last_applied_drag = -1;
 
@@ -42,8 +42,8 @@ namespace Jetpack.FlightProcessing
             _confinedScanner.Clear();
 
             // Obstacle Avoidance
-            if (_obstacleAvoidance == null)
-                _obstacleAvoidance = new ObstacleAvoidance();
+            if (_groundHover == null)
+                _groundHover = new GroundHover();
         }
         public void Deactivate()
         {
@@ -63,7 +63,7 @@ namespace Jetpack.FlightProcessing
             }
 
             _confinedScanner.Clear();
-            _obstacleAvoidance.Clear();
+            _groundHover.Clear();
         }
 
         public void Update(float drag, float horz_accel, float vert_accel, float gravity)
@@ -124,7 +124,7 @@ namespace Jetpack.FlightProcessing
 
         private void AvoidObstacles(Locomotion loco)
         {
-            Vector3? accel = _obstacleAvoidance.GetGroundAccel(loco);
+            Vector3? accel = _groundHover.GetGroundAccel(loco);
             if (accel != null)
                 loco.physicBody.AddForce(accel.Value, ForceMode.Acceleration);
         }
