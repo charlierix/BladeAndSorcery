@@ -4,14 +4,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ThunderRoad;
-using ThunderRoad.AI.Decorator;
-using ThunderRoad.DebugViz;
 using UnityEngine;
 
 namespace Jetpack.Scanning
 {
 
     // TODO: make separate classes for hover vs obstacle avoidance
+
+
+    // this shouldn't be hardcoded to vector.up, it should be against the hit's normal
+
+    // if the normals aren't enough, a small extra speed mult for vel_horz should be added (that will make it impossible to go through doors at high speed, so should be avoided)
+
 
     public class RepelGround
     {
@@ -87,11 +91,15 @@ namespace Jetpack.Scanning
             Vector3 vel_horz = velocity.GetProjectedVector(_horz);
             Vector3 vel_vert = velocity.GetProjectedVector(Vector3.up);
 
+            float speed_vert = vel_vert.magnitude;
+            if(Vector3.Dot(vel_vert, Vector3.up) < 0)
+                speed_vert *= -1;
+
             float height = Player.local.creature.morphology?.height ?? 1.5f;
             Vector3 scale_vect = Player.local.transform.localScale;
             float scale = Math1D.Avg(scale_vect.x, scale_vect.y, scale_vect.z);
 
-            var rays = GetRays(foot_pos, vel_horz, height, scale);
+            var rays = GetRays(foot_pos, vel_horz, height, scale, speed_vert);
 
             Vector3?[] hits = FireRays(rays.rays, rays.len);
 
@@ -118,7 +126,7 @@ namespace Jetpack.Scanning
             }
 
             // Increase accel based on distance, speed, strength
-            Vector3? accel = GetAccel(avg_hit.avg_from, avg_hit.avg_to, avg_hit.percent, vel_vert, rays.len);
+            Vector3? accel = GetAccel(avg_hit.avg_from, avg_hit.avg_to, avg_hit.percent, vel_vert, rays.len, speed_vert);
 
             return accel;
         }
@@ -421,10 +429,16 @@ namespace Jetpack.Scanning
         #endregion
         #region Private Methods
 
-        private static (Ray[] rays, float len) GetRays(Vector3 foot_pos, Vector3 vel_horz, float height, float scale)
+        private static (Ray[] rays, float len) GetRays(Vector3 foot_pos, Vector3 vel_horz, float height, float scale, float speed_vert)
         {
+            // When traveling downward quickly, there needs to be more room to slow down
+            // When there is no vertical speed down, the distance should be small so the player can float close to the ground (get through doors, interact with npcs)
+            float dist_increase = speed_vert < 0 ?
+                JetpackScript.RepelGround_VertSpeedDistMult * Math.Abs(speed_vert) :
+                0f;
+
             // Figure out ray length (some combination of down velocity and player's height * scale)
-            float ray_len = height * scale * JetpackScript.RepelGround_MaxDistance;
+            float ray_len = dist_increase + (height * scale * JetpackScript.RepelGround_MaxDistance);
 
             // When the distance is small, one ray is enough
             if (vel_horz.sqrMagnitude < 1f * 1f)
@@ -514,11 +528,9 @@ namespace Jetpack.Scanning
             return (true, avg1, avg2, (float)length / (float)hits.Length);
         }
 
-        private Vector3? GetAccel(Vector3 ray_origin, Vector3 hit_pos, float percent, Vector3 vel_vert, float max_dist)
+        private Vector3? GetAccel(Vector3 ray_origin, Vector3 hit_pos, float percent, Vector3 vel_vert, float max_dist, float speed_vert)
         {
-            bool is_up = Vector3.Dot(vel_vert, Vector3.up) > 0;
-
-            float speed_vert = vel_vert.magnitude;      // this should just be velocity.y, but doing it the hard way
+            bool is_up = speed_vert > 0;
 
             if (is_up && speed_vert > JetpackScript.RepelGround_UpSpeed_ZeroAccel)
                 return null;
