@@ -10,11 +10,20 @@ namespace Jetpack.FlightProcessing
 {
     public class FlightJetpack
     {
+        private readonly RayCastStorage _raycast_storage;
+        private readonly ConfinedArea _confinedScanner;
+        private readonly RepelGround _repelGround;
+
         private FlightData _standardState = null;
-        private ConfinedArea _confinedScanner = null;
-        private RepelGround _groundHover = null;
 
         private float _last_applied_drag = -1;
+
+        public FlightJetpack(RayCastStorage raycast_storage)
+        {
+            _raycast_storage = raycast_storage;
+            _confinedScanner = new ConfinedArea(_raycast_storage);
+            _repelGround = new RepelGround(_raycast_storage);
+        }
 
         public void Activate(float drag)
         {
@@ -36,14 +45,7 @@ namespace Jetpack.FlightProcessing
             //GameManager.options.allowStickJump = false;       // this doesn't seem to affect anything
 
             // Reset scanner
-            if (_confinedScanner == null)
-                _confinedScanner = new ConfinedArea();
-
             _confinedScanner.Clear();
-
-            // Obstacle Avoidance
-            if (_groundHover == null)
-                _groundHover = new RepelGround();
         }
         public void Deactivate()
         {
@@ -63,7 +65,7 @@ namespace Jetpack.FlightProcessing
             }
 
             _confinedScanner.Clear();
-            _groundHover.Clear();
+            _repelGround.Clear();
         }
 
         public void Update(float drag, float horz_accel, float vert_accel, float gravity)
@@ -76,7 +78,11 @@ namespace Jetpack.FlightProcessing
                 _last_applied_drag = drag;
             }
 
-            _confinedScanner.Update(12, 1, 1.75f);
+            _raycast_storage.Clear();
+            _confinedScanner.Update_CastRays(12, 1, 1.75f);
+            _repelGround.Update_CastRays(loco);
+
+            _confinedScanner.Update_Finish();
             float percent_accel = UtilityMath.GetScaledValue_Capped(0.25f, 1f, 1f, 0f, _confinedScanner.ConfinedPercent);
 
             DestabilizeHeldNPC(Player.local.handLeft);
@@ -124,7 +130,7 @@ namespace Jetpack.FlightProcessing
 
         private void AvoidObstacles(Locomotion loco)
         {
-            Vector3? accel = _groundHover.GetGroundAccel(loco);
+            Vector3? accel = _repelGround.GetGroundAccel(loco);
             if (accel != null)
                 loco.physicBody.AddForce(accel.Value, ForceMode.Acceleration);
         }

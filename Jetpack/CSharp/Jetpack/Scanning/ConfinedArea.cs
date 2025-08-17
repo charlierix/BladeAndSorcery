@@ -5,7 +5,6 @@ using System.Linq;
 using ThunderRoad;
 using Unity.Mathematics;
 using UnityEngine;
-using static ThunderRoad.ItemMagicAreaProjectile;
 
 namespace Jetpack.Scanning
 {
@@ -36,6 +35,14 @@ namespace Jetpack.Scanning
         /// </summary>
         private static Lazy<Ray[][]> _icos = new Lazy<Ray[][]>(() => GetIcosahedrons());
 
+        private readonly RayCastStorage _raycast_storage;
+
+        // These are set each time _raycast_storage is updated with ray cast results (values used between
+        // Update_CastRays and Update_Finish
+        private float _ray_min_len;
+        private float _ray_max_len;
+        private float _ray_gain_factor;
+
         private DateTime _prev_tick = DateTime.UtcNow;
 
         // Debug Visuals
@@ -46,25 +53,37 @@ namespace Jetpack.Scanning
         private List<DebugItem> _rayvisual_hits = null;
         private Dictionary<int, Color> _rayHitColors = null;
 
-        public void Update(float ray_length, float player_scale, float gain_factor)
+        public ConfinedArea(RayCastStorage raycast_storage)
+        {
+            _raycast_storage = raycast_storage;
+        }
+
+        public void Update_CastRays(float ray_length, float player_scale, float gain_factor)
         {
             // Adjust the ray length based on the player's scale
             var raylengths = GetRayMinMax(ray_length, player_scale);
 
+            _ray_min_len = raylengths.min;
+            _ray_max_len = raylengths.max;
+            _ray_gain_factor = gain_factor;
+
+            // Fire rays, store results
+            FireRays(raylengths.min, raylengths.max);
+        }
+        public void Update_Finish()
+        {
             // Fire rays and get an average percent of how confined the area is
-            float how_blocked = GetHowBlocked(raylengths.min, raylengths.max);
+            float how_blocked = GetHowBlocked(_ray_min_len, _ray_max_len);
 
             // Pull the new value toward the current how_blocked value
             DateTime now = DateTime.UtcNow;
 
-            ConfinedPercent = GetNewConfinedSpace(ConfinedPercent, how_blocked, gain_factor, (float)(now - _prev_tick).TotalSeconds);
+            ConfinedPercent = GetNewConfinedSpace(ConfinedPercent, how_blocked, _ray_gain_factor, (float)(now - _prev_tick).TotalSeconds);
 
             _prev_tick = now;
 
 
-            // TODO: visual of ConfinedPercent
-            // Ideally, a text label with color border
-            // Otherwise, some dots that emulate a progress bar
+            // TODO: visual of ConfinedPercent (a text label with color border)
 
         }
 
@@ -78,10 +97,42 @@ namespace Jetpack.Scanning
 
         #region Private Methods - fire rays
 
-        private float GetHowBlocked(float min_len, float max_len)
+        private void FireRays(float min_len, float max_len)
         {
             //Ray[] rays = _icos.Value[0];
             Ray[] rays = GetRandomRayBall();
+
+            var results = new RayCastStorage.RayInfo[rays.Length];
+
+            Vector3 pos = Player.local.transform.position;      // TODO: put this on the player
+
+            for (int i = 0; i < rays.Length; i++)
+            {
+                results[i] = new RayCastStorage.RayInfo()
+                {
+                    Origin = pos + rays[i].origin,
+                    Direction = rays[i].direction,
+                    MaxLen = max_len,
+                };
+
+                if (Physics.Raycast(pos + rays[i].origin, rays[i].direction, out RaycastHit hit, max_len, ScanningUtil.SolidObject_LayerMask.Value, QueryTriggerInteraction.Ignore))
+                    results[i].Hit = hit;
+            }
+
+            _raycast_storage.AddRayCasts(
+                RayCastStorage.RayCategory.ConfinedArea_Ico,
+                new RayCastStorage.RayCastBundle
+                {
+                    Rays = results,
+                });
+        }
+
+        private float GetHowBlocked(float min_len, float max_len)
+        {
+            var rays = _raycast_storage.GetRayCasts(RayCastStorage.RayCategory.ConfinedArea_Ico);
+
+            if (rays == null || rays.Length == 0)
+                return 0;
 
             float sum_score = 0;
 
@@ -90,8 +141,8 @@ namespace Jetpack.Scanning
             if (SHOULD_DRAW)
                 StartDrawingRays();
 
-            for (int i = 0; i < rays.Length; i++)
-                sum_score += FireRay(pos, rays[i], min_len, max_len);
+            for (int i = 0; i < rays[0].Rays.Length; i++)
+                sum_score += ExamineRay(pos, rays[0].Rays[i], min_len, max_len);
 
             if (SHOULD_DRAW)
                 FinishedDrawingRays();
@@ -133,6 +184,44 @@ namespace Jetpack.Scanning
             {
                 if (SHOULD_DRAW)
                     DrawRay(pos + ray.origin, ray.direction, max_len, null, 0);
+
+                return 0;
+            }
+        }
+        private float ExamineRay(Vector3 pos, RayCastStorage.RayInfo ray, float min_len, float max_len)
+        {
+            // paste this into desmos
+            // e^{-\left(mx\right)^{2}}\cdot\left(1-x^{o}\right)
+
+            const float GAUSS_PINCH = 1.6f;
+            const float CLAMP_POW = 2;
+
+            if (ray.Hit != null)
+            {
+                float dist_sqr = (ray.Hit.Value.point - pos).sqrMagnitude;      // don't want to use hit.distance, since the ray is from pos + ray.origin
+
+                if (dist_sqr <= min_len * min_len)
+                    return 1;
+
+                float dist = math.sqrt(dist_sqr) / max_len;     // need to make it between 0 and 1
+
+                float mx = GAUSS_PINCH * dist;
+                float gauss = math.exp(-(mx * mx));
+
+                float clamp = 1 - math.pow(dist, CLAMP_POW);
+
+                if (SHOULD_DRAW)
+                    //DrawRay(pos + ray.origin, ray.direction, max_len, ray.Hit.Value, gauss * clamp);
+                    DrawRay2(pos + ray.Origin, ray.Direction, max_len, ray.Hit.Value, gauss * clamp);
+
+                //Debug.Log($"FireRay dist: {dist.ToStringSignificantDigits(2)}, retVal: {(gauss * clamp).ToStringSignificantDigits(3)}");
+
+                return gauss * clamp;
+            }
+            else
+            {
+                if (SHOULD_DRAW)
+                    DrawRay(pos + ray.Origin, ray.Direction, max_len, null, 0);
 
                 return 0;
             }
@@ -197,9 +286,9 @@ namespace Jetpack.Scanning
                 _rayvisual_lines.Clear();
             }
 
-            if(_rayvisual_hits != null)
+            if (_rayvisual_hits != null)
             {
-                foreach(var hit in _rayvisual_hits)
+                foreach (var hit in _rayvisual_hits)
                     _renderer.Remove(hit);
 
                 _rayvisual_hits.Clear();

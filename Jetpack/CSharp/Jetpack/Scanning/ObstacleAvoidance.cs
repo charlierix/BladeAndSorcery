@@ -20,6 +20,13 @@ namespace Jetpack.Scanning
         // if about to brush along a wall, do a slight push away from the wall
         //  this will be a modification of low flying v
 
+        public void Update_CastRays()
+        {
 
+        }
+        public void Update_Finish()
+        {
+
+        }
     }
 }

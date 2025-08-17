@@ -19,6 +19,8 @@ namespace Jetpack.Scanning
 
     public class RepelGround
     {
+        #region Declaration Section
+
         #region debug drawing vars
 
         private const bool SHOWDEBUG = true;
@@ -55,25 +57,31 @@ namespace Jetpack.Scanning
 
         private static Triangle _horz = new Triangle(Vector3.right, Vector3.zero, Vector3.forward);
 
-        public Vector3? GetGroundAccel(ThunderRoad.Locomotion loco)
+        private readonly RayCastStorage _raycast_storage;
+
+        // These get reset each time Update_CastRays, and are then used by the corresponding call to GetGroundAccel
+        private Vector3 _velocity;
+        private Vector3 _vel_horz;
+        private Vector3 _vel_vert;
+        private float _speed_vert;
+        private Vector3 _foot_pos;
+        private float _height;
+        private float _scale;
+        private float _ray_len;
+
+        #endregion
+
+        public RepelGround(RayCastStorage raycast_storage)
         {
-            if (SHOWDEBUG)
-            {
-                if (_gameobject_rendererused != null && _gameobject_rendererused != Player.local.gameObject)
-                {
-                    Debug.Log("swapping debug renderer");
-                    ClearDebugVisuals();
-                }
-            }
+            _raycast_storage = raycast_storage;
+        }
 
+        public void Update_CastRays(ThunderRoad.Locomotion loco)
+        {
             if (!JetpackScript.ShouldRepelGround)
-            {
-                if (SHOWDEBUG)
-                    ClearDebugVisuals();
-                return null;
-            }
+                return;
 
-            Vector3 velocity = loco.physicBody.velocity;
+            _velocity = loco.physicBody.velocity;
 
             // NOTE: removing this check, hover could still be needed if going slightly up, like encountering a cliff
             // Check if traveling downward
@@ -85,36 +93,76 @@ namespace Jetpack.Scanning
             //}
 
             // Figure how ray start point (player's feet)
-            Vector3 foot_pos = Math3D.GetAverage(Player.local.footLeft.ragdollFoot.root.position, Player.local.footRight.ragdollFoot.root.position);        // Player.local.transform.position is the room level origin
+            _foot_pos = Math3D.GetAverage(Player.local.footLeft.ragdollFoot.root.position, Player.local.footRight.ragdollFoot.root.position);        // Player.local.transform.position is the room level origin
 
             // Split velocity into horizontal and vertical components
-            Vector3 vel_horz = velocity.GetProjectedVector(_horz);
-            Vector3 vel_vert = velocity.GetProjectedVector(Vector3.up);
+            _vel_horz = _velocity.GetProjectedVector(_horz);
+            _vel_vert = _velocity.GetProjectedVector(Vector3.up);
 
-            float speed_vert = vel_vert.magnitude;
-            if(Vector3.Dot(vel_vert, Vector3.up) < 0)
-                speed_vert *= -1;
+            _speed_vert = _vel_vert.magnitude;
+            if (Vector3.Dot(_vel_vert, Vector3.up) < 0)
+                _speed_vert *= -1;
 
-            float height = Player.local.creature.morphology?.height ?? 1.5f;
+            _height = Player.local.creature.morphology?.height ?? 1.5f;
             Vector3 scale_vect = Player.local.transform.localScale;
-            float scale = Math1D.Avg(scale_vect.x, scale_vect.y, scale_vect.z);
+            _scale = Math1D.Avg(scale_vect.x, scale_vect.y, scale_vect.z);
 
-            var rays = GetRays(foot_pos, vel_horz, height, scale, speed_vert);
+            var rays = GetRays(_foot_pos, _vel_horz, _height, _scale, _speed_vert);
 
-            Vector3?[] hits = FireRays(rays.rays, rays.len);
+            _ray_len = rays.len;
+
+            var results = new RayCastStorage.RayInfo[rays.rays.Length];
+
+            for (int i = 0; i < rays.rays.Length; i++)
+            {
+                results[i] = new RayCastStorage.RayInfo()
+                {
+                    Origin = rays.rays[i].origin,
+                    Direction = rays.rays[i].direction,
+                    MaxLen = rays.len,
+                };
+
+                if (Physics.Raycast(rays.rays[i].origin, rays.rays[i].direction, out RaycastHit hit, rays.len, ScanningUtil.SolidObject_LayerMask.Value, QueryTriggerInteraction.Ignore))
+                    results[i].Hit = hit;
+            }
+
+            _raycast_storage.AddRayCasts(
+                RayCastStorage.RayCategory.RepelGround,
+                new RayCastStorage.RayCastBundle
+                {
+                    Rays = results,
+                });
+        }
+        public Vector3? GetGroundAccel(ThunderRoad.Locomotion loco)
+        {
+            if (!JetpackScript.ShouldRepelGround)
+            {
+                if (SHOWDEBUG)
+                    ClearDebugVisuals();
+                return null;
+            }
+
+            var rays = _raycast_storage.GetRayCasts(RayCastStorage.RayCategory.RepelGround);
+
+            if (rays == null || rays.Length == 0)
+                return null;
+
+
+            //Vector3?[] hits = FireRays(rays.rays, rays.len);
+            Vector3?[] hits = AnalyzeRays(rays[0].Rays);
 
             // Get the avg hit point and divide total strength by number of hits vs number of rays fired
             // This is done to reduce the number of calculations that would be needed for each hit.  Since
             // hover accel will be straight up, there's no need to calculate push forces at different hits
             // (they all contribute to up)
-            var avg_hit = GetAverageHit(rays.rays, hits);
+            var avg_hit = GetAverageHit(rays[0].Rays, hits);
 
             if (SHOWDEBUG)
             {
-                DrawFootPos(foot_pos);
-                DrawVelocity(foot_pos, velocity, vel_horz, vel_vert);
-                DrawHeightScale(height, scale);
-                DrawRays(rays.rays, rays.len, hits);
+                DrawFootPos(_foot_pos);
+                DrawVelocity(_foot_pos, _velocity, _vel_horz, _vel_vert);
+                DrawHeightScale(_height, _scale);
+                DrawRays(rays[0].Rays, _ray_len, hits);
                 DrawAvgHit(avg_hit.has_hit, avg_hit.avg_from, avg_hit.avg_to, avg_hit.percent);
             }
 
@@ -126,7 +174,7 @@ namespace Jetpack.Scanning
             }
 
             // Increase accel based on distance, speed, strength
-            Vector3? accel = GetAccel(avg_hit.avg_from, avg_hit.avg_to, avg_hit.percent, vel_vert, rays.len, speed_vert);
+            Vector3? accel = GetAccel(avg_hit.avg_from, avg_hit.avg_to, avg_hit.percent, _vel_vert, _ray_len, _speed_vert);
 
             return accel;
         }
@@ -287,7 +335,7 @@ namespace Jetpack.Scanning
             DebugRenderer3D.AdjustText(_heightscale, new_text: text);
         }
 
-        private void DrawRays(Ray[] rays, float ray_len, Vector3?[] hits)
+        private void DrawRays(RayCastStorage.RayInfo[] rays, float ray_len, Vector3?[] hits)
         {
             EnsureDebugActive();
 
@@ -297,14 +345,14 @@ namespace Jetpack.Scanning
             for (int i = 0; i < rays.Length; i++)
             {
                 if (_ray_starts.Count <= i)
-                    _ray_starts.Add(_renderer.AddDot(rays[i].origin, DOT_SIZE, UtilityColor.FromHex("51E1F5")));
+                    _ray_starts.Add(_renderer.AddDot(rays[i].Origin, DOT_SIZE, UtilityColor.FromHex("51E1F5")));
 
-                _ray_starts[i].Object.transform.position = rays[i].origin;
+                _ray_starts[i].Object.transform.position = rays[i].Origin;
 
                 if (_ray_lines.Count <= i)
-                    _ray_lines.Add(_renderer.AddLine_Basic(rays[i].origin, rays[i].origin + rays[i].direction * ray_len, LINE_THICKNESS, Color.black));
+                    _ray_lines.Add(_renderer.AddLine_Basic(rays[i].Origin, rays[i].Origin + rays[i].Direction * ray_len, LINE_THICKNESS, Color.black));
 
-                DebugRenderer3D.AdjustLinePositions(_ray_lines[i], rays[i].origin, rays[i].origin + rays[i].direction * ray_len);
+                DebugRenderer3D.AdjustLinePositions(_ray_lines[i], rays[i].Origin, rays[i].Origin + rays[i].Direction * ray_len);
                 DebugRenderer3D.AdjustColor(_ray_lines[i], hits[i] != null ? UtilityColor.FromHex("47CF38") : UtilityColor.FromHex("CC3835"));
 
                 if (hits[i] != null)
@@ -483,8 +531,25 @@ namespace Jetpack.Scanning
 
             return retVal;
         }
+        private static Vector3?[] AnalyzeRays(RayCastStorage.RayInfo[] rays)
+        {
+            var retVal = new Vector3?[rays.Length];
 
-        private static (bool has_hit, Vector3 avg_from, Vector3 avg_to, float percent) GetAverageHit(Ray[] rays, Vector3?[] hits)
+            for (int i = 0; i < rays.Length; i++)
+            {
+                if (rays[i].Hit == null)
+                    continue;
+
+                if (Math.Abs(Vector3.Dot(rays[i].Hit.Value.normal, Vector3.up)) < 0.7)        // about 45 degrees
+                    continue;
+
+                retVal[i] = rays[i].Hit.Value.point;
+            }
+
+            return retVal;
+        }
+
+        private static (bool has_hit, Vector3 avg_from, Vector3 avg_to, float percent) GetAverageHit(RayCastStorage.RayInfo[] rays, Vector3?[] hits)
         {
             // Copying Math3D.GetAverage as an optimization
 
@@ -506,9 +571,9 @@ namespace Jetpack.Scanning
                 if (hits[i] == null)
                     continue;
 
-                x1 += rays[i].origin.x;
-                y1 += rays[i].origin.y;
-                z1 += rays[i].origin.z;
+                x1 += rays[i].Origin.x;
+                y1 += rays[i].Origin.y;
+                z1 += rays[i].Origin.z;
 
                 x2 += hits[i].Value.x;
                 y2 += hits[i].Value.y;

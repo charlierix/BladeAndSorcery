@@ -2,6 +2,7 @@
 using Jetpack.FlightProcessing;
 using Jetpack.InputWatchers;
 using Jetpack.Models;
+using Jetpack.Scanning;
 using PerfectlyNormalBaS;
 using System;
 using System.Collections.Generic;
@@ -354,8 +355,9 @@ namespace Jetpack
         private bool _markedToFly = false;      // will fly once not grounded
         private float _last_applied_drag = -1;
 
-        private FlightTransitionWatcher _transitions = new FlightTransitionWatcher();
-        private FlightJetpack _flight_jetpack = new FlightJetpack();
+        private RayCastStorage _raycast_storage = null;
+        private FlightTransitionWatcher _transitions = null;
+        private FlightJetpack _flight_jetpack = null;
 
         private DebugVisuals _debugVisuals = new DebugVisuals();
         private VisualizePlayerPoints _visualizePlayerPoints = new VisualizePlayerPoints();
@@ -367,6 +369,10 @@ namespace Jetpack
         {
             base.ScriptLoaded(modData);
 
+            _raycast_storage = new RayCastStorage();
+            _transitions = new FlightTransitionWatcher();
+            _flight_jetpack = new FlightJetpack(_raycast_storage);
+
             //MaterialShaderFinder.Report();
 
             Player.onSpawn += Player_onSpawn;
@@ -377,7 +383,7 @@ namespace Jetpack
         {
             _isPlayerSpawned = true;
 
-            if(Player.local != null)
+            if (Player.local != null)
             {
                 Debug.Log("showing morphology");
                 Player.local.showMorphology = true;
