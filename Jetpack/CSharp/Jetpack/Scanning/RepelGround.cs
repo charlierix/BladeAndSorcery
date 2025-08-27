@@ -23,14 +23,13 @@ namespace Jetpack.Scanning
 
         #region debug drawing vars
 
-        private const bool SHOWDEBUG = true;
+        private const bool SHOWDEBUG = false;
 
         private const float DOT_SIZE = 0.05f;
         private const float LINE_THICKNESS = 0.005f;
         private const float TEXT_HEIGHT = 0.06f;
 
         private DebugRenderer3D _renderer = null;
-        private GameObject _gameobject_rendererused = null;
 
         private DebugItem _vel_text = null;
         private DebugItem _vel_line = null;
@@ -99,6 +98,8 @@ namespace Jetpack.Scanning
             _vel_horz = _velocity.GetProjectedVector(_horz);
             _vel_vert = _velocity.GetProjectedVector(Vector3.up);
 
+            float speed_horz = _vel_horz.magnitude;
+
             _speed_vert = _vel_vert.magnitude;
             if (Vector3.Dot(_vel_vert, Vector3.up) < 0)
                 _speed_vert *= -1;
@@ -107,7 +108,7 @@ namespace Jetpack.Scanning
             Vector3 scale_vect = Player.local.transform.localScale;
             _scale = Math1D.Avg(scale_vect.x, scale_vect.y, scale_vect.z);
 
-            var rays = GetRays(_foot_pos, _vel_horz, _height, _scale, _speed_vert);
+            var rays = GetRays(_foot_pos, _vel_horz, _height, _scale, speed_horz, _speed_vert);
 
             _ray_len = rays.len;
 
@@ -133,7 +134,7 @@ namespace Jetpack.Scanning
                     Rays = results,
                 });
         }
-        public Vector3? GetGroundAccel(ThunderRoad.Locomotion loco)
+        public Vector3? Update_Finish(ThunderRoad.Locomotion loco)
         {
             if (!JetpackScript.ShouldRepelGround)
             {
@@ -189,10 +190,7 @@ namespace Jetpack.Scanning
         private void EnsureDebugActive()
         {
             if (_renderer == null)
-            {
                 _renderer = DebugRenderer3D.GetOrAddDebugRenderer3D();
-                _gameobject_rendererused = Player.local.gameObject;
-            }
         }
 
         private void ClearDebugVisuals()
@@ -477,13 +475,17 @@ namespace Jetpack.Scanning
         #endregion
         #region Private Methods
 
-        private static (Ray[] rays, float len) GetRays(Vector3 foot_pos, Vector3 vel_horz, float height, float scale, float speed_vert)
+        private static (Ray[] rays, float len) GetRays(Vector3 foot_pos, Vector3 vel_horz, float height, float scale, float speed_horz, float speed_vert)
         {
             // When traveling downward quickly, there needs to be more room to slow down
             // When there is no vertical speed down, the distance should be small so the player can float close to the ground (get through doors, interact with npcs)
-            float dist_increase = speed_vert < 0 ?
-                JetpackScript.RepelGround_VertSpeedDistMult * Math.Abs(speed_vert) :
-                0f;
+            float dist_increase = 0;
+
+            if (speed_horz > 0)
+                dist_increase += JetpackScript.RepelGround_HorzSpeedDistMult * speed_horz;
+
+            if (speed_vert < 0)
+                dist_increase += JetpackScript.RepelGround_VertSpeedDistMult * Math.Abs(speed_vert);
 
             // Figure out ray length (some combination of down velocity and player's height * scale)
             float ray_len = dist_increase + (height * scale * JetpackScript.RepelGround_MaxDistance);

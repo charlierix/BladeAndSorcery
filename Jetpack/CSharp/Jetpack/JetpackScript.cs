@@ -70,6 +70,7 @@ namespace Jetpack
 
         private const string CATEGORY_ACTIVATE = "Activation / Deactivation";
         private const string CATEGORY_OBSTACLEAVOIDANCE = "Obstacle Avoidance";
+        private const string CATEGORY_REPELGROUND = "Repel Ground";
         private const string CATEGORY_FLIGHTPROPS = "Flight Properties";
         private const string CATEGORY_SOUNDS = "Sounds";        // TODO: add this
         private const string CATEGORY_SCALE = "Player Size";
@@ -78,11 +79,12 @@ namespace Jetpack
 
         private const int ORDER_ACTIVATE = 1;
         private const int ORDER_OBSTACLEAVOIDANCE = 2;
-        private const int ORDER_FLIGHTPROPS = 3;
-        private const int ORDER_SOUNDS = 4;
-        private const int ORDER_SCALE = 5;
-        private const int ORDER_VISIBILITY = 6;
-        private const int ORDER_DEBUGDRAWING = 7;
+        private const int ORDER_REPELGROUND = 3;
+        private const int ORDER_FLIGHTPROPS = 4;
+        private const int ORDER_SOUNDS = 5;
+        private const int ORDER_SCALE = 6;
+        private const int ORDER_VISIBILITY = 7;
+        private const int ORDER_DEBUGDRAWING = 8;
 
         //[ModOptionTextDisplay("description of section", null)]
         //[ModOption("Info")]
@@ -135,8 +137,23 @@ namespace Jetpack
 
         // ******************** Obstacle Avoidance ********************
 
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOption(name: "Should Avoid Obstacles", tooltip: "Will push the player away from obstacles when moving toward them (no effect if stopped near obstacles)", order = 0)]
+        public static bool ShouldAvoidObstacles = true;
 
         [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Ellipse Point Angle", tooltip: "Angle for the point between major and minor axis", order = 1)]
+        [ModOptionFloatValues(0, 90, 1)]
+        public static float EllipsePointAngle = 55;
+
+
+
+
+
+        // ******************** Repel Ground ********************
+
+        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
         [ModOption(name: "Should Repel Ground", tooltip: "Will push the player upward from the ground requiring deliberate down pressure on the thumstick to touch the ground", order = 0)]
         public static bool ShouldRepelGround = true;
 
@@ -147,7 +164,7 @@ namespace Jetpack
         /// This isn't a simple accel.  It will only apply upward accel when velocity is downward.  There's also a dropoff
         /// distance based on player's size
         /// </summary>
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
         [ModOptionSlider]
         [ModOption(name: "Repel Ground Strength", tooltip: "CURRENTLY IGNORED - How strong the ground repel should be", order = 1)]
         [ModOptionFloatValues(0, 100, 1)]
@@ -157,54 +174,60 @@ namespace Jetpack
         // figure out which of these to expose, or maybe a single slider that affects several at the same time (one for dist, and make strength directly affect the other values directly)
 
         // Distance
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
         [ModOptionSlider]
         [ModOption(name: "Repel Ground Max Distance", tooltip: "relative to height * scale, taken from foot pos", order = 2)]
         [ModOptionFloatValues(0, 1, 0.05f)]
         public static float RepelGround_MaxDistance = 0.25f;
 
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
         [ModOptionSlider]
-        [ModOption(name: "Vertical Speed Distance Mult", tooltip: "increases ground distance based on vertical speed down (this * speed)", order = 3)]
+        [ModOption(name: "Horizontal Speed Distance Mult", tooltip: "increases ground distance based on horizontal speed (this * speed)", order = 3)]
+        [ModOptionFloatValues(0, 2, 0.05f)]
+        public static float RepelGround_HorzSpeedDistMult = 0.25f;
+
+        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
+        [ModOptionSlider]
+        [ModOption(name: "Vertical Speed Distance Mult", tooltip: "increases ground distance based on vertical speed down (this * speed)", order = 4)]
         [ModOptionFloatValues(0, 3, 0.1f)]
         public static float RepelGround_VertSpeedDistMult = 1;
 
         // Linear
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
         [ModOptionSlider]
-        [ModOption(name: "Repel Ground Max Accel [linear]", tooltip: "a linear gradient where there is zero force at max distance and max force at zero distance", order = 4)]
+        [ModOption(name: "Repel Ground Max Accel [linear]", tooltip: "a linear gradient where there is zero force at max distance and max force at zero distance", order = 5)]
         [ModOptionFloatValues(0, 6, 0.25f)]
         public static float RepelGround_Linear_MaxAccel = 2.5f;
 
         // 1/x
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
         [ModOptionSlider]
-        [ModOption(name: "Repel Ground Max Accel [1/(cx)]", tooltip: "the distance is normalized, where x is 0 to 1", order = 5)]
+        [ModOption(name: "Repel Ground Max Accel [1/(cx)]", tooltip: "the distance is normalized, where x is 0 to 1", order = 6)]
         [ModOptionFloatValues(0, 18, 0.25f)]
         public static float RepelGround_Inverse_MaxAccel = 9;
 
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
         [ModOptionSlider]
-        [ModOption(name: "Repel Ground Inverse C [1/(cx)]", tooltip: "any value less than 4 is meaningless (plot it in desmos for easy visualization/manipulation)", order = 6)]
+        [ModOption(name: "Repel Ground Inverse C [1/(cx)]", tooltip: "any value less than 4 is meaningless (plot it in desmos for easy visualization/manipulation)", order = 7)]
         [ModOptionFloatValues(4, 24, 0.25f)]
         public static float RepelGround_Inverse_C = 8;
 
         // 1/x^2
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
         [ModOptionSlider]
-        [ModOption(name: "Repel Ground Max Accel [1/(cx)^2]", tooltip: "the distance is normalized, where x is 0 to 1", order = 7)]
+        [ModOption(name: "Repel Ground Max Accel [1/(cx)^2]", tooltip: "the distance is normalized, where x is 0 to 1", order = 8)]
         [ModOptionFloatValues(0, 40, 0.25f)]
         public static float RepelGround_InverseSqr_MaxAccel = 20;
 
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
         [ModOptionSlider]
-        [ModOption(name: "Repel Ground Inverse^2 C [1/(cx)^2]", tooltip: "any value less than 4 is meaningless (plot it in desmos for easy visualization/manipulation)", order = 8)]
+        [ModOption(name: "Repel Ground Inverse^2 C [1/(cx)^2]", tooltip: "any value less than 4 is meaningless (plot it in desmos for easy visualization/manipulation)", order = 9)]
         [ModOptionFloatValues(4, 80, 0.5f)]
         public static float RepelGround_InverseSqr_C = 40;
 
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
         [ModOptionSlider]
-        [ModOption(name: "Max Upward Speed", tooltip: "stop accelerating upward beyond this speed (to avoid excessive pop up speeds)", order = 9)]
+        [ModOption(name: "Max Upward Speed", tooltip: "stop accelerating upward beyond this speed (to avoid excessive pop up speeds)", order = 10)]
         [ModOptionFloatValues(0, 1, 0.02f)]
         public static float RepelGround_UpSpeed_ZeroAccel = 0.1f;
 

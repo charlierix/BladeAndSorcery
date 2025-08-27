@@ -13,6 +13,7 @@ namespace Jetpack.FlightProcessing
         private readonly RayCastStorage _raycast_storage;
         private readonly ConfinedArea _confinedScanner;
         private readonly RepelGround _repelGround;
+        private readonly ObstacleAvoidance _obstacleAvoidance;
 
         private FlightData _standardState = null;
 
@@ -23,6 +24,7 @@ namespace Jetpack.FlightProcessing
             _raycast_storage = raycast_storage;
             _confinedScanner = new ConfinedArea(_raycast_storage);
             _repelGround = new RepelGround(_raycast_storage);
+            _obstacleAvoidance = new ObstacleAvoidance(_raycast_storage);
         }
 
         public void Activate(float drag)
@@ -46,6 +48,8 @@ namespace Jetpack.FlightProcessing
 
             // Reset scanner
             _confinedScanner.Clear();
+            _repelGround.Clear();
+            _obstacleAvoidance.Clear();
         }
         public void Deactivate()
         {
@@ -66,6 +70,7 @@ namespace Jetpack.FlightProcessing
 
             _confinedScanner.Clear();
             _repelGround.Clear();
+            _obstacleAvoidance.Clear();
         }
 
         public void Update(float drag, float horz_accel, float vert_accel, float gravity)
@@ -81,6 +86,7 @@ namespace Jetpack.FlightProcessing
             _raycast_storage.Clear();
             _confinedScanner.Update_CastRays(12, 1, 1.75f);
             _repelGround.Update_CastRays(loco);
+            _obstacleAvoidance.Update_CastRays();
 
             _confinedScanner.Update_Finish();
             float percent_accel = UtilityMath.GetScaledValue_Capped(0.25f, 1f, 1f, 0f, _confinedScanner.ConfinedPercent);
@@ -88,7 +94,13 @@ namespace Jetpack.FlightProcessing
             DestabilizeHeldNPC(Player.local.handLeft);
             DestabilizeHeldNPC(Player.local.handRight);
 
-            AvoidObstacles(loco);
+            Vector3? accel_repel = _repelGround.Update_Finish(loco);
+            if (accel_repel != null)
+                loco.physicBody.AddForce(accel_repel.Value, ForceMode.Acceleration);
+
+            Vector3? accel_obstacle = _obstacleAvoidance.Update_Finish();
+            if (accel_obstacle != null)
+                loco.physicBody.AddForce(accel_obstacle.Value, ForceMode.Acceleration);
 
             // TODO: make an option for horiztonal control mode (direct or accel)
             //loco.horizontalAirSpeed = horizontalSpeed / 100f;
@@ -126,13 +138,6 @@ namespace Jetpack.FlightProcessing
             up_accel -= gravity;
 
             loco.physicBody.AddForce(Vector3.up * up_accel, ForceMode.Acceleration);
-        }
-
-        private void AvoidObstacles(Locomotion loco)
-        {
-            Vector3? accel = _repelGround.GetGroundAccel(loco);
-            if (accel != null)
-                loco.physicBody.AddForce(accel.Value, ForceMode.Acceleration);
         }
 
         private static void DestabilizeHeldNPC(PlayerHand side)
