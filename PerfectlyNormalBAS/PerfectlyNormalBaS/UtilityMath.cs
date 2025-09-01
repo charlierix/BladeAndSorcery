@@ -10,6 +10,10 @@ namespace PerfectlyNormalBaS
 
     public static class UtilityMath
     {
+        // NOTE: Mathf.Epsilon is 1e-38 or 1e-45.  Way too precice for rough equivalence
+        public const double NEARZERO = 1e-9d;       //.000000001d;
+        public const float NEARZERO_F = 5e-6f;      // float doesn't seem to be precise enough for 9 places, drop it back to 6 (testing quaternion.tounit.lensqr caused this to need to be reduced)
+
         /// <summary>
         /// This is good for converting a trackbar into a float
         /// </summary>

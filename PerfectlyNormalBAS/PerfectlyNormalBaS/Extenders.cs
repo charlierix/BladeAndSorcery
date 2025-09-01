@@ -759,12 +759,14 @@ namespace PerfectlyNormalBaS
 
         public static bool IsNearZero(this float item, float? threshold = null)
         {
-            return Math.Abs(item) <= (threshold ?? Mathf.Epsilon);
+            //return Math.Abs(item) <= (threshold ?? Mathf.Epsilon);
+            return Math.Abs(item) <= (threshold ?? UtilityMath.NEARZERO_F);
         }
 
         public static bool IsNearValue(this float item, float compare, float? threshold = null)
         {
-            float t = threshold ?? Mathf.Epsilon;
+            //float t = threshold ?? Mathf.Epsilon;
+            float t = threshold ?? UtilityMath.NEARZERO_F;
             return item >= compare - t && item <= compare + t;
         }
 
@@ -822,12 +824,14 @@ namespace PerfectlyNormalBaS
 
         public static bool IsNearZero(this double item, double? threshold = null)
         {
-            return Math.Abs(item) <= (threshold ?? Mathf.Epsilon);
+            //return Math.Abs(item) <= (threshold ?? Mathf.Epsilon);
+            return Math.Abs(item) <= (threshold ?? UtilityMath.NEARZERO);
         }
 
         public static bool IsNearValue(this double item, double compare, double? threshold = null)
         {
-            double t = threshold ?? Mathf.Epsilon;
+            //double t = threshold ?? Mathf.Epsilon;
+            double t = threshold ?? UtilityMath.NEARZERO;
             return item >= compare - t && item <= compare + t;
         }
 
