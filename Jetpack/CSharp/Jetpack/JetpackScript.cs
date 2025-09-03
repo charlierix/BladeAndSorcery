@@ -145,7 +145,52 @@ namespace Jetpack
         [ModOptionSlider]
         [ModOption(name: "Ellipse Point Angle", tooltip: "Angle for the point between major and minor axis", order = 1)]
         [ModOptionFloatValues(0, 90, 1)]
-        public static float EllipsePointAngle = 55;
+        public static float ObstAvoid_EllipsePointAngle = 55;
+
+        // Don't bother with inward angle
+        //[ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        //[ModOptionSlider]
+        //[ModOption(name: "Ellipse Ray Angle (inward)", tooltip: "At each point along the perimiter of the ellipse, there will be two diverging rays at an angle (one toward interior, one away from ellipse)", order = 2)]
+        //[ModOptionFloatValues(0, 3, 0.1f)]
+        //public static float ObstAvoid_EllipseRayAngleIn = 0;
+
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Ellipse Ray Angle (outward)", tooltip: "At each point along the perimiter of the ellipse, there will be two diverging rays at an angle (one toward interior, one away from ellipse)", order = 2)]
+        [ModOptionFloatValues(0, 24, 1)]
+        public static float ObstAvoid_EllipseRayAngleOut = 12;
+
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Ray Distance Multiplier", tooltip: "Length of the ray cast (velocity * mult)", order = 3)]
+        [ModOptionFloatValues(0, 6, 0.05f)]
+        public static float ObstAvoid_RayDistMult = 3f;
+
+
+
+
+        //const float MAX_DIST = 20;
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Analyze Max Distance", tooltip: "Accel is zero beyond this distance", order = 4)]
+        [ModOptionFloatValues(0, 24, 0.5f)]
+        public static float ObstAvoid_Analyze_MaxDist = 9f;
+
+
+        //const float DIST_DROPOFF_POW = 3;
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Analyze Dropoff Power", tooltip: "Percent Dropoff is 1-x^n", order = 5)]
+        [ModOptionFloatValues(1, 6, 0.25f)]
+        public static float ObstAvoid_Analyze_DropoffPow = 3f;
+
+
+        //const float SPEED_PERCENT_MULT = 0.75f;
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Analyze Speed Percent Mult", tooltip: "Accel is reduced based on speed * this", order = 6)]
+        [ModOptionFloatValues(0, 2, 0.05f)]
+        public static float ObstAvoid_Analyze_SpeedMult = 0.75f;
 
 
 

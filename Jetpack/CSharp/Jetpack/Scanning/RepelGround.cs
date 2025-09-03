@@ -23,7 +23,7 @@ namespace Jetpack.Scanning
 
         #region debug drawing vars
 
-        private const bool SHOWDEBUG = false;
+        private const bool SHOULD_DRAW = false;
 
         private const float DOT_SIZE = 0.05f;
         private const float LINE_THICKNESS = 0.005f;
@@ -138,7 +138,7 @@ namespace Jetpack.Scanning
         {
             if (!JetpackScript.ShouldRepelGround)
             {
-                if (SHOWDEBUG)
+                if (SHOULD_DRAW)
                     ClearDebugVisuals();
                 return null;
             }
@@ -158,7 +158,7 @@ namespace Jetpack.Scanning
             // (they all contribute to up)
             var avg_hit = GetAverageHit(rays[0].Rays, hits);
 
-            if (SHOWDEBUG)
+            if (SHOULD_DRAW)
             {
                 DrawFootPos(_foot_pos);
                 DrawVelocity(_foot_pos, _velocity, _vel_horz, _vel_vert);
@@ -169,7 +169,7 @@ namespace Jetpack.Scanning
 
             if (!avg_hit.has_hit)
             {
-                if (SHOWDEBUG)
+                if (SHOULD_DRAW)
                     RemoveAccel();
                 return null;
             }
@@ -615,7 +615,7 @@ namespace Jetpack.Scanning
             Vector3 inverse = GetAccel_Inverse(direction, distance, max_dist, JetpackScript.RepelGround_Inverse_MaxAccel, JetpackScript.RepelGround_Inverse_C);
             Vector3 invsqr = GetAccel_InvSqr(direction, distance, max_dist, JetpackScript.RepelGround_InverseSqr_MaxAccel, JetpackScript.RepelGround_InverseSqr_C);
 
-            if (SHOWDEBUG)
+            if (SHOULD_DRAW)
                 DrawAccel(linear, inverse, invsqr, percent);
 
             Vector3 retVal = (linear + inverse + invsqr) * percent;

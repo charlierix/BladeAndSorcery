@@ -13,6 +13,7 @@ namespace Jetpack.Scanning
         {
             ConfinedArea_Ico,
             RepelGround,
+            ObstacleAvoidance_BodyEllipse,
         }
 
         public class RayCastBundle

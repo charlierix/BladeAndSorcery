@@ -19,6 +19,8 @@ namespace Jetpack.FlightProcessing
 
         private float _last_applied_drag = -1;
 
+        private DateTime _activation_time = DateTime.UtcNow;
+
         public FlightJetpack(RayCastStorage raycast_storage)
         {
             _raycast_storage = raycast_storage;
@@ -45,6 +47,8 @@ namespace Jetpack.FlightProcessing
             Player.fallDamage = false;
             Player.crouchOnJump = false;
             //GameManager.options.allowStickJump = false;       // this doesn't seem to affect anything
+
+            _activation_time = DateTime.UtcNow;
 
             // Reset scanner
             _confinedScanner.Clear();
@@ -94,13 +98,18 @@ namespace Jetpack.FlightProcessing
             DestabilizeHeldNPC(Player.local.handLeft);
             DestabilizeHeldNPC(Player.local.handRight);
 
-            Vector3? accel_repel = _repelGround.Update_Finish(loco);
-            if (accel_repel != null)
-                loco.physicBody.AddForce(accel_repel.Value, ForceMode.Acceleration);
 
-            Vector3? accel_obstacle = _obstacleAvoidance.Update_Finish();
-            if (accel_obstacle != null)
-                loco.physicBody.AddForce(accel_obstacle.Value, ForceMode.Acceleration);
+            // Only do these when already in the air
+            if (!Player.local.locomotion.isGrounded && (DateTime.UtcNow - _activation_time).TotalMilliseconds > 500)
+            {
+                Vector3? accel_repel = _repelGround.Update_Finish(loco);
+                if (accel_repel != null)
+                    loco.physicBody.AddForce(accel_repel.Value, ForceMode.Acceleration);
+
+                Vector3? accel_obstacle = _obstacleAvoidance.Update_Finish();
+                if (accel_obstacle != null)
+                    loco.physicBody.AddForce(accel_obstacle.Value, ForceMode.Acceleration);
+            }
 
             // TODO: make an option for horiztonal control mode (direct or accel)
             //loco.horizontalAirSpeed = horizontalSpeed / 100f;
