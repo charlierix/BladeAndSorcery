@@ -11,6 +11,9 @@ namespace Jetpack.Scanning
 {
     // This will focus on not running into walls, trees, etc
 
+    // TODO: instead of two dedicated rays at each perimeter point, have each point fire a random cone direction
+    // TODO: when pressing thumbstick down, suppress upward accel
+
     public class ObstacleAvoidance
     {
         #region class: EllipsePoints
@@ -18,8 +21,11 @@ namespace Jetpack.Scanning
         private class EllipsePoints
         {
             public float Angle { get; set; }
-            public float AlongMajor { get; set; }
-            public float AlongMinor { get; set; }
+
+            public float Cosθ { get; set; }
+            public float Sinθ { get; set; }
+
+            public Vector2 Normal { get; set; }
         }
 
         #endregion
@@ -53,7 +59,7 @@ namespace Jetpack.Scanning
 
         private DebugRenderer3D _renderer = null;
 
-        private (DebugItem point, DebugItem line)[] _viz_ellipse = null;
+        private (DebugItem point, DebugItem tangent_right, DebugItem line)[] _viz_ellipse = null;
 
         private List<DebugItem> _ray_lines = new List<DebugItem>();
         private List<DebugItem> _ray_hit_points = new List<DebugItem>();
@@ -63,6 +69,8 @@ namespace Jetpack.Scanning
         private List<DebugItem> _hitanal_accel = new List<DebugItem>();
         private List<(DebugItem orth, DebugItem back)> _hitanal_dirs = new List<(DebugItem, DebugItem)>();
         private List<DebugItem> _hitanal_reports = new List<DebugItem>();
+
+        private DebugItem _accel = null;
 
         #endregion
 
@@ -89,6 +97,13 @@ namespace Jetpack.Scanning
 
         public void Update_CastRays()
         {
+            if (!JetpackScript.ShouldAvoidObstacles)
+            {
+                if (SHOULD_DRAW)
+                    ClearDebugVisuals();
+                return;
+            }
+
             _velocity = Player.local.locomotion.physicBody.velocity;
             if (_velocity.IsNearZero())
                 return;
@@ -101,11 +116,11 @@ namespace Jetpack.Scanning
             _pos = ellipse_points.origin;
 
             if (SHOULD_DRAW)
-                DrawEllipsePointsLines(ellipse_points.origin, ellipse_points.perimiter, _velocity);
+                DrawEllipsePointsLines(ellipse_points.origin, ellipse_points.perimeter, _velocity);
 
             // Define the rays
             // NOTE: this also has a ray coming out of origin
-            var rays = GetEllipseRays(ellipse_points.origin, ellipse_points.perimiter, _velocity);
+            var rays = GetEllipseRays(ellipse_points.origin, ellipse_points.perimeter, _velocity);
 
             _ray_len = _speed * JetpackScript.ObstAvoid_RayDistMult;
 
@@ -138,18 +153,16 @@ namespace Jetpack.Scanning
 
             var hits = AnalyzeHits(rays[0].Rays, _ray_len, _pos, _velocity_dir, _speed);
 
+            Vector3? accel = GetAccel(hits);
+
             if (SHOULD_DRAW)
             {
                 DrawRayCasts(rays[0].Rays, _ray_len);
                 DrawHitAnalysis(hits, _pos, _velocity_dir);
+                DrawAccel(accel, _pos, _velocity_dir);
             }
 
-
-
-
-
-
-            return null;
+            return accel;
         }
 
         public void Clear()
@@ -176,6 +189,9 @@ namespace Jetpack.Scanning
                 {
                     if (_viz_ellipse[i].point != null)
                         _renderer.Remove(_viz_ellipse[i].point);
+
+                    if (_viz_ellipse[i].tangent_right != null)
+                        _renderer.Remove(_viz_ellipse[i].tangent_right);
 
                     if (_viz_ellipse[i].line != null)
                         _renderer.Remove(_viz_ellipse[i].line);
@@ -207,29 +223,43 @@ namespace Jetpack.Scanning
 
             _hitanal_dirs.Clear();
 
+            if (_accel != null)
+                _renderer.Remove(_accel);
+
+            _accel = null;
+
             _renderer = null;
         }
 
-        private void DrawEllipsePointsLines(Vector3 origin, Vector3[] perimiter, Vector3 velocity)
+        private void DrawEllipsePointsLines(Vector3 origin, (Vector3 point, Vector3 tangent_right)[] perimeter, Vector3 velocity)
         {
             EnsureDebugActive();
 
             if (_viz_ellipse == null)
             {
-                _viz_ellipse = new (DebugItem point, DebugItem line)[perimiter.Length + 1];
+                _viz_ellipse = new (DebugItem point, DebugItem tangent_right, DebugItem line)[perimeter.Length + 1];
 
-                for (int i = 0; i < perimiter.Length; i++)
-                    _viz_ellipse[i] = (_renderer.AddDot(origin, DOT_SIZE, Color.yellow), _renderer.AddLine_Basic(origin, origin + velocity, LINE_THICKNESS, Color.yellow));
+                for (int i = 0; i < perimeter.Length; i++)
+                {
+                    _viz_ellipse[i] = (
+                        _renderer.AddDot(origin, DOT_SIZE, Color.yellow),
+                        _renderer.AddLine_Basic(origin, origin + velocity, LINE_THICKNESS, UtilityColor.FromHex("880")),
+                        _renderer.AddLine_Basic(origin, origin + velocity, LINE_THICKNESS, Color.yellow));
+                }
 
-                _viz_ellipse[_viz_ellipse.Length - 1] = (_renderer.AddDot(origin, DOT_SIZE, Color.yellow), _renderer.AddLine_Basic(origin, origin + velocity, LINE_THICKNESS, Color.yellow));
+                _viz_ellipse[_viz_ellipse.Length - 1] = (
+                    _renderer.AddDot(origin, DOT_SIZE, Color.yellow),
+                    null,
+                    _renderer.AddLine_Basic(origin, origin + velocity, LINE_THICKNESS, Color.yellow));
             }
 
-            for (int i = 0; i < perimiter.Length; i++)
+            for (int i = 0; i < perimeter.Length; i++)
             {
-                Vector3 pos = perimiter[i];
+                var perim_point = perimeter[i];
 
-                _viz_ellipse[i].point.Object.transform.position = pos;
-                DebugRenderer3D.AdjustLinePositions(_viz_ellipse[i].line, pos, pos + velocity);
+                _viz_ellipse[i].point.Object.transform.position = perim_point.point;
+                DebugRenderer3D.AdjustLinePositions(_viz_ellipse[i].tangent_right, perim_point.point, perim_point.point + perim_point.tangent_right);
+                DebugRenderer3D.AdjustLinePositions(_viz_ellipse[i].line, perim_point.point, perim_point.point + velocity);
             }
 
             _viz_ellipse[_viz_ellipse.Length - 1].point.Object.transform.position = origin;
@@ -354,10 +384,32 @@ namespace Jetpack.Scanning
             }
         }
 
+        private void DrawAccel(Vector3? accel, Vector3 pos, Vector3 velocity_dir)
+        {
+            EnsureDebugActive();
+
+            if (accel == null)
+            {
+                if (_accel != null)
+                    _renderer.Remove(_accel);
+
+                _accel = null;
+            }
+            else
+            {
+                Vector3 from_pos = pos + velocity_dir * 1;
+
+                if (_accel == null)
+                    _accel = _renderer.AddLine_Basic(from_pos, from_pos + accel.Value, LINE_THICKNESS, Color.cyan);
+
+                DebugRenderer3D.AdjustLinePositions(_accel, from_pos, from_pos + accel.Value);
+            }
+        }
+
         #endregion
         #region Private Methods
 
-        private (Vector3[] perimiter, Vector3 origin) GetEllipsePoints(Vector3 velocity)
+        private ((Vector3 point, Vector3 tangent_right)[] perimeter, Vector3 origin) GetEllipsePoints(Vector3 velocity)
         {
             const float WIDTH_PERCENT_OF_HEIGHT = 0.25f;
             const float HEIGHT_EXPAND_PERCENT = 1.1f;
@@ -386,26 +438,64 @@ namespace Jetpack.Scanning
             if (_ellipsePoints == null || !_ellipsePoints.Angle.IsNearValue(JetpackScript.ObstAvoid_EllipsePointAngle))
                 _ellipsePoints = GetEllipsePoints(JetpackScript.ObstAvoid_EllipsePointAngle);
 
-            Vector3 along_major = major_axis_dir * (height / 2 * _ellipsePoints.AlongMajor);
-            Vector3 along_minor = minor_axis_dir * (minor_axis_half_width * _ellipsePoints.AlongMinor);
+            Vector3 along_major = major_axis_dir * (height / 2 * _ellipsePoints.Cosθ);
+            Vector3 along_minor = minor_axis_dir * (minor_axis_half_width * _ellipsePoints.Sinθ);
+
+            // Figure out tangent
+            float a = height / 2.0f;
+            float b = minor_axis_half_width;
+
+            Vector3 tangent1 = -a * _ellipsePoints.Sinθ * major_axis_dir + b * _ellipsePoints.Cosθ * minor_axis_dir;
+            Vector3 tangent2 = -a * _ellipsePoints.Cosθ * major_axis_dir - b * _ellipsePoints.Sinθ * minor_axis_dir;
+            Vector3 tangent3 = a * _ellipsePoints.Sinθ * major_axis_dir - b * _ellipsePoints.Cosθ * minor_axis_dir;
+            Vector3 tangent4 = a * _ellipsePoints.Cosθ * major_axis_dir + b * _ellipsePoints.Sinθ * minor_axis_dir;
 
             // Return
-            Vector3[] perimiter = new[]
+            var perimeter = new[]
             {
-                mid_pos + major_axis_dir * (height * 0.5f),
-                mid_pos + along_minor + along_major,
-                right_pos,
-                mid_pos + along_minor - along_major,
-                mid_pos - major_axis_dir * (height * 0.5f),
-                mid_pos - along_minor - along_major,
-                left_pos,
-                mid_pos - along_minor + along_major,
+                (mid_pos + major_axis_dir * (height * 0.5f),        // top
+                minor_axis_dir),
+
+                (mid_pos + along_minor + along_major,
+                tangent1),
+
+                (right_pos,     // right
+                -major_axis_dir),
+
+                (mid_pos + along_minor - along_major,
+                tangent2),
+
+                (mid_pos - major_axis_dir * (height * 0.5f),        // bottom
+                -minor_axis_dir),
+
+                (mid_pos - along_minor - along_major,
+                tangent3),
+
+                (left_pos,      // left
+                major_axis_dir),
+
+                (mid_pos - along_minor + along_major,
+                tangent4),
             };
 
-            return (perimiter, mid_pos);
+            return (perimeter, mid_pos);
+        }
+        private static EllipsePoints GetEllipsePoints(float angle_degrees)
+        {
+            float radians = angle_degrees * Mathf.Deg2Rad;
+
+            float cosTheta = Mathf.Cos(radians);
+            float sinTheta = Mathf.Sin(radians);
+
+            return new EllipsePoints()
+            {
+                Angle = angle_degrees,
+                Cosθ = cosTheta,
+                Sinθ = sinTheta,
+            };
         }
 
-        private Ray[] GetEllipseRays(Vector3 origin, Vector3[] perimiter, Vector3 velocity)
+        private static Ray[] GetEllipseRays(Vector3 origin, (Vector3 point, Vector3 tangent_right)[] perimeter, Vector3 velocity)
         {
             var retVal = new List<Ray>();
 
@@ -413,13 +503,17 @@ namespace Jetpack.Scanning
 
             retVal.Add(new Ray(origin, ray_dir));
 
-            foreach (Vector3 perim_point in perimiter)
-            {
-                Vector3 orth_axis = Vector3.Cross(velocity, perim_point - origin).normalized;
+            float max_angle = JetpackScript.ObstAvoid_EllipseRayAngleOut;
+            float min_angle = max_angle / 3f;
 
+            var rand = StaticRandom.GetRandomForThread();
+
+            foreach (var perim_point in perimeter)
+            {
                 //retVal.Add(new Ray(perim_point, Quaternion.AngleAxis(JetpackScript.ObstAvoid_EllipseRayAngleIn, -orth_axis) * ray_dir));
-                retVal.Add(new Ray(perim_point, ray_dir));
-                retVal.Add(new Ray(perim_point, Quaternion.AngleAxis(JetpackScript.ObstAvoid_EllipseRayAngleOut, orth_axis) * ray_dir));
+                retVal.Add(new Ray(perim_point.point, ray_dir));
+
+                retVal.Add(new Ray(perim_point.point, Quaternion.AngleAxis(rand.NextFloat(min_angle, max_angle), perim_point.tangent_right) * ray_dir));
             }
 
             return retVal.ToArray();
@@ -448,40 +542,6 @@ namespace Jetpack.Scanning
                 {
                     Rays = results,
                 });
-        }
-
-        // TODO: instead of returning a single vector, return two lengths (along major and minor axiis)
-        // TODO: rework so the cosine and sine are calculated according to angle, then cached
-        private static Vector3 GetPointOnEllipse(Vector3 majoraxis_dir, Vector3 minoraxis_dir, float majoraxis_len, float minoraxis_len, float angle_degrees)
-        {
-            // Convert angle to radians
-            float radians = angle_degrees * Mathf.Deg2Rad;
-
-            // Compute the cosine and sine components
-            float cosTheta = Mathf.Cos(radians);
-            float sinTheta = Mathf.Sin(radians);
-
-            // Compute the displacement from the ellipse center
-            Vector3 displacement =
-                majoraxis_dir * (majoraxis_len / 2 * cosTheta) +
-                minoraxis_dir * (minoraxis_len / 2 * sinTheta);
-
-            return displacement;
-        }
-
-        private static EllipsePoints GetEllipsePoints(float angle_degrees)
-        {
-            float radians = angle_degrees * Mathf.Deg2Rad;
-
-            float cosTheta = Mathf.Cos(radians);
-            float sinTheta = Mathf.Sin(radians);
-
-            return new EllipsePoints()
-            {
-                Angle = angle_degrees,
-                AlongMajor = cosTheta,
-                AlongMinor = sinTheta,
-            };
         }
 
         private static HitDetails[] AnalyzeHits(RayCastStorage.RayInfo[] rays, float ray_len, Vector3 pos, Vector3 velocity_dir, float speed)
@@ -532,6 +592,19 @@ namespace Jetpack.Scanning
             }
 
             return retVal.ToArray();
+        }
+
+        private static Vector3? GetAccel(HitDetails[] hits)
+        {
+            if (hits.Length == 0)
+                return null;
+
+            Vector3 retVal = Vector3.zero;
+
+            foreach (var hit in hits)
+                retVal += hit.Accel;
+
+            return -retVal;     // for some reason, it's backward
         }
 
         #endregion
