@@ -162,39 +162,51 @@ namespace Jetpack
 
         [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
         [ModOptionSlider]
-        [ModOption(name: "Ray Distance Multiplier", tooltip: "Length of the ray cast (velocity * mult)", order = 3)]
+        [ModOption(name: "Ellipse Ray Angle (yaw)", tooltip: "Max random yaw of each ray source each frame", order = 3)]
+        [ModOptionFloatValues(0, 45, 1)]
+        public static float ObstAvoid_EllipseRayAngleYaw = 8;
+
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Ellipse Ray Angle (pitch)", tooltip: "Max random pitch of each ray source each frame", order = 4)]
+        [ModOptionFloatValues(0, 45, 1)]
+        public static float ObstAvoid_EllipseRayAnglePitch = 12;
+
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Ray Distance Multiplier", tooltip: "Length of the ray cast (velocity * mult)", order = 5)]
         [ModOptionFloatValues(0, 6, 0.05f)]
         public static float ObstAvoid_RayDistMult = 3f;
 
-
-
-
-        //const float MAX_DIST = 20;
         [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
         [ModOptionSlider]
-        [ModOption(name: "Analyze Max Distance", tooltip: "Accel is zero beyond this distance", order = 4)]
+        [ModOption(name: "Analyze Max Distance", tooltip: "Accel is zero beyond this distance", order = 6)]
         [ModOptionFloatValues(0, 24, 0.5f)]
         public static float ObstAvoid_Analyze_MaxDist = 9f;
 
-
-        //const float DIST_DROPOFF_POW = 3;
         [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
         [ModOptionSlider]
-        [ModOption(name: "Analyze Dropoff Power", tooltip: "Percent Dropoff is 1-x^n", order = 5)]
+        [ModOption(name: "Analyze Dropoff Power", tooltip: "Percent Dropoff is 1-x^n", order = 7)]
         [ModOptionFloatValues(1, 6, 0.25f)]
         public static float ObstAvoid_Analyze_DropoffPow = 3f;
 
-
-        //const float SPEED_PERCENT_MULT = 0.75f;
         [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
         [ModOptionSlider]
-        [ModOption(name: "Analyze Speed Percent Mult", tooltip: "Accel is reduced based on speed * this", order = 6)]
+        [ModOption(name: "Analyze Speed Percent Mult", tooltip: "Accel is reduced based on speed * this", order = 8)]
         [ModOptionFloatValues(0, 2, 0.05f)]
         public static float ObstAvoid_Analyze_SpeedMult = 0.75f;
 
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Don't Fight Dot Threshold (start)", tooltip: "When dot product of input and accel is negative, this is how negative the dot is before accel starts getting cancelled out", order = 9)]
+        [ModOptionFloatValues(0, 1, 0.05f)]
+        public static float ObstAvoid_DontFight_DotThreshold_Start = 0.1f;
 
-
-
+        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
+        [ModOptionSlider]
+        [ModOption(name: "Don't Fight Dot Threshold (full block)", tooltip: "When dot product of input and accel is negative, this is how negative the dot is when accel is fully cancelled out", order = 9)]
+        [ModOptionFloatValues(0, 1, 0.05f)]
+        public static float ObstAvoid_DontFight_DotThreshold_Full = 0.7f;
 
         // ******************** Repel Ground ********************
 

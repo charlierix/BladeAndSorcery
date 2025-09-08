@@ -134,7 +134,7 @@ namespace Jetpack.Scanning
                     Rays = results,
                 });
         }
-        public Vector3? Update_Finish(ThunderRoad.Locomotion loco)
+        public Vector3? Update_Finish(ThunderRoad.Locomotion loco, Vector3? input_dir)
         {
             if (!JetpackScript.ShouldRepelGround)
             {
@@ -176,6 +176,8 @@ namespace Jetpack.Scanning
 
             // Increase accel based on distance, speed, strength
             Vector3? accel = GetAccel(avg_hit.avg_from, avg_hit.avg_to, avg_hit.percent, _vel_vert, _ray_len, _speed_vert);
+
+            accel = ObstacleAvoidance.DontFightInput(accel, input_dir);
 
             return accel;
         }

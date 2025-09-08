@@ -11,9 +11,6 @@ namespace Jetpack.Scanning
 {
     // This will focus on not running into walls, trees, etc
 
-    // TODO: instead of two dedicated rays at each perimeter point, have each point fire a random cone direction
-    // TODO: when pressing thumbstick down, suppress upward accel
-
     public class ObstacleAvoidance
     {
         #region class: EllipsePoints
@@ -51,7 +48,7 @@ namespace Jetpack.Scanning
 
         #region debug drawing vars
 
-        private const bool SHOULD_DRAW = true;
+        private const bool SHOULD_DRAW = false;
 
         private const float DOT_SIZE = 0.05f;
         private const float LINE_THICKNESS = 0.005f;
@@ -112,7 +109,7 @@ namespace Jetpack.Scanning
             _speed = _velocity.magnitude;
 
             // Define points on an ellipse around the player
-            var ellipse_points = GetEllipsePoints(_velocity);
+            var ellipse_points = GetEllipsePoints2(_velocity);
             _pos = ellipse_points.origin;
 
             if (SHOULD_DRAW)
@@ -120,13 +117,13 @@ namespace Jetpack.Scanning
 
             // Define the rays
             // NOTE: this also has a ray coming out of origin
-            var rays = GetEllipseRays(ellipse_points.origin, ellipse_points.perimeter, _velocity);
+            var rays = GetEllipseRays2(ellipse_points.origin, ellipse_points.perimeter, _velocity, ellipse_points.up, ellipse_points.right);
 
             _ray_len = _speed * JetpackScript.ObstAvoid_RayDistMult;
 
             CastAndStoreRays(rays, _velocity, _ray_len);
         }
-        public Vector3? Update_Finish()
+        public Vector3? Update_Finish(Vector3? input_dir)
         {
             if (!JetpackScript.ShouldAvoidObstacles)
             {
@@ -153,7 +150,10 @@ namespace Jetpack.Scanning
 
             var hits = AnalyzeHits(rays[0].Rays, _ray_len, _pos, _velocity_dir, _speed);
 
-            Vector3? accel = GetAccel(hits);
+            Vector3? accel = GetAccel1(hits);
+
+            // Suppress accel that is counter to the input (if they want to go down or into a wall, don't fight them)
+            accel = DontFightInput(accel, input_dir);
 
             if (SHOULD_DRAW)
             {
@@ -243,7 +243,10 @@ namespace Jetpack.Scanning
                 {
                     _viz_ellipse[i] = (
                         _renderer.AddDot(origin, DOT_SIZE, Color.yellow),
-                        _renderer.AddLine_Basic(origin, origin + velocity, LINE_THICKNESS, UtilityColor.FromHex("880")),
+
+                        //_renderer.AddLine_Basic(origin, origin + velocity, LINE_THICKNESS, UtilityColor.FromHex("880")),      // only used in GetEllipsePoints1
+                        null,
+
                         _renderer.AddLine_Basic(origin, origin + velocity, LINE_THICKNESS, Color.yellow));
                 }
 
@@ -258,7 +261,10 @@ namespace Jetpack.Scanning
                 var perim_point = perimeter[i];
 
                 _viz_ellipse[i].point.Object.transform.position = perim_point.point;
-                DebugRenderer3D.AdjustLinePositions(_viz_ellipse[i].tangent_right, perim_point.point, perim_point.point + perim_point.tangent_right);
+
+                if (_viz_ellipse[i].tangent_right != null)
+                    DebugRenderer3D.AdjustLinePositions(_viz_ellipse[i].tangent_right, perim_point.point, perim_point.point + perim_point.tangent_right);
+
                 DebugRenderer3D.AdjustLinePositions(_viz_ellipse[i].line, perim_point.point, perim_point.point + velocity);
             }
 
@@ -409,7 +415,7 @@ namespace Jetpack.Scanning
         #endregion
         #region Private Methods
 
-        private ((Vector3 point, Vector3 tangent_right)[] perimeter, Vector3 origin) GetEllipsePoints(Vector3 velocity)
+        private ((Vector3 point, Vector3 tangent_right)[] perimeter, Vector3 origin) GetEllipsePoints1(Vector3 velocity)
         {
             const float WIDTH_PERCENT_OF_HEIGHT = 0.25f;
             const float HEIGHT_EXPAND_PERCENT = 1.1f;
@@ -495,7 +501,60 @@ namespace Jetpack.Scanning
             };
         }
 
-        private static Ray[] GetEllipseRays(Vector3 origin, (Vector3 point, Vector3 tangent_right)[] perimeter, Vector3 velocity)
+        /// <summary>
+        /// This puts four points a little inside the player's ellipse.  They will fire rays in a random rectangle, so
+        /// some rays will point outside the player's ellipse a little
+        /// </summary>
+        /// <remarks>
+        /// tangent_right was for attempt1.  keeping it here so the rest of the class doesn't need to change (final code
+        /// should skip that assuming attempt2 is the correct design)
+        /// </remarks>
+        private ((Vector3 point, Vector3 tangent_right)[] perimeter, Vector3 origin, Vector3 up, Vector3 right) GetEllipsePoints2(Vector3 velocity)
+        {
+            const float WIDTH_PERCENT_OF_HEIGHT = 0.2f;
+            const float HEIGHT_EXPAND_PERCENT = 0.75f;
+
+            // Top and Bottom
+            Vector3 head_pos = Player.local.head.anchor.position;
+            Vector3 foot_pos = Math3D.GetAverage(Player.local.footLeft.ragdollFoot.root.position, Player.local.footRight.ragdollFoot.root.position);        // Player.local.transform.position is the room level origin
+
+            float height = (head_pos - foot_pos).magnitude;
+            Vector3 major_axis_dir = (head_pos - foot_pos).normalized;      // could divide by height, but normalized feels safer
+            Vector3 minor_axis_dir = Vector3.Cross(velocity, major_axis_dir).normalized;
+
+            // Expand height so head and foot are above and below sensor points
+            height *= HEIGHT_EXPAND_PERCENT;
+            float half_height = height / 2f;
+
+            // Origin
+            Vector3 mid_pos = foot_pos + ((head_pos - foot_pos) * 0.5f);
+
+            // Left and Right
+            float half_width = height * WIDTH_PERCENT_OF_HEIGHT * 0.5f;
+
+            Vector3 right_pos = mid_pos + (minor_axis_dir * half_width);
+            Vector3 left_pos = mid_pos - (minor_axis_dir * half_width);
+
+            // Four corner points (tangent isn't used for attempt2)
+            var perimeter = new[]
+            {
+                (mid_pos + major_axis_dir * half_height + minor_axis_dir * half_width,
+                Vector3.zero),
+
+                (mid_pos + major_axis_dir * half_height - minor_axis_dir * half_width,
+                Vector3.zero),
+
+                (mid_pos - major_axis_dir * half_height + minor_axis_dir * half_width,
+                Vector3.zero),
+
+                (mid_pos - major_axis_dir * half_height - minor_axis_dir * half_width,
+                Vector3.zero),
+            };
+
+            return (perimeter, mid_pos, major_axis_dir, minor_axis_dir);
+        }
+
+        private static Ray[] GetEllipseRays1(Vector3 origin, (Vector3 point, Vector3 tangent_right)[] perimeter, Vector3 velocity)
         {
             var retVal = new List<Ray>();
 
@@ -514,6 +573,39 @@ namespace Jetpack.Scanning
                 retVal.Add(new Ray(perim_point.point, ray_dir));
 
                 retVal.Add(new Ray(perim_point.point, Quaternion.AngleAxis(rand.NextFloat(min_angle, max_angle), perim_point.tangent_right) * ray_dir));
+            }
+
+            return retVal.ToArray();
+        }
+        private static Ray[] GetEllipseRays2(Vector3 origin, (Vector3 point, Vector3 tangent_right)[] perimeter, Vector3 velocity, Vector3 up, Vector3 right)
+        {
+            var retVal = new List<Ray>();
+
+            Vector3 ray_dir = velocity.normalized;
+
+            retVal.Add(new Ray(origin, ray_dir));
+
+            float max_yaw = JetpackScript.ObstAvoid_EllipseRayAngleYaw;
+            float max_pitch = JetpackScript.ObstAvoid_EllipseRayAnglePitch;
+
+            var rand = StaticRandom.GetRandomForThread();
+
+            foreach (var perim_point in perimeter)
+            {
+                Vector3 dir = ray_dir;
+
+                if (rand.NextBool())        // mix up yaw then pitch vs pitch then yaw.  it probably doesn't matter much for small angles, but this should avoid any bias
+                {
+                    dir = Quaternion.AngleAxis(rand.NextFloat(-max_pitch, max_pitch), right) * dir;
+                    dir = Quaternion.AngleAxis(rand.NextFloat(-max_yaw, max_yaw), up) * dir;
+                }
+                else
+                {
+                    dir = Quaternion.AngleAxis(rand.NextFloat(-max_yaw, max_yaw), up) * dir;
+                    dir = Quaternion.AngleAxis(rand.NextFloat(-max_pitch, max_pitch), right) * dir;
+                }
+
+                retVal.Add(new Ray(perim_point.point, dir));
             }
 
             return retVal.ToArray();
@@ -560,8 +652,8 @@ namespace Jetpack.Scanning
                 if (to_hit_dist > JetpackScript.ObstAvoid_Analyze_MaxDist)
                     continue;
 
-                if (!ray.Hit.Value.normal.magnitude.IsNearValue(1))
-                    Debug.Log($"hit normal isn't one: {ray.Hit.Value.normal.magnitude}");
+                //if (!ray.Hit.Value.normal.magnitude.IsNearValue(1))       // it's always len 1
+                //    Debug.Log($"hit normal isn't one: {ray.Hit.Value.normal.magnitude}");
 
                 Vector3 normal = ray.Hit.Value.normal;
 
@@ -594,7 +686,8 @@ namespace Jetpack.Scanning
             return retVal.ToArray();
         }
 
-        private static Vector3? GetAccel(HitDetails[] hits)
+        // Attempt1 just adds up accels, which are along the hit normals
+        private static Vector3? GetAccel1(HitDetails[] hits)
         {
             if (hits.Length == 0)
                 return null;
@@ -605,6 +698,55 @@ namespace Jetpack.Scanning
                 retVal += hit.Accel;
 
             return -retVal;     // for some reason, it's backward
+        }
+        // Attempt2 doesn't care about hit normals and instead cares about the distribution relative to the velocity centerline
+        private static Vector3? GetAccel2(HitDetails[] hits, float speed)
+        {
+            if (hits.Length == 0)
+                return null;
+
+            Vector3 retVal = Vector3.zero;
+
+            foreach (var hit in hits)
+            {
+                // ??????????????
+            }
+
+            return retVal;
+        }
+
+        internal static Vector3? DontFightInput(Vector3? accel, Vector3? input_dir)
+        {
+            if (input_dir == null || accel == null)
+                return accel;
+
+            // Do a quick test with the unnormalized accel to see if there is anything counter to input
+            if (Vector3.Dot(accel.Value, input_dir.Value) >= 0)
+                return accel;
+
+            // It is negative, so normalize the accel to get an accurate measurment
+            Vector3 a = accel.Value.normalized;
+
+            float dot_threshold_start = -JetpackScript.ObstAvoid_DontFight_DotThreshold_Start;
+            float dot_threshold_full = -JetpackScript.ObstAvoid_DontFight_DotThreshold_Full;
+
+            float dot = Vector3.Dot(a, input_dir.Value);
+
+            if (dot > dot_threshold_start)
+                return accel.Value;     // not negative enough to interfere
+
+            float percent_block = dot > dot_threshold_full ?
+                UtilityMath.GetScaledValue_Capped(0, 1, dot_threshold_start, dot_threshold_full, dot) :
+                1f;
+
+            // Calculate the component of acceleration to subtract (similar code to accel.Value.GetProjectedVector(input_dir.Value), but avoids
+            // an unnecessary sqrt)
+            float componentDot = dot * accel.Value.magnitude;       // since dot is negative, this is the component of accel that along input, but opposite direction of input
+            Vector3 component = componentDot * input_dir.Value;
+            Vector3 adjusted = accel.Value - component;     // since component is oppposite input and accel is also opposite input, need to subtract to reduce accel (adding the two would increase accel)
+
+            // Interpolate between original and adjusted acceleration
+            return Vector3.Lerp(accel.Value, adjusted, percent_block);
         }
 
         #endregion

@@ -98,15 +98,18 @@ namespace Jetpack.FlightProcessing
             DestabilizeHeldNPC(Player.local.handLeft);
             DestabilizeHeldNPC(Player.local.handRight);
 
+            Vector2 left_stick = InputUtil.GetLeftStick();
+            Vector2 right_stick = InputUtil.GetRightStick();
+            Vector3? input_dir = GetInputDirection(left_stick, right_stick, loco);
 
             // Only do these when already in the air
             if (!Player.local.locomotion.isGrounded && (DateTime.UtcNow - _activation_time).TotalMilliseconds > 500)
             {
-                Vector3? accel_repel = _repelGround.Update_Finish(loco);
+                Vector3? accel_repel = _repelGround.Update_Finish(loco, input_dir);
                 if (accel_repel != null)
                     loco.physicBody.AddForce(accel_repel.Value, ForceMode.Acceleration);
 
-                Vector3? accel_obstacle = _obstacleAvoidance.Update_Finish();
+                Vector3? accel_obstacle = _obstacleAvoidance.Update_Finish(input_dir);
                 if (accel_obstacle != null)
                     loco.physicBody.AddForce(accel_obstacle.Value, ForceMode.Acceleration);
             }
@@ -114,10 +117,33 @@ namespace Jetpack.FlightProcessing
             // TODO: make an option for horiztonal control mode (direct or accel)
             //loco.horizontalAirSpeed = horizontalSpeed / 100f;
 
-            AccelHorz(InputUtil.GetLeftStick(), loco, horz_accel * percent_accel);
-            AccelUp(InputUtil.GetRightStick(), loco, vert_accel * percent_accel, gravity);
+            AccelHorz(left_stick, loco, horz_accel * percent_accel);
+            AccelUp(right_stick, loco, vert_accel * percent_accel, gravity);
         }
 
+        // This is kind of a copy of AccelHorz and AccelUp.  The output is sent to classes that avoid hitting things, and
+        // is used so they don't fight with the desired input direction
+        private Vector3? GetInputDirection(Vector2 left_stick, Vector2 right_stick, Locomotion loco)
+        {
+            var pointer = Pointer.GetActive();
+            if (pointer.isPointingUI)
+                return null;
+
+            Vector3 retVal = Vector3.zero;
+
+            var transform = Player.local.transform;
+
+            retVal += transform.forward * left_stick.y;
+            retVal += transform.right * left_stick.x;
+            retVal += Vector3.up * right_stick.y;
+
+            if (retVal.IsNearZero())
+                return null;
+
+            return retVal.normalized;
+        }
+
+        // These two actually apply accelerations
         private void AccelHorz(Vector2 axis, Locomotion loco, float horz_accel)
         {
             if (axis.x == 0 && axis.y == 0)
@@ -137,12 +163,16 @@ namespace Jetpack.FlightProcessing
 
             float axis_y = axis.y;
 
-            if (axis_y != 0.0 && (!Pointer.GetActive() || !Pointer.GetActive().isPointingUI))
+            if (!axis_y.IsNearZero())
             {
-                up_accel = vert_accel * axis_y;
+                var pointer = Pointer.GetActive();
+                if (!pointer.isPointingUI)
+                {
+                    up_accel = vert_accel * axis_y;
 
-                if (axis_y > 0)
-                    up_accel += gravity;     // when pushing up, cancel out gravity.  When pushing down, it's accelerating down in addition to gravity
+                    if (axis_y > 0)
+                        up_accel += gravity;     // when pushing up, cancel out gravity.  When pushing down, it's accelerating down in addition to gravity
+                }
             }
             up_accel -= gravity;
 
