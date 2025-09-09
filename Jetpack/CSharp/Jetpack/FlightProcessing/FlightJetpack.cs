@@ -1,3 +1,4 @@
+using Jetpack.DebugCode;
 using Jetpack.InputWatchers;
 using Jetpack.Models;
 using Jetpack.Scanning;
@@ -11,9 +12,11 @@ namespace Jetpack.FlightProcessing
     public class FlightJetpack
     {
         private readonly RayCastStorage _raycast_storage;
+        private readonly DebugStats _debugStats;
         private readonly ConfinedArea _confinedScanner;
         private readonly RepelGround _repelGround;
         private readonly ObstacleAvoidance _obstacleAvoidance;
+        private readonly PullYawToLook _pullYawToLook;
 
         private FlightData _standardState = null;
 
@@ -21,12 +24,14 @@ namespace Jetpack.FlightProcessing
 
         private DateTime _activation_time = DateTime.UtcNow;
 
-        public FlightJetpack(RayCastStorage raycast_storage)
+        public FlightJetpack(RayCastStorage raycast_storage, DebugStats debugStats)
         {
             _raycast_storage = raycast_storage;
+            _debugStats = debugStats;
             _confinedScanner = new ConfinedArea(_raycast_storage);
             _repelGround = new RepelGround(_raycast_storage);
             _obstacleAvoidance = new ObstacleAvoidance(_raycast_storage);
+            _pullYawToLook = new PullYawToLook();
         }
 
         public void Activate(float drag)
@@ -54,6 +59,9 @@ namespace Jetpack.FlightProcessing
             _confinedScanner.Clear();
             _repelGround.Clear();
             _obstacleAvoidance.Clear();
+
+            // Others
+            _pullYawToLook.Clear();
         }
         public void Deactivate()
         {
@@ -75,6 +83,7 @@ namespace Jetpack.FlightProcessing
             _confinedScanner.Clear();
             _repelGround.Clear();
             _obstacleAvoidance.Clear();
+            _pullYawToLook.Clear();
         }
 
         public void Update(float drag, float horz_accel, float vert_accel, float gravity)
@@ -112,6 +121,8 @@ namespace Jetpack.FlightProcessing
                 Vector3? accel_obstacle = _obstacleAvoidance.Update_Finish(input_dir);
                 if (accel_obstacle != null)
                     loco.physicBody.AddForce(accel_obstacle.Value, ForceMode.Acceleration);
+
+                _pullYawToLook.Update();
             }
 
             // TODO: make an option for horiztonal control mode (direct or accel)

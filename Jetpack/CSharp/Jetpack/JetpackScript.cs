@@ -73,6 +73,7 @@ namespace Jetpack
         private const string CATEGORY_REPELGROUND = "Repel Ground";
         private const string CATEGORY_FLIGHTPROPS = "Flight Properties";
         private const string CATEGORY_SOUNDS = "Sounds";        // TODO: add this
+        private const string CATEGORY_LOOKYAW = "Yaw Toward Look";
         private const string CATEGORY_SCALE = "Player Size";
         private const string CATEGORY_VISIBILITY = "Player Visibility";
         private const string CATEGORY_DEBUGDRAWING = "Debug Drawing";
@@ -82,9 +83,10 @@ namespace Jetpack
         private const int ORDER_REPELGROUND = 3;
         private const int ORDER_FLIGHTPROPS = 4;
         private const int ORDER_SOUNDS = 5;
-        private const int ORDER_SCALE = 6;
-        private const int ORDER_VISIBILITY = 7;
-        private const int ORDER_DEBUGDRAWING = 8;
+        private const int ORDER_LOOKYAW = 6;
+        private const int ORDER_SCALE = 7;
+        private const int ORDER_VISIBILITY = 8;
+        private const int ORDER_DEBUGDRAWING = 9;
 
         //[ModOptionTextDisplay("description of section", null)]
         //[ModOption("Info")]
@@ -314,6 +316,29 @@ namespace Jetpack
         [ModOptionFloatValues(0, 18, 0.1f)]
         public static float GravitySetting = 0f;
 
+
+
+        // ******************** Yaw Toward Look ********************
+
+        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOption(name: "Should Yaw Toward Look", tooltip: "Will rotate the player toward the direction looking", order = 0)]
+        public static bool ShouldYawToLook = true;
+
+        //[ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        //[ModOptionSlider]
+        //[ModOption(name: "Ellipse Point Angle", tooltip: "Angle for the point between major and minor axis", order = 1)]
+        //[ModOptionFloatValues(0, 90, 1)]
+        //public static float ObstAvoid_EllipsePointAngle = 55;
+
+
+
+
+
+
+
+
+
+
         // ******************** Player Size ********************
 
         [ModOptionCategory(CATEGORY_SCALE, ORDER_SCALE)]
@@ -430,7 +455,6 @@ namespace Jetpack
         private FlightData _old = null;
 
         // FLIGHT DATA
-        private Locomotion _loco = null;
         private bool _isFlying = false;
         private bool _markedToFly = false;      // will fly once not grounded
         private float _last_applied_drag = -1;
@@ -440,6 +464,7 @@ namespace Jetpack
         private FlightJetpack _flight_jetpack = null;
 
         private DebugVisuals _debugVisuals = new DebugVisuals();
+        private DebugStats _debugStats = new DebugStats();
         private VisualizePlayerPoints _visualizePlayerPoints = new VisualizePlayerPoints();
         private ScaleAdjuster _scaleAdjuster = new ScaleAdjuster();
 
@@ -451,7 +476,7 @@ namespace Jetpack
 
             _raycast_storage = new RayCastStorage();
             _transitions = new FlightTransitionWatcher();
-            _flight_jetpack = new FlightJetpack(_raycast_storage);
+            _flight_jetpack = new FlightJetpack(_raycast_storage, _debugStats);
 
             //MaterialShaderFinder.Report();
 
@@ -468,11 +493,14 @@ namespace Jetpack
                 Debug.Log("showing morphology");
                 Player.local.showMorphology = true;
             }
+
+            _debugStats.Clear();
         }
         private void Player_onDespawn(Player player)
         {
             _isPlayerSpawned = false;
 
+            _debugStats.Clear();
             _debugVisuals.RemoveVisuals();
             _visualizePlayerPoints.Clear();
 
@@ -487,6 +515,7 @@ namespace Jetpack
                 return;
 
             _visualizePlayerPoints.Update(VisualizePlayerPoints, playerScale / 100);
+            _debugStats.Update_Pre();
 
             bool should_switch = _transitions.Update(_flightActivation_cast, RequireBothHands, DeactivateOnGround, _isFlying);
 
@@ -515,6 +544,12 @@ namespace Jetpack
 
             if (_markedToFly && !Player.local.locomotion.isGrounded)
                 ActivateFly();
+
+            if (DebugStats.SHOULD_DRAW && _isPlayerSpawned)
+            {
+                PopulateDebug();
+                _debugStats.Update_Final();
+            }
         }
         public override void ScriptFixedUpdate()
         {
@@ -562,6 +597,20 @@ namespace Jetpack
             _flight_jetpack.Deactivate();
 
             //PlaySounds.Play(SoundName.Jetpack_Deactivate);
+        }
+
+        private void PopulateDebug()
+        {
+            _debugStats.AddEntry("is flying", _isFlying.ToString());
+            _debugStats.AddEntry("is grounded", Player.local.locomotion.isGrounded.ToString());
+            _debugStats.AddEntry("is marked to fly", _markedToFly.ToString());
+
+            Vector3 velocity = Player.local.locomotion.physicBody.velocity;
+            _debugStats.AddEntry("velocity", velocity.ToStringSignificantDigits(2));
+            _debugStats.AddEntry("vel speed", velocity.magnitude.ToStringSignificantDigits(2));
+
+            _debugStats.AddEntry("stick left", InputUtil.GetLeftStick().ToStringSignificantDigits(2));
+            _debugStats.AddEntry("stick right", InputUtil.GetRightStick().ToStringSignificantDigits(2));
         }
     }
 }

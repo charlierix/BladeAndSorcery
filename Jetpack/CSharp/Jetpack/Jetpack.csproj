@@ -41,9 +41,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DebugCode\DebugStats.cs" />
     <Compile Include="DebugCode\PlayerVisibility.cs" />
     <Compile Include="DebugCode\ScaleAdjuster.cs" />
     <Compile Include="DebugCode\VisualizePlayerPoints.cs" />
+    <Compile Include="FlightProcessing\PullYawToLook.cs" />
     <Compile Include="Scanning\RayCastStorage.cs" />
     <Compile Include="Scanning\RepelGround.cs" />
     <Compile Include="JetpackScript.cs" />
