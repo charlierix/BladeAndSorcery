@@ -324,20 +324,47 @@ namespace Jetpack
         [ModOption(name: "Should Yaw Toward Look", tooltip: "Will rotate the player toward the direction looking", order = 0)]
         public static bool ShouldYawToLook = true;
 
-        //[ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
-        //[ModOptionSlider]
-        //[ModOption(name: "Ellipse Point Angle", tooltip: "Angle for the point between major and minor axis", order = 1)]
-        //[ModOptionFloatValues(0, 90, 1)]
-        //public static float ObstAvoid_EllipsePointAngle = 55;
+        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionSlider]
+        [ModOption(name: "Capacitor Charging Dot", tooltip: "Capacitor increases above this (forward dot look)", order = 1)]
+        [ModOptionFloatValues(0, 1, 0.01f)]
+        public static float YawToLook_Capacitor_UpperDot = 0.95f;
 
+        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionSlider]
+        [ModOption(name: "Capacitor Start Discharge Dot", tooltip: "Capacitor starts discharging below this (forward dot look)", order = 2)]
+        [ModOptionFloatValues(0, 1, 0.01f)]
+        public static float YawToLook_Capacitor_LowerDot = 0.9f;
 
+        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionSlider]
+        [ModOption(name: "Capacitor Full Discharge Dot", tooltip: "Capacitor discharges fastest below this (forward dot look)", order = 2)]
+        [ModOptionFloatValues(0, 1, 0.01f)]
+        public static float YawToLook_Capacitor_BottomDot = 0.75f;
 
+        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionSlider]
+        [ModOption(name: "Capacitor Charge Speed", tooltip: "Charge per second when look diff is above upper dot", order = 3)]
+        [ModOptionFloatValues(0, 8, 0.05f)]
+        public static float YawToLook_Capacitor_ChargeSpeed = 1;
 
+        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionSlider]
+        [ModOption(name: "Capacitor Charge Power", tooltip: "Look diff beween upper dot and one ramps up by this power", order = 4)]
+        [ModOptionFloatValues(1, 6, 0.1f)]
+        public static float YawToLook_Capacitor_ChargePower = 2;
 
+        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionSlider]
+        [ModOption(name: "Capacitor Discharge Speed", tooltip: "Charge per second when diff is below lower dot", order = 5)]
+        [ModOptionFloatValues(0, 8, 0.05f)]
+        public static float YawToLook_Capacitor_DischargeSpeed = 2f;
 
-
-
-
+        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionSlider]
+        [ModOption(name: "Capacitor Discharge Power", tooltip: "Look diff between lower dot and zero ramps up by this power", order = 6)]
+        [ModOptionFloatValues(1, 6, 0.1f)]
+        public static float YawToLook_Capacitor_DischargePower = 2;
 
         // ******************** Player Size ********************
 

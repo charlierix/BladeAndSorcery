@@ -101,6 +101,35 @@ namespace PerfectlyNormalBaS
 
             return retVal;
         }
+        public DebugItem AddAxisLines(Transform transform, float length, float thickness, bool isBasic = true)
+        {
+            EnsureContainerExists();
+
+            GameObject parent = new GameObject();
+            parent.name = PREFIX + "axis lines";
+            parent.transform.SetParent(_container.transform, false);
+
+            var children = new List<GameObject>();
+
+            if (isBasic)
+            {
+                children.Add(GetNewBasicLine(new[] { transform.position, transform.position + transform.rotation * new Vector3(length, 0, 0) }, thickness, UtilityColor.FromHex(AXISCOLOR_X), 0, 4, false, parent));
+                children.Add(GetNewBasicLine(new[] { transform.position, transform.position + transform.rotation * new Vector3(0, length, 0) }, thickness, UtilityColor.FromHex(AXISCOLOR_Y), 0, 4, false, parent));
+                children.Add(GetNewBasicLine(new[] { transform.position, transform.position + transform.rotation * new Vector3(0, 0, length) }, thickness, UtilityColor.FromHex(AXISCOLOR_Z), 0, 4, false, parent));
+            }
+            else
+            {
+                children.Add(GetNewPipeLine(transform.position, transform.position + transform.rotation * new Vector3(length, 0, 0), thickness, UtilityColor.FromHex(AXISCOLOR_X), parent));
+                children.Add(GetNewPipeLine(transform.position, transform.position + transform.rotation * new Vector3(0, length, 0), thickness, UtilityColor.FromHex(AXISCOLOR_Y), parent));
+                children.Add(GetNewPipeLine(transform.position, transform.position + transform.rotation * new Vector3(0, 0, length), thickness, UtilityColor.FromHex(AXISCOLOR_Z), parent));
+            }
+
+            var retVal = new DebugItem(NextToken(), parent, children.ToArray(), new Vector3(), null, null, true);
+
+            AddItem(retVal);
+
+            return retVal;
+        }
 
         public DebugItem AddDot(Vector3 position, float radius, Color color, bool isLit = false, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
