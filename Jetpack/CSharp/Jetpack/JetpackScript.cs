@@ -366,6 +366,26 @@ namespace Jetpack
         [ModOptionFloatValues(1, 6, 0.1f)]
         public static float YawToLook_Capacitor_DischargePower = 2;
 
+
+        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionSlider]
+        [ModOption(name: "Buffer Max Time (seconds)", tooltip: "How long to keep previous look directions", order = 7)]
+        [ModOptionFloatValues(0, 3, 0.1f)]
+        public static float YawToLook_Buffer_MaxSeconds = 1.5f;
+
+        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionSlider]
+        [ModOption(name: "Buffer Max Count", tooltip: "Max size of buffer", order = 8)]
+        [ModOptionIntValues(0, 500, 20)]
+        public static int YawToLook_Buffer_MaxCount = 20;
+
+        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionSlider]
+        [ModOption(name: "Gaze Confidence", tooltip: "The average of look directions", order = 9)]
+        [ModOptionFloatValues(0, 1, 0.01f)]
+        public static float YawToLook_Buffer_GazeConfidence = 0.7f;
+
+
         // ******************** Player Size ********************
 
         [ModOptionCategory(CATEGORY_SCALE, ORDER_SCALE)]

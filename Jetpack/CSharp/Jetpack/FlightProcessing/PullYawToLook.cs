@@ -1,6 +1,8 @@
-﻿using PerfectlyNormalBaS;
+﻿using Jetpack.InputWatchers;
+using PerfectlyNormalBaS;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ThunderRoad;
 using UnityEngine;
 
@@ -20,6 +22,8 @@ namespace Jetpack.FlightProcessing
             RagdollPart.Type.Torso,     // I think there are two parts labeled as torso
             //RagdollPart.Type.Neck,        // this one points downward a little
         };
+
+        private readonly GazeBuffer _gazeBuffer = new GazeBuffer();
 
         private float _capacitor = 0f;
 
@@ -54,6 +58,7 @@ namespace Jetpack.FlightProcessing
         public void Clear()
         {
             _capacitor = 0f;
+            _gazeBuffer.Clear();
             _prevTick = DateTime.UtcNow;
 
             if (SHOULD_DRAW)
@@ -77,19 +82,14 @@ namespace Jetpack.FlightProcessing
             //Vector3 forward = Player.local.waist.ikAnchor.forward.GetProjectedVector(_xzplane).normalized;      // same as prev
             Vector3 forward = GetRagdollForward().GetProjectedVector(_xzplane).normalized;
 
-
-
-            //SpellCaster caster;
-            //caster.magicSource.
-
-            //var test1 = Player.local.globalOffsetTransform.position;
-
-            //var test = Player.local.creature.morphology;        // definitions, not realtime data
-
-
-
             // Update the capacitor
-            UpdateCapacitor2(look, forward, elapsedSeconds);
+            //UpdateCapacitor2(look, forward, elapsedSeconds);
+
+            float upper_dot = JetpackScript.YawToLook_Capacitor_UpperDot;
+            float lower_dot = JetpackScript.YawToLook_Capacitor_LowerDot;
+            float bottom_dot = JetpackScript.YawToLook_Capacitor_BottomDot;
+
+            _capacitor = UpdateCapacitor3(_capacitor, look, forward, elapsedSeconds, upper_dot, lower_dot, bottom_dot);
 
             if (SHOULD_DRAW)
             {
@@ -300,6 +300,15 @@ namespace Jetpack.FlightProcessing
 
             _ragdoll.Clear();
 
+
+            //SpellCaster caster;
+            //caster.magicSource.
+
+            //var test1 = Player.local.globalOffsetTransform.position;
+
+            //var test = Player.local.creature.morphology;        // definitions, not realtime data
+
+
             var ragdoll = Player.currentCreature.ragdoll;
 
             //var foot1 = Player.currentCreature.footLeft;
@@ -418,6 +427,44 @@ namespace Jetpack.FlightProcessing
 
             // Enforce capacitor bounds
             _capacitor = Mathf.Clamp(_capacitor, 0f, 1f);
+        }
+
+        private static float UpdateCapacitor3(float capacitor, Vector3 target, Vector3 forward, double elapsedSeconds, float upper_dot, float lower_dot, float bottom_dot)
+        {
+            // Calculate alignment between target and forward directions
+            float dot = Vector3.Dot(target, forward);
+
+            var retVal = capacitor;
+
+            // Determine which region we're in
+            if (dot > upper_dot)
+            {
+                // CHARGE REGION: dot > upper threshold
+                // Normalize to 0-1 range based on available threshold window
+                float chargeFactor = (dot - upper_dot) / (1f - upper_dot);
+                float chargeRate = JetpackScript.YawToLook_Capacitor_ChargeSpeed * Mathf.Pow(chargeFactor, JetpackScript.YawToLook_Capacitor_ChargePower);
+                retVal += chargeRate * (float)elapsedSeconds;
+            }
+            else if (dot < bottom_dot)
+            {
+                // DISCHARGE REGION: max amount
+                retVal -= JetpackScript.YawToLook_Capacitor_DischargeSpeed * (float)elapsedSeconds;
+            }
+            else if (dot < lower_dot)
+            {
+                // DISCHARGE REGION: dot < lower threshold
+                // Normalize to 0-1 range based on threshold position
+                //float decayFactor = (lower_dot - dot) / lower_dot;
+                float decayFactor = UtilityMath.GetScaledValue_Capped(0, 1, bottom_dot, lower_dot, dot);
+                float decayRate = JetpackScript.YawToLook_Capacitor_DischargeSpeed * Mathf.Pow(decayFactor, JetpackScript.YawToLook_Capacitor_DischargePower);
+                retVal -= decayRate * (float)elapsedSeconds;
+            }
+            // else: NEUTRAL WINDOW - capacitor remains unchanged
+
+            // Enforce capacitor bounds
+            retVal = Mathf.Clamp(retVal, 0f, 1f);
+
+            return retVal;
         }
 
         #endregion
