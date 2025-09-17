@@ -180,7 +180,7 @@ namespace Jetpack.FlightProcessing
 
         private void DrawForwardLookDiagram(Vector3 look, Vector3 forward)
         {
-            const float LINE_LEN = 0.4f;
+            const float LINE_LEN = 0.35f;
 
             EnsureDebugActive();
 
@@ -191,7 +191,7 @@ namespace Jetpack.FlightProcessing
             Vector3 origin = Player.local.head.anchor.position +
                 Player.local.head.transform.forward * 1.5f +
                 right * -0.4f +
-                up * 0.25f;
+                up * 0.3f;
 
             // forward is straight up
             if (_diag_forwardline == null)
@@ -250,8 +250,8 @@ namespace Jetpack.FlightProcessing
 
         private void DrawCapacitor()
         {
-            const float HEIGHT = 0.4f;
-            const float TICK_HALF_WIDTH = 0.07f;
+            const float HEIGHT = 0.35f;
+            const float TICK_HALF_WIDTH = 0.06f;
 
             EnsureDebugActive();
 
@@ -261,7 +261,7 @@ namespace Jetpack.FlightProcessing
             Vector3 bottom = Player.local.head.anchor.position +
                 Player.local.head.transform.forward * 1.5f +
                 right * -0.4f +
-                up * -0.25f;
+                up * -0.3f;
 
             // vertical line
             if (_capa_vert == null)

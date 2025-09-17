@@ -469,28 +469,30 @@ namespace Jetpack.Scanning
 
         private static Ray[] GetIcosahedron()
         {
+            // came from PartyPeople.UnitTests
+
             return new[]
             {
-                new Ray(new Vector3(-0.11469849f, 0.11469849f, 0.11469849f),        new Vector3( -0.57735026f, 0.57735026f, 0.57735026f)),
-                new Ray(new Vector3(0, 0.18558607f, 0.070887566f),                  new Vector3(0, 0.93417233f, 0.3568221f)),
-                new Ray(new Vector3(0, 0.18558607f, -0.070887566f),                 new Vector3(0, 0.93417233f, -0.3568221f)),
-                new Ray(new Vector3(-0.11469849f, 0.11469849f, -0.11469849f),       new Vector3(-0.57735026f, 0.57735026f, -0.57735026f)),
-                new Ray(new Vector3(-0.18558607f, 0.070887566f, 0),                 new Vector3(-0.93417233f, 0.3568221f, 0)),
-                new Ray(new Vector3(0.11469849f, 0.11469849f, 0.11469849f),         new Vector3(0.57735026f, 0.57735026f, 0.57735026f)),
-                new Ray(new Vector3(-0.070887566f, 0, 0.18558607f),                 new Vector3(-0.3568221f, 0, 0.93417233f)),
-                new Ray(new Vector3(-0.18558607f, -0.070887566f, 0),                new Vector3(-0.93417233f, -0.3568221f, 0)),
-                new Ray(new Vector3(-0.070887566f, 0, -0.18558607f),                new Vector3(-0.3568221f, -0, -0.93417233f)),
-                new Ray(new Vector3(0.11469849f, 0.11469849f, -0.11469849f),        new Vector3(0.57735026f, 0.57735026f, -0.57735026f)),
-                new Ray(new Vector3(0.11469849f, -0.11469849f, 0.11469849f),        new Vector3(0.57735026f, -0.57735026f, 0.57735026f)),
-                new Ray(new Vector3(0, -0.18558607f, 0.070887566f),                 new Vector3(0, -0.93417233f, 0.3568221f)),
-                new Ray(new Vector3(0, -0.18558607f, -0.070887566f),                new Vector3(0, -0.93417233f, -0.3568221f)),
-                new Ray(new Vector3(0.11469849f, -0.11469849f, -0.11469849f),       new Vector3(0.57735026f, -0.57735026f, -0.57735026f)),
-                new Ray(new Vector3(0.18558607f, -0.070887566f, 0),                 new Vector3(0.93417233f, -0.3568221f, 0)),
-                new Ray(new Vector3(0.070887566f, 0, 0.18558607f),                  new Vector3(0.3568221f, 0, 0.93417233f)),
-                new Ray(new Vector3(-0.11469849f, -0.11469849f, 0.11469849f),       new Vector3(-0.57735026f, -0.57735026f, 0.57735026f)),
-                new Ray(new Vector3(-0.11469849f, -0.11469849f, -0.11469849f),      new Vector3(-0.57735026f, -0.57735026f, -0.57735026f)),
-                new Ray(new Vector3(0.070887566f, 0, -0.18558607f),                 new Vector3(0.3568221f, 0, -0.93417233f)),
-                new Ray(new Vector3(0.18558607f, 0.070887566f, 0),                  new Vector3(0.93417233f, 0.3568221f, -0)),
+                new Ray(new Vector3(-0.11469849f, 0.11469849f, 0.11469849f),    new Vector3( -0.57735026f, 0.57735026f, 0.57735026f)),
+                new Ray(new Vector3(0, 0.18558607f, 0.070887566f),              new Vector3(0, 0.93417233f, 0.3568221f)),
+                new Ray(new Vector3(0, 0.18558607f, -0.070887566f),             new Vector3(0, 0.93417233f, -0.3568221f)),
+                new Ray(new Vector3(-0.11469849f, 0.11469849f, -0.11469849f),   new Vector3(-0.57735026f, 0.57735026f, -0.57735026f)),
+                new Ray(new Vector3(-0.18558607f, 0.070887566f, 0),             new Vector3(-0.93417233f, 0.3568221f, 0)),
+                new Ray(new Vector3(0.11469849f, 0.11469849f, 0.11469849f),     new Vector3(0.57735026f, 0.57735026f, 0.57735026f)),
+                new Ray(new Vector3(-0.070887566f, 0, 0.18558607f),             new Vector3(-0.3568221f, 0, 0.93417233f)),
+                new Ray(new Vector3(-0.18558607f, -0.070887566f, 0),            new Vector3(-0.93417233f, -0.3568221f, 0)),
+                new Ray(new Vector3(-0.070887566f, 0, -0.18558607f),            new Vector3(-0.3568221f, -0, -0.93417233f)),
+                new Ray(new Vector3(0.11469849f, 0.11469849f, -0.11469849f),    new Vector3(0.57735026f, 0.57735026f, -0.57735026f)),
+                new Ray(new Vector3(0.11469849f, -0.11469849f, 0.11469849f),    new Vector3(0.57735026f, -0.57735026f, 0.57735026f)),
+                new Ray(new Vector3(0, -0.18558607f, 0.070887566f),             new Vector3(0, -0.93417233f, 0.3568221f)),
+                new Ray(new Vector3(0, -0.18558607f, -0.070887566f),            new Vector3(0, -0.93417233f, -0.3568221f)),
+                new Ray(new Vector3(0.11469849f, -0.11469849f, -0.11469849f),   new Vector3(0.57735026f, -0.57735026f, -0.57735026f)),
+                new Ray(new Vector3(0.18558607f, -0.070887566f, 0),             new Vector3(0.93417233f, -0.3568221f, 0)),
+                new Ray(new Vector3(0.070887566f, 0, 0.18558607f),              new Vector3(0.3568221f, 0, 0.93417233f)),
+                new Ray(new Vector3(-0.11469849f, -0.11469849f, 0.11469849f),   new Vector3(-0.57735026f, -0.57735026f, 0.57735026f)),
+                new Ray(new Vector3(-0.11469849f, -0.11469849f, -0.11469849f),  new Vector3(-0.57735026f, -0.57735026f, -0.57735026f)),
+                new Ray(new Vector3(0.070887566f, 0, -0.18558607f),             new Vector3(0.3568221f, 0, -0.93417233f)),
+                new Ray(new Vector3(0.18558607f, 0.070887566f, 0),              new Vector3(0.93417233f, 0.3568221f, -0)),
             };
         }
 

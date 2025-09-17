@@ -44,6 +44,9 @@ namespace PerfectlyNormalBaS
         private readonly List<DebugItem> _stationary = new List<DebugItem>();
         private readonly List<DebugItem> _relativeTo = new List<DebugItem>();
 
+        private static Lazy<(Vector3, Vector3)[]> _icolines_lowres = new Lazy<(Vector3, Vector3)[]>(() => GetIcosahedronLines(true));
+        private static Lazy<(Vector3, Vector3)[]> _icolines_highres = new Lazy<(Vector3, Vector3)[]>(() => GetIcosahedronLines(false));
+
         #endregion
 
         void Update()
@@ -194,6 +197,25 @@ namespace PerfectlyNormalBaS
 
             return retVal;
         }
+        public DebugItem AddLine_Basic((Vector3, Vector3)[] segments, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        {
+            EnsureContainerExists();
+
+            GameObject parent = new GameObject();
+            parent.name = PREFIX + "basic line segments";
+            parent.transform.SetParent(_container.transform, false);
+
+            var children = new List<GameObject>();
+
+            for (int i = 0; i < segments.Length; i++)
+                children.Add(GetNewBasicLine(new[] { segments[i].Item1, segments[i].Item2 }, thickness, color, 0, 4, false, parent));
+
+            var retVal = new DebugItem(NextToken(), parent, children.ToArray(), new Vector3(), relativeToComponent, relativeToGameObject, true);
+
+            AddItem(retVal);
+
+            return retVal;
+        }
 
         /// <summary>
         /// This draws a line using a cylinder
@@ -205,6 +227,25 @@ namespace PerfectlyNormalBaS
             GameObject obj = GetNewPipeLine(from, to, thickness, color, isLit, _container);
 
             var retVal = new DebugItem(NextToken(), obj, null, from, relativeToComponent, relativeToGameObject, isLit);
+
+            AddItem(retVal);
+
+            return retVal;
+        }
+        public DebugItem AddLine_Pipe((Vector3, Vector3)[] segments, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        {
+            EnsureContainerExists();
+
+            GameObject parent = new GameObject();
+            parent.name = PREFIX + "pipe line segments";
+            parent.transform.SetParent(_container.transform, false);
+
+            var children = new List<GameObject>();
+
+            for (int i = 0; i < segments.Length; i++)
+                children.Add(GetNewPipeLine(segments[i].Item1, segments[i].Item2, thickness, color, parent));
+
+            var retVal = new DebugItem(NextToken(), parent, children.ToArray(), new Vector3(), relativeToComponent, relativeToGameObject, true);
 
             AddItem(retVal);
 
@@ -280,7 +321,7 @@ namespace PerfectlyNormalBaS
             return AddPlane_ThreePoints(pointOnPlane + direction1, pointOnPlane, pointOnPlane + direction2, size, color, isLit, numCells, center, relativeToComponent, relativeToGameObject);
         }
 
-        public DebugItem AddCircle(Vector3 position, Vector3 normal, float radius, float thickness, Color color, bool isLit = false, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        public DebugItem AddCircle(Vector3 position, Vector3 normal, float radius, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
             Quaternion quat = Quaternion.FromToRotation(new Vector3(0, 0, 1), normal);
 
@@ -291,6 +332,27 @@ namespace PerfectlyNormalBaS
                 points[i] = position + (quat * (new Vector3(unit_circle[i].x, unit_circle[i].y, 0) * radius));
 
             return AddLine_Basic(points, true, thickness, color, relativeToComponent, relativeToGameObject);
+        }
+
+        public DebugItem AddWireframeSphere(Vector3 position, float radius, float line_thickness, Color color, bool isBasic = true, bool isLowRes = true, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        {
+            // Get the precalculated lines
+            var lines_shared = isLowRes ?
+                _icolines_lowres.Value :
+                _icolines_highres.Value;
+
+            // Random rotation
+            Quaternion quat = StaticRandom.RotationUniform();
+
+            var lines = new (Vector3, Vector3)[lines_shared.Length];        // need to store the tranformed vectors in a new array
+
+            for (int i = 0; i < lines.Length; i++)
+                lines[i] = (position + quat * lines_shared[i].Item1 * radius, position + quat * lines_shared[i].Item2 * radius);
+
+            // Call the line segments overload
+            return isBasic ?
+                AddLine_Basic(lines, line_thickness, color, relativeToComponent, relativeToGameObject) :
+                AddLine_Pipe(lines, line_thickness, color, relativeToComponent, relativeToGameObject);
         }
 
         public DebugItem AddText(string text, Vector3 pos, Vector3 normal, Color back_color, Color fore_color, float world_height, Component relativeToComponent = null, GameObject relativeToGameObject = null)
@@ -690,8 +752,8 @@ namespace PerfectlyNormalBaS
 
             line.useWorldSpace = false;     // this is false by default in the editor, but true by default here
             line.positionCount = points.Length;
-            for (int cntr = 0; cntr < points.Length; cntr++)
-                line.SetPosition(cntr, points[cntr]);
+            for (int i = 0; i < points.Length; i++)
+                line.SetPosition(i, points[i]);
 
             line.loop = shouldLoop;
 
@@ -836,6 +898,171 @@ namespace PerfectlyNormalBaS
             return (scale, imageWidth);
         }
 
+        private static (Vector3, Vector3)[] GetIcosahedronLines(bool isLowRes)
+        {
+            // came from PartyPeople.UnitTests.IcoNormals_Click
+
+            if (isLowRes)
+                return new[]
+                {
+                    (new Vector3(-0.5257311f, 0.8506508f, 0f),  new Vector3(-0.8506508f, 0f, 0.5257311f)),
+                    (new Vector3(0f, 0.5257311f, 0.8506508f),   new Vector3(-0.8506508f, 0f, 0.5257311f)),
+                    (new Vector3(-0.5257311f, 0.8506508f, 0f),  new Vector3(0f, 0.5257311f, 0.8506508f)),
+                    (new Vector3(0.5257311f, 0.8506508f, 0f),   new Vector3(0f, 0.5257311f, 0.8506508f)),
+                    (new Vector3(-0.5257311f, 0.8506508f, 0f),  new Vector3(0.5257311f, 0.8506508f, 0f)),
+                    (new Vector3(0.5257311f, 0.8506508f, 0f),   new Vector3(0f, 0.5257311f, -0.8506508f)),
+                    (new Vector3(-0.5257311f, 0.8506508f, 0f),  new Vector3(0f, 0.5257311f, -0.8506508f)),
+                    (new Vector3(0f, 0.5257311f, -0.8506508f),  new Vector3(-0.8506508f, 0f, -0.5257311f)),
+                    (new Vector3(-0.5257311f, 0.8506508f, 0f),  new Vector3(-0.8506508f, 0f, -0.5257311f)),
+                    (new Vector3(-0.8506508f, 0f, -0.5257311f), new Vector3(-0.8506508f, 0f, 0.5257311f)),
+                    (new Vector3(0f, 0.5257311f, 0.8506508f),   new Vector3(0.8506508f, 0f, 0.5257311f)),
+                    (new Vector3(0.5257311f, 0.8506508f, 0f),   new Vector3(0.8506508f, 0f, 0.5257311f)),
+                    (new Vector3(0f, -0.5257311f, 0.8506508f),  new Vector3(-0.8506508f, 0f, 0.5257311f)),
+                    (new Vector3(0f, -0.5257311f, 0.8506508f),  new Vector3(0f, 0.5257311f, 0.8506508f)),
+                    (new Vector3(-0.5257311f, -0.8506508f, 0f), new Vector3(-0.8506508f, 0f, -0.5257311f)),
+                    (new Vector3(-0.5257311f, -0.8506508f, 0f), new Vector3(-0.8506508f, 0f, 0.5257311f)),
+                    (new Vector3(0f, -0.5257311f, -0.8506508f), new Vector3(0f, 0.5257311f, -0.8506508f)),
+                    (new Vector3(0f, -0.5257311f, -0.8506508f), new Vector3(-0.8506508f, 0f, -0.5257311f)),
+                    (new Vector3(0.5257311f, 0.8506508f, 0f),   new Vector3(0.8506508f, 0f, -0.5257311f)),
+                    (new Vector3(0f, 0.5257311f, -0.8506508f),  new Vector3(0.8506508f, 0f, -0.5257311f)),
+                    (new Vector3(0.5257311f, -0.8506508f, 0f),  new Vector3(0.8506508f, 0f, 0.5257311f)),
+                    (new Vector3(0f, -0.5257311f, 0.8506508f),  new Vector3(0.8506508f, 0f, 0.5257311f)),
+                    (new Vector3(0.5257311f, -0.8506508f, 0f),  new Vector3(0f, -0.5257311f, 0.8506508f)),
+                    (new Vector3(-0.5257311f, -0.8506508f, 0f), new Vector3(0f, -0.5257311f, 0.8506508f)),
+                    (new Vector3(-0.5257311f, -0.8506508f, 0f), new Vector3(0.5257311f, -0.8506508f, 0f)),
+                    (new Vector3(-0.5257311f, -0.8506508f, 0f), new Vector3(0f, -0.5257311f, -0.8506508f)),
+                    (new Vector3(0.5257311f, -0.8506508f, 0f),  new Vector3(0f, -0.5257311f, -0.8506508f)),
+                    (new Vector3(0f, -0.5257311f, -0.8506508f), new Vector3(0.8506508f, 0f, -0.5257311f)),
+                    (new Vector3(0.5257311f, -0.8506508f, 0f),  new Vector3(0.8506508f, 0f, -0.5257311f)),
+                    (new Vector3(0.8506508f, 0f, -0.5257311f),  new Vector3(0.8506508f, 0f, 0.5257311f)),
+                };
+
+            else
+                return new[]
+                {
+                    (new Vector3(-0.5257311f, 0.8506508f, 0f),  new Vector3(-0.809017f, 0.5f, 0.309017f)),
+                    (new Vector3(-0.809017f, 0.5f, 0.309017f),  new Vector3(-0.309017f, 0.809017f, 0.5f)),
+                    (new Vector3(-0.5257311f, 0.8506508f, 0f),  new Vector3(-0.309017f, 0.809017f, 0.5f)),
+                    (new Vector3(-0.8506508f, 0f, 0.5257311f),  new Vector3(-0.5f, 0.309017f, 0.809017f)),
+                    (new Vector3(-0.809017f, 0.5f, 0.309017f),  new Vector3(-0.5f, 0.309017f, 0.809017f)),
+                    (new Vector3(-0.8506508f, 0f, 0.5257311f),  new Vector3(-0.809017f, 0.5f, 0.309017f)),
+                    (new Vector3(0f, 0.5257311f, 0.8506508f),   new Vector3(-0.309017f, 0.809017f, 0.5f)),
+                    (new Vector3(-0.5f, 0.309017f, 0.809017f),  new Vector3(-0.309017f, 0.809017f, 0.5f)),
+                    (new Vector3(0f, 0.5257311f, 0.8506508f),   new Vector3(-0.5f, 0.309017f, 0.809017f)),
+                    (new Vector3(-0.309017f, 0.809017f, 0.5f),  new Vector3(0f, 1f, 0f)),
+                    (new Vector3(-0.5257311f, 0.8506508f, 0f),  new Vector3(0f, 1f, 0f)),
+                    (new Vector3(0f, 0.5257311f, 0.8506508f),   new Vector3(0.309017f, 0.809017f, 0.5f)),
+                    (new Vector3(-0.309017f, 0.809017f, 0.5f),  new Vector3(0.309017f, 0.809017f, 0.5f)),
+                    (new Vector3(0.5257311f, 0.8506508f, 0f),   new Vector3(0f, 1f, 0f)),
+                    (new Vector3(0.309017f, 0.809017f, 0.5f),   new Vector3(0f, 1f, 0f)),
+                    (new Vector3(0.5257311f, 0.8506508f, 0f),   new Vector3(0.309017f, 0.809017f, 0.5f)),
+                    (new Vector3(0f, 1f, 0f),                   new Vector3(-0.309017f, 0.809017f, -0.5f)),
+                    (new Vector3(-0.5257311f, 0.8506508f, 0f),  new Vector3(-0.309017f, 0.809017f, -0.5f)),
+                    (new Vector3(0.5257311f, 0.8506508f, 0f),   new Vector3(0.309017f, 0.809017f, -0.5f)),
+                    (new Vector3(0f, 1f, 0f),                   new Vector3(0.309017f, 0.809017f, -0.5f)),
+                    (new Vector3(0f, 0.5257311f, -0.8506508f),  new Vector3(-0.309017f, 0.809017f, -0.5f)),
+                    (new Vector3(0.309017f, 0.809017f, -0.5f),  new Vector3(-0.309017f, 0.809017f, -0.5f)),
+                    (new Vector3(0f, 0.5257311f, -0.8506508f),  new Vector3(0.309017f, 0.809017f, -0.5f)),
+                    (new Vector3(-0.309017f, 0.809017f, -0.5f), new Vector3(-0.809017f, 0.5f, -0.309017f)),
+                    (new Vector3(-0.5257311f, 0.8506508f, 0f),  new Vector3(-0.809017f, 0.5f, -0.309017f)),
+                    (new Vector3(0f, 0.5257311f, -0.8506508f),  new Vector3(-0.5f, 0.309017f, -0.809017f)),
+                    (new Vector3(-0.309017f, 0.809017f, -0.5f), new Vector3(-0.5f, 0.309017f, -0.809017f)),
+                    (new Vector3(-0.8506508f, 0f, -0.5257311f), new Vector3(-0.809017f, 0.5f, -0.309017f)),
+                    (new Vector3(-0.5f, 0.309017f, -0.809017f), new Vector3(-0.809017f, 0.5f, -0.309017f)),
+                    (new Vector3(-0.8506508f, 0f, -0.5257311f), new Vector3(-0.5f, 0.309017f, -0.809017f)),
+                    (new Vector3(-0.809017f, 0.5f, 0.309017f),  new Vector3(-0.809017f, 0.5f, -0.309017f)),
+                    (new Vector3(-0.8506508f, 0f, -0.5257311f), new Vector3(-1f, 0f, 0f)),
+                    (new Vector3(-0.809017f, 0.5f, -0.309017f), new Vector3(-1f, 0f, 0f)),
+                    (new Vector3(-0.809017f, 0.5f, 0.309017f),  new Vector3(-1f, 0f, 0f)),
+                    (new Vector3(-0.8506508f, 0f, 0.5257311f),  new Vector3(-1f, 0f, 0f)),
+                    (new Vector3(0.309017f, 0.809017f, 0.5f),   new Vector3(0.809017f, 0.5f, 0.309017f)),
+                    (new Vector3(0.5257311f, 0.8506508f, 0f),   new Vector3(0.809017f, 0.5f, 0.309017f)),
+                    (new Vector3(0f, 0.5257311f, 0.8506508f),   new Vector3(0.5f, 0.309017f, 0.809017f)),
+                    (new Vector3(0.309017f, 0.809017f, 0.5f),   new Vector3(0.5f, 0.309017f, 0.809017f)),
+                    (new Vector3(0.8506508f, 0f, 0.5257311f),   new Vector3(0.809017f, 0.5f, 0.309017f)),
+                    (new Vector3(0.5f, 0.309017f, 0.809017f),   new Vector3(0.809017f, 0.5f, 0.309017f)),
+                    (new Vector3(0.8506508f, 0f, 0.5257311f),   new Vector3(0.5f, 0.309017f, 0.809017f)),
+                    (new Vector3(-0.5f, 0.309017f, 0.809017f),  new Vector3(0f, 0f, 1f)),
+                    (new Vector3(0f, 0.5257311f, 0.8506508f),   new Vector3(0f, 0f, 1f)),
+                    (new Vector3(-0.8506508f, 0f, 0.5257311f),  new Vector3(-0.5f, -0.309017f, 0.809017f)),
+                    (new Vector3(-0.5f, 0.309017f, 0.809017f),  new Vector3(-0.5f, -0.309017f, 0.809017f)),
+                    (new Vector3(0f, -0.5257311f, 0.8506508f),  new Vector3(0f, 0f, 1f)),
+                    (new Vector3(-0.5f, -0.309017f, 0.809017f), new Vector3(0f, 0f, 1f)),
+                    (new Vector3(0f, -0.5257311f, 0.8506508f),  new Vector3(-0.5f, -0.309017f, 0.809017f)),
+                    (new Vector3(-1f, 0f, 0f),                  new Vector3(-0.809017f, -0.5f, 0.309017f)),
+                    (new Vector3(-0.8506508f, 0f, 0.5257311f),  new Vector3(-0.809017f, -0.5f, 0.309017f)),
+                    (new Vector3(-0.8506508f, 0f, -0.5257311f), new Vector3(-0.809017f, -0.5f, -0.309017f)),
+                    (new Vector3(-1f, 0f, 0f),                  new Vector3(-0.809017f, -0.5f, -0.309017f)),
+                    (new Vector3(-0.5257311f, -0.8506508f, 0f), new Vector3(-0.809017f, -0.5f, 0.309017f)),
+                    (new Vector3(-0.809017f, -0.5f, -0.309017f),new Vector3(-0.809017f, -0.5f, 0.309017f)),
+                    (new Vector3(-0.5257311f, -0.8506508f, 0f), new Vector3(-0.809017f, -0.5f, -0.309017f)),
+                    (new Vector3(-0.5f, 0.309017f, -0.809017f), new Vector3(-0.5f, -0.309017f, -0.809017f)),
+                    (new Vector3(-0.8506508f, 0f, -0.5257311f), new Vector3(-0.5f, -0.309017f, -0.809017f)),
+                    (new Vector3(0f, 0.5257311f, -0.8506508f),  new Vector3(0f, 0f, -1f)),
+                    (new Vector3(-0.5f, 0.309017f, -0.809017f), new Vector3(0f, 0f, -1f)),
+                    (new Vector3(0f, -0.5257311f, -0.8506508f), new Vector3(-0.5f, -0.309017f, -0.809017f)),
+                    (new Vector3(0f, 0f, -1f),                  new Vector3(-0.5f, -0.309017f, -0.809017f)),
+                    (new Vector3(0f, -0.5257311f, -0.8506508f), new Vector3(0f, 0f, -1f)),
+                    (new Vector3(0.309017f, 0.809017f, -0.5f),  new Vector3(0.5f, 0.309017f, -0.809017f)),
+                    (new Vector3(0f, 0.5257311f, -0.8506508f),  new Vector3(0.5f, 0.309017f, -0.809017f)),
+                    (new Vector3(0.5257311f, 0.8506508f, 0f),   new Vector3(0.809017f, 0.5f, -0.309017f)),
+                    (new Vector3(0.309017f, 0.809017f, -0.5f),  new Vector3(0.809017f, 0.5f, -0.309017f)),
+                    (new Vector3(0.8506508f, 0f, -0.5257311f),  new Vector3(0.5f, 0.309017f, -0.809017f)),
+                    (new Vector3(0.809017f, 0.5f, -0.309017f),  new Vector3(0.5f, 0.309017f, -0.809017f)),
+                    (new Vector3(0.8506508f, 0f, -0.5257311f),  new Vector3(0.809017f, 0.5f, -0.309017f)),
+                    (new Vector3(0.5257311f, -0.8506508f, 0f),  new Vector3(0.809017f, -0.5f, 0.309017f)),
+                    (new Vector3(0.809017f, -0.5f, 0.309017f),  new Vector3(0.309017f, -0.809017f, 0.5f)),
+                    (new Vector3(0.5257311f, -0.8506508f, 0f),  new Vector3(0.309017f, -0.809017f, 0.5f)),
+                    (new Vector3(0.8506508f, 0f, 0.5257311f),   new Vector3(0.5f, -0.309017f, 0.809017f)),
+                    (new Vector3(0.809017f, -0.5f, 0.309017f),  new Vector3(0.5f, -0.309017f, 0.809017f)),
+                    (new Vector3(0.8506508f, 0f, 0.5257311f),   new Vector3(0.809017f, -0.5f, 0.309017f)),
+                    (new Vector3(0f, -0.5257311f, 0.8506508f),  new Vector3(0.309017f, -0.809017f, 0.5f)),
+                    (new Vector3(0.5f, -0.309017f, 0.809017f),  new Vector3(0.309017f, -0.809017f, 0.5f)),
+                    (new Vector3(0f, -0.5257311f, 0.8506508f),  new Vector3(0.5f, -0.309017f, 0.809017f)),
+                    (new Vector3(0.309017f, -0.809017f, 0.5f),  new Vector3(0f, -1f, 0f)),
+                    (new Vector3(0.5257311f, -0.8506508f, 0f),  new Vector3(0f, -1f, 0f)),
+                    (new Vector3(0f, -0.5257311f, 0.8506508f),  new Vector3(-0.309017f, -0.809017f, 0.5f)),
+                    (new Vector3(0.309017f, -0.809017f, 0.5f),  new Vector3(-0.309017f, -0.809017f, 0.5f)),
+                    (new Vector3(-0.5257311f, -0.8506508f, 0f), new Vector3(0f, -1f, 0f)),
+                    (new Vector3(-0.309017f, -0.809017f, 0.5f), new Vector3(0f, -1f, 0f)),
+                    (new Vector3(-0.5257311f, -0.8506508f, 0f), new Vector3(-0.309017f, -0.809017f, 0.5f)),
+                    (new Vector3(0f, -1f, 0f),                  new Vector3(0.309017f, -0.809017f, -0.5f)),
+                    (new Vector3(0.5257311f, -0.8506508f, 0f),  new Vector3(0.309017f, -0.809017f, -0.5f)),
+                    (new Vector3(-0.5257311f, -0.8506508f, 0f), new Vector3(-0.309017f, -0.809017f, -0.5f)),
+                    (new Vector3(0f, -1f, 0f),                  new Vector3(-0.309017f, -0.809017f, -0.5f)),
+                    (new Vector3(0f, -0.5257311f, -0.8506508f), new Vector3(0.309017f, -0.809017f, -0.5f)),
+                    (new Vector3(-0.309017f, -0.809017f, -0.5f),new Vector3(0.309017f, -0.809017f, -0.5f)),
+                    (new Vector3(0f, -0.5257311f, -0.8506508f), new Vector3(-0.309017f, -0.809017f, -0.5f)),
+                    (new Vector3(0.309017f, -0.809017f, -0.5f), new Vector3(0.809017f, -0.5f, -0.309017f)),
+                    (new Vector3(0.5257311f, -0.8506508f, 0f),  new Vector3(0.809017f, -0.5f, -0.309017f)),
+                    (new Vector3(0f, -0.5257311f, -0.8506508f), new Vector3(0.5f, -0.309017f, -0.809017f)),
+                    (new Vector3(0.309017f, -0.809017f, -0.5f), new Vector3(0.5f, -0.309017f, -0.809017f)),
+                    (new Vector3(0.8506508f, 0f, -0.5257311f),  new Vector3(0.809017f, -0.5f, -0.309017f)),
+                    (new Vector3(0.5f, -0.309017f, -0.809017f), new Vector3(0.809017f, -0.5f, -0.309017f)),
+                    (new Vector3(0.8506508f, 0f, -0.5257311f),  new Vector3(0.5f, -0.309017f, -0.809017f)),
+                    (new Vector3(0.809017f, -0.5f, 0.309017f),  new Vector3(0.809017f, -0.5f, -0.309017f)),
+                    (new Vector3(0.8506508f, 0f, -0.5257311f),  new Vector3(1f, 0f, 0f)),
+                    (new Vector3(0.809017f, -0.5f, -0.309017f), new Vector3(1f, 0f, 0f)),
+                    (new Vector3(0.809017f, -0.5f, 0.309017f),  new Vector3(1f, 0f, 0f)),
+                    (new Vector3(0.8506508f, 0f, 0.5257311f),   new Vector3(1f, 0f, 0f)),
+                    (new Vector3(0f, 0f, 1f),                   new Vector3(0.5f, -0.309017f, 0.809017f)),
+                    (new Vector3(0.5f, 0.309017f, 0.809017f),   new Vector3(0.5f, -0.309017f, 0.809017f)),
+                    (new Vector3(0.5f, 0.309017f, 0.809017f),   new Vector3(0f, 0f, 1f)),
+                    (new Vector3(-0.809017f, -0.5f, 0.309017f), new Vector3(-0.309017f, -0.809017f, 0.5f)),
+                    (new Vector3(-0.5f, -0.309017f, 0.809017f), new Vector3(-0.309017f, -0.809017f, 0.5f)),
+                    (new Vector3(-0.5f, -0.309017f, 0.809017f), new Vector3(-0.809017f, -0.5f, 0.309017f)),
+                    (new Vector3(-0.5f, -0.309017f, -0.809017f),new Vector3(-0.309017f, -0.809017f, -0.5f)),
+                    (new Vector3(-0.809017f, -0.5f, -0.309017f),new Vector3(-0.309017f, -0.809017f, -0.5f)),
+                    (new Vector3(-0.809017f, -0.5f, -0.309017f),new Vector3(-0.5f, -0.309017f, -0.809017f)),
+                    (new Vector3(0.5f, 0.309017f, -0.809017f),  new Vector3(0.5f, -0.309017f, -0.809017f)),
+                    (new Vector3(0f, 0f, -1f),                  new Vector3(0.5f, -0.309017f, -0.809017f)),
+                    (new Vector3(0f, 0f, -1f),                  new Vector3(0.5f, 0.309017f, -0.809017f)),
+                    (new Vector3(0.809017f, 0.5f, 0.309017f),   new Vector3(1f, 0f, 0f)),
+                    (new Vector3(0.809017f, 0.5f, -0.309017f),  new Vector3(1f, 0f, 0f)),
+                    (new Vector3(0.809017f, 0.5f, 0.309017f),   new Vector3(0.809017f, 0.5f, -0.309017f)),
+                };
+        }
+
         #endregion
         #region Private Methods - utils
 
@@ -848,7 +1075,7 @@ namespace PerfectlyNormalBaS
 
             Vector3 rand = UnityEngine.Random.onUnitSphere;
 
-            for (int cntr = 0; cntr < 10; cntr++)
+            for (int i = 0; i < 10; i++)
             {
                 Vector3 retVal = Vector3.Cross(vector, rand);
 

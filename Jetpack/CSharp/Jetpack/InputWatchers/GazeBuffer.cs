@@ -23,20 +23,22 @@ namespace Jetpack.InputWatchers
     /// </remarks>
     public class GazeBuffer
     {
+        // NOTE: member variables are internal so GazeBufferVisualizer can see them.  otherwise they should be private
+
         #region struct: GazeSample
 
-        private interface IGazeSample
+        internal interface IGazeSample
         {
             DateTime Timestamp { get; set; }
         }
 
-        private struct GazeSample_Direct : IGazeSample
+        internal struct GazeSample_Direct : IGazeSample
         {
             public Vector3 Direction { get; set; }
             public DateTime Timestamp { get; set; }
         }
 
-        private struct GazeSample_Offset : IGazeSample
+        internal struct GazeSample_Offset : IGazeSample
         {
             public Quaternion Quaternion { get; set; }
 
@@ -46,7 +48,7 @@ namespace Jetpack.InputWatchers
             public DateTime Timestamp { get; set; }
         }
 
-        private struct GazeSample_SphereTarget : IGazeSample
+        internal struct GazeSample_SphereTarget : IGazeSample
         {
             public Vector3 SphereOrigin { get; set; }
             public float SphereRadius { get; set; }
@@ -60,11 +62,11 @@ namespace Jetpack.InputWatchers
         #region Declaration Section
 
         private readonly List<GazeSample_Direct> _direct = new List<GazeSample_Direct>();
-        private readonly List<GazeSample_Offset> _offset = new List<GazeSample_Offset>();
-
-        private readonly Dictionary<string, Dictionary<string, List<GazeSample_SphereTarget>>> _target = new Dictionary<string, Dictionary<string, List<GazeSample_SphereTarget>>>();
+        internal readonly List<GazeSample_Offset> _offset = new List<GazeSample_Offset>();
+        internal readonly Dictionary<string, Dictionary<string, List<GazeSample_SphereTarget>>> _target = new Dictionary<string, Dictionary<string, List<GazeSample_SphereTarget>>>();
 
         private DateTime _prevRadiusCleanup = DateTime.MinValue;
+        private DateTime _prevOriginCleanup = DateTime.MinValue;
 
         #endregion
 
@@ -111,13 +113,16 @@ namespace Jetpack.InputWatchers
         }
         public void AddSample_Target(Vector3 pos, Vector3 direction, float speed)
         {
-            const float MIN_ALLOWED_DISTANCE = 1;
-            const float SPACING_RATIO = 0.33f;      // spacing = radius * ratio
-
             float[] radii = GetRadiiForSpeed(speed);
 
-            // remove any buckets that aren't in this set of radii
-            RemoveUnusedRadii(radii);
+            RemoveUnusedRadii(radii);       // remove any buckets that aren't in this set of radii
+
+            // No need to do origin cleanup every frame
+            DateTime now = DateTime.UtcNow;
+            bool should_cleanup_origins = (now - _prevOriginCleanup).TotalSeconds > 1;
+
+            if (should_cleanup_origins)
+                _prevRadiusCleanup = now;
 
             foreach (float radius in radii)
             {
@@ -129,7 +134,37 @@ namespace Jetpack.InputWatchers
                     _target.Add(radius_key, by_origin);
                 }
 
-                Vector3[] origins = GetRelevantSphereOrigins(pos, radius * SPACING_RATIO, radius, MIN_ALLOWED_DISTANCE);
+
+                //float spacing = JetpackScript.YawToLook_GazeTarget_SpacingRatio;
+
+                // not so simple, this ratio made 225 out of 3000 samples with 0 origins
+                // NOTE: after running the numbers, this shouldn't be an independent slider, it can be a simple
+                // y=mx+b.  This will produce between 1 and 2 spheres.  Radius doesn't have much influence
+                //float mindist_percentof_radius = JetpackScript.YawToLook_GazeTarget_MinAllowedDistance;
+                //float mindist_percentof_radius = -0.5721f * spacing + 0.8997f;
+
+
+                // this gives between 1 and 4 origins (slight chance of 0)
+                float spacing = 0.65f;
+                float mindist_percentof_radius = 0.45f;
+
+                Vector3[] origins = GetRelevantSphereOrigins(pos, radius * spacing, radius, radius * mindist_percentof_radius);
+                if(origins.Length == 0)
+                    origins = GetRelevantSphereOrigins(pos, radius * spacing, radius, radius * 0.2f);       // using a smaller min dist from surface of sphere to make sure there is something returned
+
+
+                // TODO: instead of keeping the closest, try to keep one that is already loaded.  if none loaded, take
+                // the closest.  if multiple loaded, take the closest.  this will let them persist longer
+
+                // keep the two closest spheres (it gets inefficient with too many spheres)
+                origins = KeepNClosest(origins, pos, 1);
+
+
+
+
+
+                if (should_cleanup_origins)
+                    RemoveUnusedOrigins(by_origin, origins);      // remove any buckets that aren't in this set of origins
 
                 foreach (Vector3 origin in origins)
                 {
@@ -141,7 +176,6 @@ namespace Jetpack.InputWatchers
                         by_origin.Add(origin_key, origin_bucket);
                     }
 
-                    DateTime now = DateTime.UtcNow;
                     RemoveOldEntries(origin_bucket, now);
 
                     origin_bucket.Add(new GazeSample_SphereTarget
@@ -270,9 +304,20 @@ namespace Jetpack.InputWatchers
             foreach (string key in _target.Keys.Except(radii_keys).ToArray())
                 _target.Remove(key);
         }
+        private void RemoveUnusedOrigins(Dictionary<string, List<GazeSample_SphereTarget>> by_origin, Vector3[] origins)
+        {
+            // Convert origin into key
+            string[] origin_keys = new string[origins.Length];
+            for (int i = 0; i < origins.Length; i++)
+                origin_keys[i] = GetOriginKey(origins[i]);
 
-        private static string GetRadiusKey(float radius) => radius.ToStringSignificantDigits(1);
-        private static string GetOriginKey(Vector3 origin) => origin.ToStringSignificantDigits(1);
+            // Remove any origin that is not in the list passed in
+            foreach (string key in by_origin.Keys.Except(origin_keys).ToArray())
+                by_origin.Remove(key);
+        }
+
+        internal static string GetRadiusKey(float radius) => radius.ToStringSignificantDigits(3);
+        internal static string GetOriginKey(Vector3 origin) => origin.ToStringSignificantDigits(3);
 
         private static Vector3 GetWeightedAverage(List<GazeSample_Direct> samples)
         {
@@ -447,9 +492,9 @@ namespace Jetpack.InputWatchers
         /// </remarks>
         private static float[] GetRadiiForSpeed(float speed)
         {
-            const float MIN = 3;                    // Minimum base radius
-            const float SPEED_RATIO = 0.5f;         // Speed to base radius scaling factor
-            const float MULT = 2;                   // Multiplier for step progression
+            float MIN = JetpackScript.YawToLook_GazeTarget_RadiiForSpeed_Min;                       // Minimum base radius
+            float SPEED_RATIO = JetpackScript.YawToLook_GazeTarget_RadiiForSpeed_SpeedRatio;        // Speed to base radius scaling factor
+            float MULT = JetpackScript.YawToLook_GazeTarget_RadiiForSpeed_StepMult;                 // Multiplier for step progression
 
             // Step 1: Calculate the base radius based on speed
             float calculatedBase = Math.Max(MIN, SPEED_RATIO * speed);
@@ -507,6 +552,23 @@ namespace Jetpack.InputWatchers
             }
 
             return retVal.ToArray();
+        }
+
+        private static Vector3[] KeepNClosest(Vector3[] origins, Vector3 pos, int count)
+        {
+            if (origins.Length <= count)
+                return origins;
+
+            return origins.
+                Select(o => new
+                {
+                    origin = o,
+                    dist_sqr = (pos - o).sqrMagnitude,
+                }).
+                OrderBy(o => o.dist_sqr).
+                Take(count).
+                Select(o => o.origin).
+                ToArray();
         }
 
         private static Vector3 SphereExitPoint(Vector3 origin, float radius, Vector3 ray_start, Vector3 ray_direction)

@@ -17,6 +17,7 @@ namespace Jetpack.FlightProcessing
         private readonly RepelGround _repelGround;
         private readonly ObstacleAvoidance _obstacleAvoidance;
         private readonly PullYawToLook _pullYawToLook;
+        private readonly GazeBufferVisualizer _gazeBufferVisualizer;
 
         private FlightData _standardState = null;
 
@@ -32,6 +33,7 @@ namespace Jetpack.FlightProcessing
             _repelGround = new RepelGround(_raycast_storage);
             _obstacleAvoidance = new ObstacleAvoidance(_raycast_storage);
             _pullYawToLook = new PullYawToLook();
+            _gazeBufferVisualizer = new GazeBufferVisualizer();
         }
 
         public void Activate(float drag)
@@ -62,6 +64,7 @@ namespace Jetpack.FlightProcessing
 
             // Others
             _pullYawToLook.Clear();
+            _gazeBufferVisualizer.Clear();
         }
         public void Deactivate()
         {
@@ -84,6 +87,7 @@ namespace Jetpack.FlightProcessing
             _repelGround.Clear();
             _obstacleAvoidance.Clear();
             _pullYawToLook.Clear();
+            _gazeBufferVisualizer.Clear();
         }
 
         public void Update(float drag, float horz_accel, float vert_accel, float gravity)
@@ -123,6 +127,7 @@ namespace Jetpack.FlightProcessing
                     loco.physicBody.AddForce(accel_obstacle.Value, ForceMode.Acceleration);
 
                 _pullYawToLook.Update();
+                _gazeBufferVisualizer.Update();
             }
 
             // TODO: make an option for horiztonal control mode (direct or accel)
