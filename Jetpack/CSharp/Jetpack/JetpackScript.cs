@@ -370,8 +370,8 @@ namespace Jetpack
         [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
         [ModOptionSlider]
         [ModOption(name: "Buffer Max Time (seconds)", tooltip: "How long to keep previous look directions", order = 7)]
-        [ModOptionFloatValues(0, 2, 0.01f)]
-        public static float YawToLook_Buffer_MaxSeconds = 0.75f;
+        [ModOptionFloatValues(0, 3, 0.01f)]
+        public static float YawToLook_Buffer_MaxSeconds = 2f;
 
         [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
         [ModOptionSlider]

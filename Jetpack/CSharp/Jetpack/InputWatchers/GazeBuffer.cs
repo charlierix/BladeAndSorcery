@@ -61,12 +61,14 @@ namespace Jetpack.InputWatchers
 
         #region Declaration Section
 
+        private const float CLEANUP_RADIUS_ORIGIN_SECONDS = 0.5f;
+        private const int MAX_PER_RADIUS = 1;       // how many spheres at each radius.  tried with 2, but that seemed like overkill (multi radius, a few extra while flying since cleanup isn't immediate)
+
         private readonly List<GazeSample_Direct> _direct = new List<GazeSample_Direct>();
         internal readonly List<GazeSample_Offset> _offset = new List<GazeSample_Offset>();
         internal readonly Dictionary<string, Dictionary<string, List<GazeSample_SphereTarget>>> _target = new Dictionary<string, Dictionary<string, List<GazeSample_SphereTarget>>>();
 
-        private DateTime _prevRadiusCleanup = DateTime.MinValue;
-        private DateTime _prevOriginCleanup = DateTime.MinValue;
+        private DateTime _prev_cleanup = DateTime.MinValue;
 
         #endregion
 
@@ -113,16 +115,15 @@ namespace Jetpack.InputWatchers
         }
         public void AddSample_Target(Vector3 pos, Vector3 direction, float speed)
         {
-            float[] radii = GetRadiiForSpeed(speed);
-
-            RemoveUnusedRadii(radii);       // remove any buckets that aren't in this set of radii
+            DateTime now = DateTime.UtcNow;
 
             // No need to do origin cleanup every frame
-            DateTime now = DateTime.UtcNow;
-            bool should_cleanup_origins = (now - _prevOriginCleanup).TotalSeconds > 1;
+            bool should_cleanup = ShouldCleanupRadiiOrigins(now);
 
-            if (should_cleanup_origins)
-                _prevRadiusCleanup = now;
+            float[] radii = GetRadiiForSpeed(speed);
+
+            if (should_cleanup)
+                RemoveUnusedRadii(radii);       // remove any buckets that aren't in this set of radii
 
             foreach (float radius in radii)
             {
@@ -134,7 +135,6 @@ namespace Jetpack.InputWatchers
                     _target.Add(radius_key, by_origin);
                 }
 
-
                 //float spacing = JetpackScript.YawToLook_GazeTarget_SpacingRatio;
 
                 // not so simple, this ratio made 225 out of 3000 samples with 0 origins
@@ -143,46 +143,35 @@ namespace Jetpack.InputWatchers
                 //float mindist_percentof_radius = JetpackScript.YawToLook_GazeTarget_MinAllowedDistance;
                 //float mindist_percentof_radius = -0.5721f * spacing + 0.8997f;
 
-
                 // this gives between 1 and 4 origins (slight chance of 0)
                 float spacing = 0.65f;
                 float mindist_percentof_radius = 0.45f;
 
                 Vector3[] origins = GetRelevantSphereOrigins(pos, radius * spacing, radius, radius * mindist_percentof_radius);
-                if(origins.Length == 0)
+                if (origins.Length == 0)
                     origins = GetRelevantSphereOrigins(pos, radius * spacing, radius, radius * 0.2f);       // using a smaller min dist from surface of sphere to make sure there is something returned
 
+                // keep N closest spheres (it gets inefficient with too many spheres)
+                var origins_keys = KeepNClosest(origins, pos, MAX_PER_RADIUS, by_origin);
 
-                // TODO: instead of keeping the closest, try to keep one that is already loaded.  if none loaded, take
-                // the closest.  if multiple loaded, take the closest.  this will let them persist longer
-
-                // keep the two closest spheres (it gets inefficient with too many spheres)
-                origins = KeepNClosest(origins, pos, 1);
-
-
-
-
-
-                if (should_cleanup_origins)
+                if (should_cleanup)
                     RemoveUnusedOrigins(by_origin, origins);      // remove any buckets that aren't in this set of origins
 
-                foreach (Vector3 origin in origins)
+                foreach (var origin in origins_keys)
                 {
-                    string origin_key = GetOriginKey(origin);
-
-                    if (!by_origin.TryGetValue(origin_key, out var origin_bucket))
+                    if (!by_origin.TryGetValue(origin.key, out var origin_bucket))
                     {
                         origin_bucket = new List<GazeSample_SphereTarget>();
-                        by_origin.Add(origin_key, origin_bucket);
+                        by_origin.Add(origin.key, origin_bucket);
                     }
 
                     RemoveOldEntries(origin_bucket, now);
 
                     origin_bucket.Add(new GazeSample_SphereTarget
                     {
-                        SphereOrigin = origin,
+                        SphereOrigin = origin.origin,
                         SphereRadius = radius,
-                        Hit = SphereExitPoint(origin, radius, pos, direction),
+                        Hit = SphereExitPoint(origin.origin, radius, pos, direction),
                         Timestamp = now,
                     });
 
@@ -285,16 +274,17 @@ namespace Jetpack.InputWatchers
                 items.RemoveAt(0);        // zero is oldest entry
         }
 
+        private bool ShouldCleanupRadiiOrigins(DateTime now)
+        {
+            if ((now - _prev_cleanup).TotalSeconds < CLEANUP_RADIUS_ORIGIN_SECONDS)
+                return false;
+
+            _prev_cleanup = now;
+
+            return true;
+        }
         private void RemoveUnusedRadii(float[] radii)
         {
-            // No need to do this cleanup every frame
-            DateTime now = DateTime.UtcNow;
-
-            if ((now - _prevRadiusCleanup).TotalSeconds < 1)
-                return;
-
-            _prevRadiusCleanup = now;
-
             // Convert radius into key
             string[] radii_keys = new string[radii.Length];
             for (int i = 0; i < radii.Length; i++)
@@ -554,21 +544,56 @@ namespace Jetpack.InputWatchers
             return retVal.ToArray();
         }
 
-        private static Vector3[] KeepNClosest(Vector3[] origins, Vector3 pos, int count)
+        /// <summary>
+        /// This gives priority to origins that are already created, else uses new ones.  Then sorts by distance from user
+        /// </summary>
+        private static (Vector3 origin, string key)[] KeepNClosest(Vector3[] origins, Vector3 pos, int count, Dictionary<string, List<GazeSample_SphereTarget>> by_origin)
         {
-            if (origins.Length <= count)
-                return origins;
+            // Split into what's in and not in the by_origin bucket
+            var in_list = new List<(Vector3 origin, string key)>();
+            var out_list = new List<(Vector3 origin, string key)>();
 
-            return origins.
-                Select(o => new
+            foreach (var origin in origins)
+            {
+                string key = GetOriginKey(origin);
+
+                if (by_origin.ContainsKey(key))
+                    in_list.Add((origin, key));
+                else
+                    out_list.Add((origin, key));
+            }
+
+            // If total doesn't exceed max, then return those
+            if (in_list.Count + out_list.Count <= count)
+                return in_list.Concat(out_list).ToArray();
+
+            // If there's exactly enough from the in list, return those without needing to do a sort
+            if (in_list.Count == count)
+                return in_list.ToArray();
+
+            // Define the sorting and take N function
+            var takesorted = new Func<IEnumerable<(Vector3 origin, string key)>, int, (Vector3 origin, string key)[]>((list, cnt) =>
+                list.Select(o => new
                 {
                     origin = o,
-                    dist_sqr = (pos - o).sqrMagnitude,
+                    dist_sqr = (pos - o.origin).sqrMagnitude,
                 }).
                 OrderBy(o => o.dist_sqr).
-                Take(count).
+                Take(cnt).
                 Select(o => o.origin).
-                ToArray();
+                ToArray());
+
+            // If there's too many in the in list, only take from that
+            if (in_list.Count > count)
+                return takesorted(in_list, count);
+
+            // If execution gets here, then some or all are needed from the out list
+
+            // Get what will be needed from the out list
+            var outs = takesorted(out_list, count - in_list.Count);
+
+            // Return the combined
+            return in_list.Concat(outs).ToArray();
         }
 
         private static Vector3 SphereExitPoint(Vector3 origin, float radius, Vector3 ray_start, Vector3 ray_direction)

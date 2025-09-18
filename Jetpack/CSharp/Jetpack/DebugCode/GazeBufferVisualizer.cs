@@ -8,6 +8,22 @@ using UnityEngine;
 
 namespace Jetpack.DebugCode
 {
+
+    // TODO: instead of showing dot sets, show individual dots that are the same color
+    // this way, a single list of them can be used and only a few will be removed/added each step
+    // also only do the add/remove every quarter second
+
+    // TODO: show some stats
+    //  - num spheres
+    //  - total hits
+    //  - avg hits per sphere
+    //  - max hits per sphere
+
+    // I'm worried that per frame is too often and the buffer is getting flooded with recent values and throwing away hits before they age out
+    // look at max buffer size and max age, figure out how many milliseconds to wait between taking samples
+
+    // TODO: target confidence can't be max value if data isn't old enough
+
     public class GazeBufferVisualizer
     {
         #region Declaration Section
