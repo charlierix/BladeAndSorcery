@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using ThunderRoad;
 using UnityEngine;
+using static Jetpack.InputWatchers.GazeBuffer;
+using static ThunderRoad.ItemMagicAreaProjectile;
 
 namespace Jetpack.DebugCode
 {
@@ -40,7 +42,9 @@ namespace Jetpack.DebugCode
         private DebugRenderer3D _renderer = null;
 
         private Dictionary<string, (DebugItem item, Color color)> _spheres = new Dictionary<string, (DebugItem item, Color color)>();
+        private int _hit_index = -1;
         private List<DebugItem> _hits = new List<DebugItem>();
+        private DebugItem _status = null;
 
         #endregion
 
@@ -58,6 +62,8 @@ namespace Jetpack.DebugCode
 
             if (SHOWTARGET)
             {
+                PrepForHitsUpdate();
+
                 _gazeBuffer.AddSample_Target(pos, look, velocity.magnitude);
 
                 if (_gazeBuffer.TryGetDominantDirection_Target(out Vector3 dominant_direction, out float confidence, pos))
@@ -70,7 +76,9 @@ namespace Jetpack.DebugCode
                 }
 
                 DrawSpheresAndHits();
-                //DrawReport();
+                DrawStatus();
+
+                FinishHitsUpdate();
             }
 
             //if(SHOWOFFSET)
@@ -102,7 +110,42 @@ namespace Jetpack.DebugCode
 
             _hits.Clear();
 
+            // Status
+            if (_status != null)
+                _renderer.Remove(_status);
+
+            _status = null;
+
             _renderer = null;
+        }
+
+        private void PrepForHitsUpdate()
+        {
+            _hit_index = -1;
+            RemoveDespawned(_hits);
+        }
+        private static void RemoveDespawned(List<DebugItem> items)
+        {
+            int index = 0;
+
+            while (index < items.Count)
+            {
+                if (items[index].Object == null)
+                {
+                    //Debug.Log($"Removing despawned visual: {items[index].Token}");
+                    items.RemoveAt(index);
+                }
+                else
+                {
+                    index++;
+                }
+            }
+        }
+
+        private void FinishHitsUpdate()
+        {
+            for (int i = 0; i < _hits.Count; i++)
+                _hits[i].Object.SetActive(i <= _hit_index);     // this should be cheaper than removing/adding
         }
 
         private void DrawSpheresAndHits()
@@ -139,6 +182,23 @@ namespace Jetpack.DebugCode
 
                     // Hits
                     //_hits.Add(_renderer.AddDots(bucket.Select(o => o.Hit), DOT_SIZE / 4, _spheres[sphere_key].color));
+
+                    var color2 = _spheres[sphere_key].color;
+
+                    foreach (var hit in bucket)
+                    {
+                        _hit_index++;
+
+                        if (_hit_index < _hits.Count)
+                        {
+                            _hits[_hit_index].Object.transform.position = hit.Hit;
+                            DebugRenderer3D.AdjustColor(_hits[_hit_index], color2);
+                        }
+                        else
+                        {
+                            _hits.Add(_renderer.AddDot(hit.Hit, DOT_SIZE / 4, color2));
+                        }
+                    }
                 }
             }
 
@@ -147,6 +207,42 @@ namespace Jetpack.DebugCode
                 bool was_removed = _renderer.Remove(_spheres[dead_sphere].item);
                 _spheres.Remove(dead_sphere);
             }
+        }
+
+        private void DrawStatus()
+        {
+            EnsureDebugActive();
+
+            // select many buckets
+            var buckets = new List<List<GazeSample_SphereTarget>>();
+
+            foreach (var by_radius in _gazeBuffer._target.Values)
+                buckets.AddRange(by_radius.Values);
+
+            // text pos
+            Vector3 text_pos = Player.local.head.anchor.position +
+                Player.local.head.transform.forward * 1.5f +
+                //Player.local.head.transform.right * -0.75f +
+                Player.local.head.transform.up * -0.33f;
+
+            // fill out report
+            var text_list = new List<string>();
+
+            text_list.Add($"num spheres: {buckets.Count}");
+            text_list.Add($"total hits: {buckets.Sum(o => o.Count)}");
+            text_list.Add($"avg hits per sphere: {buckets.Average(o => o.Count)}");
+            text_list.Add($"max hits in sphere: {buckets.Max(o => o.Count)}");
+
+            string text = string.Join(Environment.NewLine, text_list);
+
+            // draw
+            if (_status == null)
+                _status = _renderer.AddText(text, text_pos, Player.local.head.transform.forward, Color.cyan, Color.black, TEXT_HEIGHT * text_list.Count);
+
+            _status.Object.transform.position = text_pos;
+            _status.Object.transform.rotation = Quaternion.LookRotation((text_pos - Player.local.head.anchor.position).normalized, Player.local.head.transform.up);
+
+            DebugRenderer3D.AdjustText(_status, new_text: text);
         }
 
         #endregion

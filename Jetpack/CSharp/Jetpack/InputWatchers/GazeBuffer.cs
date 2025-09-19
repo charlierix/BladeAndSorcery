@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Profiling;
+using static UnityEngine.Rendering.DebugUI.Table;
 
 namespace Jetpack.InputWatchers
 {
@@ -413,7 +414,9 @@ namespace Jetpack.InputWatchers
                 confidence = Mathf.Min(confidence, normalized_dot);
             }
 
-            return confidence;
+            float time_percent = GetTimePercent(samples[0].Timestamp);
+
+            return confidence * time_percent;
         }
         // Calculates confidence based on axis and angle similarity between samples
         private static float CalculateDirectionConfidence(List<GazeSample_Offset> samples)
@@ -447,7 +450,9 @@ namespace Jetpack.InputWatchers
                     minConfidence = sampleConfidence;
             }
 
-            return minConfidence;
+            float time_percent = GetTimePercent(samples[0].Timestamp);
+
+            return minConfidence * time_percent;
         }
         // Calculates confience by subracting hit from pos, then very similar to direct overload
         private static float CalculateDirectionConfidence(List<GazeSample_SphereTarget> samples, Vector3 pos)
@@ -470,7 +475,21 @@ namespace Jetpack.InputWatchers
                 confidence = Mathf.Min(confidence, normalized_dot);
             }
 
-            return confidence;
+            float time_percent = GetTimePercent(samples[0].Timestamp);
+
+            return confidence * time_percent;
+        }
+
+        private static float GetTimePercent(DateTime oldest)
+        {
+            float max_seconds = JetpackScript.YawToLook_Buffer_MaxSeconds;
+
+            float elapsed = (float)(DateTime.Now - oldest).TotalSeconds;
+
+            if (elapsed >= max_seconds)
+                return 1;
+
+            return (float)Math.Pow(elapsed / max_seconds, 4);       // linear is too forgiving.  wait until it's closer to full before giving a higher score
         }
 
         /// <summary>
