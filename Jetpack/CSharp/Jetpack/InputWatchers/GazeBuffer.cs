@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Profiling;
+using UnityEngine.SocialPlatforms.Impl;
 using static UnityEngine.Rendering.DebugUI.Table;
+using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 namespace Jetpack.InputWatchers
 {
@@ -59,6 +61,19 @@ namespace Jetpack.InputWatchers
         }
 
         #endregion
+        #region class: FrameSkip
+
+        private class FrameSkip
+        {
+            public int BasedOnCount { get; set; }
+            public float BasedOnSeconds { get; set; }
+
+            public double Milliseconds_Between_Frames { get; set; }
+
+            public DateTime NextFrameTime { get; set; }
+        }
+
+        #endregion
 
         #region Declaration Section
 
@@ -68,6 +83,10 @@ namespace Jetpack.InputWatchers
         private readonly List<GazeSample_Direct> _direct = new List<GazeSample_Direct>();
         internal readonly List<GazeSample_Offset> _offset = new List<GazeSample_Offset>();
         internal readonly Dictionary<string, Dictionary<string, List<GazeSample_SphereTarget>>> _target = new Dictionary<string, Dictionary<string, List<GazeSample_SphereTarget>>>();
+
+        private FrameSkip _frameskip_direct = null;
+        private FrameSkip _frameskip_offset = null;
+        private FrameSkip _frameskip_target = null;
 
         private DateTime _prev_cleanup = DateTime.MinValue;
 
@@ -79,6 +98,9 @@ namespace Jetpack.InputWatchers
         {
             DateTime now = DateTime.UtcNow;
 
+            if (!EstimateFrameSkip(ref _frameskip_direct, now))
+                return;
+
             // Remove old samples exceeding the window
             RemoveOldEntries(_direct, now);
 
@@ -88,13 +110,13 @@ namespace Jetpack.InputWatchers
                 Direction = direction,
                 Timestamp = now,
             });
-
-            // Keep size controlled
-            RemoveExcessEntries(_direct);
         }
         public void AddSample_Offset(Vector3 direction, Vector3 relativeTo)
         {
             DateTime now = DateTime.UtcNow;
+
+            if (!EstimateFrameSkip(ref _frameskip_offset, now))
+                return;
 
             // Remove old samples exceeding the window
             RemoveOldEntries(_offset, now);
@@ -110,13 +132,13 @@ namespace Jetpack.InputWatchers
                 Angle = angle,
                 Timestamp = now,
             });
-
-            // Keep size controlled
-            RemoveExcessEntries(_offset);
         }
         public void AddSample_Target(Vector3 pos, Vector3 direction, float speed)
         {
             DateTime now = DateTime.UtcNow;
+
+            if (!EstimateFrameSkip(ref _frameskip_target, now))
+                return;
 
             // No need to do origin cleanup every frame
             bool should_cleanup = ShouldCleanupRadiiOrigins(now);
@@ -175,8 +197,6 @@ namespace Jetpack.InputWatchers
                         Hit = SphereExitPoint(origin.origin, radius, pos, direction),
                         Timestamp = now,
                     });
-
-                    RemoveExcessEntries(_direct);
                 }
             }
         }
@@ -246,6 +266,34 @@ namespace Jetpack.InputWatchers
 
             return found_one;
         }
+        internal bool TryGetDominantDirection_Target_Debug(out Vector3 dominant_direction, out float confidence, out float sphere_radius, out Vector3 sphere_origin, Vector3 pos)
+        {
+            dominant_direction = Vector3.zero;
+            confidence = 0f;
+            sphere_radius = 0f;
+            sphere_origin = Vector3.zero;
+            bool found_one = false;
+
+            // Iterate over all buckets, finding the strongest result and return that
+            foreach (var bucket in IterateTargetBuckets())
+            {
+                float confidence2 = CalculateDirectionConfidence(bucket, pos);      // may not need to pass in pos
+
+                if (confidence2 < JetpackScript.YawToLook_Buffer_GazeConfidence)
+                    continue;
+
+                if (confidence2 < confidence)
+                    continue;
+
+                found_one = true;
+                confidence = confidence2;
+                sphere_radius = bucket[0].SphereRadius;
+                sphere_origin = bucket[0].SphereOrigin;
+                dominant_direction = GetWeightedAverage(bucket, pos);
+            }
+
+            return found_one;
+        }
 
         public void Clear()
         {
@@ -253,7 +301,45 @@ namespace Jetpack.InputWatchers
             _offset.Clear();
         }
 
-        #region Private Methods
+        #region Private Methods - AddSample
+
+        private static bool EstimateFrameSkip(ref FrameSkip frameskip, DateTime now)
+        {
+            int count = JetpackScript.YawToLook_Buffer_MaxCount;
+            float seconds = JetpackScript.YawToLook_Buffer_MaxSeconds;
+
+            if (frameskip == null || frameskip.BasedOnCount != count || frameskip.BasedOnSeconds != seconds)
+            {
+                frameskip = new FrameSkip()
+                {
+                    BasedOnCount = count,
+                    BasedOnSeconds = seconds,
+                    Milliseconds_Between_Frames = GetMillisecondsBetweenFrames(count, seconds),
+                };
+
+                Debug.Log($"frameskip.Milliseconds_Between_Frames: {frameskip.Milliseconds_Between_Frames} (count: {count}, seconds: {seconds})");
+
+                frameskip.NextFrameTime = now.AddMilliseconds(frameskip.Milliseconds_Between_Frames);
+
+                return true;
+            }
+
+            if (now < frameskip.NextFrameTime)
+                return false;
+
+            frameskip.NextFrameTime = now.AddMilliseconds(frameskip.Milliseconds_Between_Frames);
+
+            return true;
+        }
+        private static double GetMillisecondsBetweenFrames(int count, float seconds)
+        {
+            double retVal = 1000d * seconds / count;
+
+            // Reduce it a bit, because framerate won't be perfect.  This will allow for some hiccups and still get close to ideal count
+            retVal *= 0.9167;
+
+            return retVal;
+        }
 
         private static void RemoveOldEntries<T>(IList<T> items, DateTime now) where T : IGazeSample
         {
@@ -267,13 +353,9 @@ namespace Jetpack.InputWatchers
                 items.RemoveAt(0);
             }
         }
-        private static void RemoveExcessEntries<T>(IList<T> items) where T : IGazeSample
-        {
-            int max_count = JetpackScript.YawToLook_Buffer_MaxCount;
 
-            while (items.Count > max_count)
-                items.RemoveAt(0);        // zero is oldest entry
-        }
+        #endregion
+        #region Private Methods - AddSample - spheres
 
         private bool ShouldCleanupRadiiOrigins(DateTime now)
         {
@@ -305,222 +387,6 @@ namespace Jetpack.InputWatchers
             // Remove any origin that is not in the list passed in
             foreach (string key in by_origin.Keys.Except(origin_keys).ToArray())
                 by_origin.Remove(key);
-        }
-
-        internal static string GetRadiusKey(float radius) => radius.ToStringSignificantDigits(3);
-        internal static string GetOriginKey(Vector3 origin) => origin.ToStringSignificantDigits(3);
-
-        private static Vector3 GetWeightedAverage(List<GazeSample_Direct> samples)
-        {
-            if (samples.Count == 0)
-                return Vector3.zero;
-
-            float totalWeight = 0f;
-            Vector3 weightedSum = Vector3.zero;
-
-            foreach (var sample in samples)
-            {
-                float weight = 1f - Vector3.Magnitude(sample.Direction - samples[0].Direction);     // Simple weighting
-                weightedSum += sample.Direction * weight;
-                totalWeight += weight;
-            }
-
-            return totalWeight > 0f ?
-                weightedSum / totalWeight :
-                Vector3.zero;
-        }
-        private static Vector3 GetWeightedAverage(List<GazeSample_Offset> samples, Vector3 relativeTo)
-        {
-            if (samples.Count == 0)
-                return Vector3.zero;
-
-            Vector4 sumQuat = Vector4.zero;
-            float totalWeight = 0f;
-
-            GazeSample_Offset referenceSample = samples[0];
-            Vector3 referenceAxis = referenceSample.Axis;
-            float referenceAngle = referenceSample.Angle;
-
-            for (int i = 0; i < samples.Count; i++)
-            {
-                GazeSample_Offset sample = samples[i];
-
-                // Calculate axis confidence (normalized to 0..1)
-                float axisDot = Vector3.Dot(sample.Axis, referenceAxis);
-                axisDot = (axisDot + 1f) / 2f;
-
-                // Calculate angle confidence (normalized to 0..1)
-                float angleDiff = Mathf.Abs(sample.Angle - referenceAngle) / 180f;
-                float angleConfidence = 1f - angleDiff;
-
-                // Weight is the product of axis and angle confidence
-                float weight = axisDot * angleConfidence;
-
-                // Add to sum of quaternions weighted by their confidence
-                sumQuat += new Vector4(samples[i].Quaternion.x * weight, samples[i].Quaternion.y * weight, samples[i].Quaternion.z * weight, samples[i].Quaternion.w * weight);
-                totalWeight += weight;
-            }
-
-            if (totalWeight == 0f)
-                return Vector3.zero;
-
-            // Normalize the sum to get the average quaternion
-            Vector4 avgQuat = sumQuat / totalWeight;
-            Quaternion averageQ = new Quaternion(avgQuat.x, avgQuat.y, avgQuat.z, avgQuat.w).normalized;
-
-            // Apply the average rotation to the base direction
-            return averageQ * relativeTo;
-        }
-        private static Vector3 GetWeightedAverage(List<GazeSample_SphereTarget> samples, Vector3 pos)
-        {
-            if (samples.Count == 0)
-                return Vector3.zero;
-
-            float totalWeight = 0f;
-            Vector3 weightedSum = Vector3.zero;
-
-            Vector3 direction0 = (samples[0].Hit - pos).normalized;
-
-            for (int i = 0; i < samples.Count; i++)
-            {
-                Vector3 direction = i > 0 ?
-                    (samples[i].Hit - pos).normalized :
-                    direction0;
-
-                float weight = 1f - Vector3.Magnitude(direction - direction0);     // Simple weighting
-                weightedSum += direction * weight;
-                totalWeight += weight;
-            }
-
-            return totalWeight > 0f ?
-                weightedSum / totalWeight :
-                Vector3.zero;
-        }
-
-        // Calculate confidence based on direction consistency
-        private static float CalculateDirectionConfidence(List<GazeSample_Direct> samples)
-        {
-            Vector3 average = GetWeightedAverage(samples);
-
-            if (average.IsNearZero())
-                return 0;
-
-            average = average.normalized;
-            float confidence = 1f;
-
-            foreach (var sample in samples)
-            {
-                float normalized_dot = (Vector3.Dot(sample.Direction, average) + 1f) / 2f;      // sample.Direction is normalized, no need to do it again
-                confidence = Mathf.Min(confidence, normalized_dot);
-            }
-
-            float time_percent = GetTimePercent(samples[0].Timestamp);
-
-            return confidence * time_percent;
-        }
-        // Calculates confidence based on axis and angle similarity between samples
-        private static float CalculateDirectionConfidence(List<GazeSample_Offset> samples)
-        {
-            if (samples.Count == 0)
-                return 0f;
-
-            GazeSample_Offset referenceSample = samples[0];
-            Vector3 referenceAxis = referenceSample.Axis;
-            float referenceAngle = referenceSample.Angle;
-
-            float minConfidence = 1f;
-
-            for (int i = 0; i < samples.Count; i++)
-            {
-                GazeSample_Offset sample = samples[i];
-
-                // Axis confidence: dot product between axis and reference axis
-                float axisDot = Vector3.Dot(sample.Axis, referenceAxis);
-                axisDot = (axisDot + 1f) / 2f; // Normalize to 0..1
-
-                // Angle confidence: difference between angle and reference angle
-                float angleDiff = Mathf.Abs(sample.Angle - referenceAngle) / 180f;
-                float angleConfidence = 1f - angleDiff;
-
-                // Take the minimum of axis and angle confidence for this sample
-                float sampleConfidence = Mathf.Min(axisDot, angleConfidence);
-
-                // Track the lowest confidence across all samples
-                if (sampleConfidence < minConfidence)
-                    minConfidence = sampleConfidence;
-            }
-
-            float time_percent = GetTimePercent(samples[0].Timestamp);
-
-            return minConfidence * time_percent;
-        }
-        // Calculates confience by subracting hit from pos, then very similar to direct overload
-        private static float CalculateDirectionConfidence(List<GazeSample_SphereTarget> samples, Vector3 pos)
-        {
-            if (samples.Count == 0)
-                return 0f;
-
-            Vector3 average = GetWeightedAverage(samples, pos);
-
-            if (average.IsNearZero())
-                return 0;
-
-            average = average.normalized;
-            float confidence = 1f;
-
-            foreach (var sample in samples)
-            {
-                Vector3 direction = (pos - sample.Hit).normalized;
-                float normalized_dot = (Vector3.Dot(direction, average) + 1f) / 2f;
-                confidence = Mathf.Min(confidence, normalized_dot);
-            }
-
-            float time_percent = GetTimePercent(samples[0].Timestamp);
-
-            return confidence * time_percent;
-        }
-
-        private static float GetTimePercent(DateTime oldest)
-        {
-            float max_seconds = JetpackScript.YawToLook_Buffer_MaxSeconds;
-
-            float elapsed = (float)(DateTime.Now - oldest).TotalSeconds;
-
-            if (elapsed >= max_seconds)
-                return 1;
-
-            return (float)Math.Pow(elapsed / max_seconds, 4);       // linear is too forgiving.  wait until it's closer to full before giving a higher score
-        }
-
-        /// <summary>
-        /// Returns 3 different radius (small, medium, large) that make sense for the speed
-        /// </summary>
-        /// <remarks>
-        /// The radii returned are multiples of MIN radius, so the tostring of radius can be used as
-        /// a key into a bucket
-        /// </remarks>
-        private static float[] GetRadiiForSpeed(float speed)
-        {
-            float MIN = JetpackScript.YawToLook_GazeTarget_RadiiForSpeed_Min;                       // Minimum base radius
-            float SPEED_RATIO = JetpackScript.YawToLook_GazeTarget_RadiiForSpeed_SpeedRatio;        // Speed to base radius scaling factor
-            float MULT = JetpackScript.YawToLook_GazeTarget_RadiiForSpeed_StepMult;                 // Multiplier for step progression
-
-            // Step 1: Calculate the base radius based on speed
-            float calculatedBase = Math.Max(MIN, SPEED_RATIO * speed);
-
-            // Step 2: Find the next power of MULT that is >= calculatedBase
-            float ratio = calculatedBase / MIN;     // Normalize to the MIN base
-            double logBase2 = Math.Log(ratio, 2);   // Log base 2 of the ratio
-            int n = (int)Math.Ceiling(logBase2);    // Smallest integer exponent
-            float baseRadius = MIN * (float)Math.Pow(MULT, n);
-
-            // Step 3: Return the radii as a geometric progression
-            return new float[]
-            {
-                baseRadius,
-                baseRadius * MULT,
-                //baseRadius * MULT * MULT      // having three sizes seems excessive
-            };
         }
 
         private static Vector3[] GetRelevantSphereOrigins(Vector3 pos, float originSpacing, float sphereRadius, float minAllowedDistance)
@@ -639,6 +505,319 @@ namespace Jetpack.InputWatchers
             // t should always be > 0 (since c < 0 and discriminant >= 0)
             return ray_start + ray_direction * t;
         }
+
+        /// <summary>
+        /// Returns 3 different radius (small, medium, large) that make sense for the speed
+        /// </summary>
+        /// <remarks>
+        /// The radii returned are multiples of MIN radius, so the tostring of radius can be used as
+        /// a key into a bucket
+        /// </remarks>
+        private static float[] GetRadiiForSpeed(float speed)
+        {
+            float MIN = JetpackScript.YawToLook_GazeTarget_RadiiForSpeed_Min;                       // Minimum base radius
+            float SPEED_RATIO = JetpackScript.YawToLook_GazeTarget_RadiiForSpeed_SpeedRatio;        // Speed to base radius scaling factor
+            float MULT = JetpackScript.YawToLook_GazeTarget_RadiiForSpeed_StepMult;                 // Multiplier for step progression
+
+            // Step 1: Calculate the base radius based on speed
+            float calculatedBase = Math.Max(MIN, SPEED_RATIO * speed);
+
+            // Step 2: Find the next power of MULT that is >= calculatedBase
+            float ratio = calculatedBase / MIN;     // Normalize to the MIN base
+            double logBase2 = Math.Log(ratio, 2);   // Log base 2 of the ratio
+            int n = (int)Math.Ceiling(logBase2);    // Smallest integer exponent
+            float baseRadius = MIN * (float)Math.Pow(MULT, n);
+
+            // Step 3: Return the radii as a geometric progression
+            return new float[]
+            {
+                baseRadius,
+                baseRadius * MULT,
+                //baseRadius * MULT * MULT      // having three sizes seems excessive
+            };
+        }
+
+        internal static string GetRadiusKey(float radius) => radius.ToStringSignificantDigits(3);
+        internal static string GetOriginKey(Vector3 origin) => origin.ToStringSignificantDigits(3);
+
+        #endregion
+
+        #region Private Methods - TryGetDominantDirection
+
+        // Calculate confidence based on direction consistency
+        private static float CalculateDirectionConfidence(List<GazeSample_Direct> samples)
+        {
+            Vector3 average = GetWeightedAverage(samples);
+
+            if (average.IsNearZero())
+                return 0;
+
+            average = average.normalized;
+            float confidence = 1f;
+
+            foreach (var sample in samples)
+            {
+                float normalized_dot = (Vector3.Dot(sample.Direction, average) + 1f) / 2f;      // sample.Direction is normalized, no need to do it again
+                confidence = Mathf.Min(confidence, normalized_dot);
+            }
+
+            float time_percent = GetTimePercent(samples[0].Timestamp);
+
+            return confidence * time_percent;
+        }
+        // Calculates confidence based on axis and angle similarity between samples
+        private static float CalculateDirectionConfidence(List<GazeSample_Offset> samples)
+        {
+            if (samples.Count == 0)
+                return 0f;
+
+            GazeSample_Offset referenceSample = samples[0];
+            Vector3 referenceAxis = referenceSample.Axis;
+            float referenceAngle = referenceSample.Angle;
+
+            float minConfidence = 1f;
+
+            for (int i = 0; i < samples.Count; i++)
+            {
+                GazeSample_Offset sample = samples[i];
+
+                // Axis confidence: dot product between axis and reference axis
+                float axisDot = Vector3.Dot(sample.Axis, referenceAxis);
+                axisDot = (axisDot + 1f) / 2f; // Normalize to 0..1
+
+                // Angle confidence: difference between angle and reference angle
+                float angleDiff = Mathf.Abs(sample.Angle - referenceAngle) / 180f;
+                float angleConfidence = 1f - angleDiff;
+
+                // Take the minimum of axis and angle confidence for this sample
+                float sampleConfidence = Mathf.Min(axisDot, angleConfidence);
+
+                // Track the lowest confidence across all samples
+                if (sampleConfidence < minConfidence)
+                    minConfidence = sampleConfidence;
+            }
+
+            float time_percent = GetTimePercent(samples[0].Timestamp);
+
+            return minConfidence * time_percent;
+        }
+
+
+        // Calculates confience by subracting hit from pos, then very similar to direct overload
+        private static float CalculateDirectionConfidence_ATTEMPT1(List<GazeSample_SphereTarget> samples, Vector3 pos)
+        {
+            if (samples.Count == 0)
+                return 0f;
+
+            Vector3 average = GetWeightedAverage(samples, pos);
+
+            if (average.IsNearZero())
+                return 0;
+
+            average = average.normalized;
+            float confidence = 1f;
+
+            foreach (var sample in samples)
+            {
+                Vector3 direction = (sample.Hit - pos).normalized;
+                float normalized_dot = (Vector3.Dot(direction, average) + 1f) / 2f;
+
+                confidence = Mathf.Min(confidence, normalized_dot);
+            }
+
+            float time_percent = GetTimePercent(samples[0].Timestamp);
+
+            Debug.Log($"confidence: {confidence}, time_percent: {time_percent}, max time: {(DateTime.UtcNow - samples[0].Timestamp).TotalSeconds}");
+
+            return confidence * time_percent;
+        }
+        private static float CalculateDirectionConfidence(List<GazeSample_SphereTarget> samples, Vector3 pos)
+        {
+            if (samples.Count == 0)
+                return 0f;
+
+            float time_percent = GetTimePercent(samples[0].Timestamp);
+
+            if (time_percent < JetpackScript.YawToLook_Buffer_GazeConfidence)        // even if all the hits are perfectly aligned, the low amount of time they are around won't make it worth calculating
+                return 0f;
+
+            Vector3 avg_dir = GetWeightedAverage(samples, pos);
+
+            if (avg_dir.IsNearZero())
+                return 0f;
+
+            avg_dir = avg_dir.normalized;
+
+            // Compute normalized dot products
+            float[] normalized_dots = new float[samples.Count];
+            for (int i = 0; i < samples.Count; i++)
+            {
+                Vector3 direction = (samples[i].Hit - pos).normalized;
+                float dot = Vector3.Dot(direction, avg_dir);
+                normalized_dots[i] = (dot + 1f) / 2f; // Map to [0,1]
+            }
+
+            // Compute average confidence
+            float sum_confidence = normalized_dots.Sum();
+            float avg_confidence = sum_confidence / samples.Count;
+
+            // Compute standard deviation
+            float sum_squared_diff = 0f;
+            foreach (float dot in normalized_dots)
+            {
+                float diff = dot - avg_confidence;
+                sum_squared_diff += diff * diff;
+            }
+
+            float variance = sum_squared_diff / samples.Count;
+            float std_dev = Mathf.Sqrt(variance);
+
+
+
+
+
+            // Normalize standard deviation to [0,1]
+            const float MAX_STDDEV = 0.5f;
+            //float normalized_stddev = 1f - (std_dev / MAX_STDDEV);
+
+            // Your current normalization (normalized_stddev = 1 - std_dev) is linear. Replace it with a non-linear function to make
+            // small standard deviations (tight clusters) dominate the confidence
+
+            // Exponential decay for normalized standard deviation
+            float normalized_stddev = Mathf.Exp(-std_dev * JetpackScript.YawToLook_Buffer_Confidence_StdDev_DecayMult); // Aggressive drop for std_dev > 0.001 (even a value of 12 is pretty aggressive - add a slider for this)
+
+
+
+
+            // Combine average and normalized standard deviation
+            float confidence = avg_confidence * normalized_stddev;
+
+
+            // both of these seem touchy.  I think the std dev adjustment should be enough
+
+            // Non-Linear Activation for Final Confidence
+            // Use a sigmoid - like function to compress the final confidence score.This ensures:
+            // - Only very tight clusters(e.g., avg_confidence > 0.995) yield high confidence.
+            // - Gradually penalizes clusters with slightly higher spread.
+
+            // Apply sigmoid-like scaling to final confidence
+            //confidence = 1f - (1f / (1f + Mathf.Exp(100f * (confidence - 0.995f))));      // these numbers are off.  it needs to shift left
+
+            // Or use a logarithmic transformation
+            //confidence = Mathf.Log(confidence) / Mathf.Log(0.999f);
+
+
+
+
+            Debug.Log($"final: {confidence * time_percent}, confidence: {confidence}, time_percent: {time_percent}, std_dev: {std_dev}, avg_confidence: {avg_confidence}, normalized_stddev: {normalized_stddev} (decay mult: {JetpackScript.YawToLook_Buffer_Confidence_StdDev_DecayMult})");
+
+            // Reduce if the bucket is too new
+            return confidence * time_percent;
+        }
+
+
+
+        private static float GetTimePercent(DateTime oldest)
+        {
+            float max_seconds = JetpackScript.YawToLook_Buffer_MaxSeconds;
+
+            float elapsed = (float)(DateTime.UtcNow - oldest).TotalSeconds;
+
+            if (elapsed >= max_seconds)
+                return 1;
+
+            return (float)Math.Pow(elapsed / max_seconds, 4);       // linear is too forgiving.  wait until it's closer to full before giving a higher score
+        }
+
+        private static Vector3 GetWeightedAverage(List<GazeSample_Direct> samples)
+        {
+            if (samples.Count == 0)
+                return Vector3.zero;
+
+            float totalWeight = 0f;
+            Vector3 weightedSum = Vector3.zero;
+
+            foreach (var sample in samples)
+            {
+                float weight = 1f - Vector3.Magnitude(sample.Direction - samples[0].Direction);     // Simple weighting
+                weightedSum += sample.Direction * weight;
+                totalWeight += weight;
+            }
+
+            return totalWeight > 0f ?
+                weightedSum / totalWeight :
+                Vector3.zero;
+        }
+        private static Vector3 GetWeightedAverage(List<GazeSample_Offset> samples, Vector3 relativeTo)
+        {
+            if (samples.Count == 0)
+                return Vector3.zero;
+
+            Vector4 sumQuat = Vector4.zero;
+            float totalWeight = 0f;
+
+            GazeSample_Offset referenceSample = samples[0];
+            Vector3 referenceAxis = referenceSample.Axis;
+            float referenceAngle = referenceSample.Angle;
+
+            for (int i = 0; i < samples.Count; i++)
+            {
+                GazeSample_Offset sample = samples[i];
+
+                // Calculate axis confidence (normalized to 0..1)
+                float axisDot = Vector3.Dot(sample.Axis, referenceAxis);
+                axisDot = (axisDot + 1f) / 2f;
+
+                // Calculate angle confidence (normalized to 0..1)
+                float angleDiff = Mathf.Abs(sample.Angle - referenceAngle) / 180f;
+                float angleConfidence = 1f - angleDiff;
+
+                // Weight is the product of axis and angle confidence
+                float weight = axisDot * angleConfidence;
+
+                // Add to sum of quaternions weighted by their confidence
+                sumQuat += new Vector4(samples[i].Quaternion.x * weight, samples[i].Quaternion.y * weight, samples[i].Quaternion.z * weight, samples[i].Quaternion.w * weight);
+                totalWeight += weight;
+            }
+
+            if (totalWeight == 0f)
+                return Vector3.zero;
+
+            // Normalize the sum to get the average quaternion
+            Vector4 avgQuat = sumQuat / totalWeight;
+            Quaternion averageQ = new Quaternion(avgQuat.x, avgQuat.y, avgQuat.z, avgQuat.w).normalized;
+
+            // Apply the average rotation to the base direction
+            return averageQ * relativeTo;
+        }
+        private static Vector3 GetWeightedAverage(List<GazeSample_SphereTarget> samples, Vector3 pos)
+        {
+            if (samples.Count == 0)
+                return Vector3.zero;
+
+            float totalWeight = 0f;
+            Vector3 weightedSum = Vector3.zero;
+
+            Vector3 direction0 = (samples[0].Hit - pos).normalized;
+
+            for (int i = 0; i < samples.Count; i++)
+            {
+                Vector3 direction = i > 0 ?
+                    (samples[i].Hit - pos).normalized :
+                    direction0;
+
+                float weight = 1f - Vector3.Magnitude(direction - direction0);     // Simple weighting
+                weightedSum += direction * weight;
+                totalWeight += weight;
+            }
+
+            return totalWeight > 0f ?
+                weightedSum / totalWeight :
+                Vector3.zero;
+        }
+
+        #endregion
+        #region Private Methods - TryGetDominantDirection - spheres
 
         private IEnumerable<List<GazeSample_SphereTarget>> IterateTargetBuckets()
         {

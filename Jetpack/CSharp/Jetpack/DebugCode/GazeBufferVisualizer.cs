@@ -11,20 +11,7 @@ using static ThunderRoad.ItemMagicAreaProjectile;
 namespace Jetpack.DebugCode
 {
 
-    // TODO: instead of showing dot sets, show individual dots that are the same color
-    // this way, a single list of them can be used and only a few will be removed/added each step
-    // also only do the add/remove every quarter second
-
-    // TODO: show some stats
-    //  - num spheres
-    //  - total hits
-    //  - avg hits per sphere
-    //  - max hits per sphere
-
-    // I'm worried that per frame is too often and the buffer is getting flooded with recent values and throwing away hits before they age out
-    // look at max buffer size and max age, figure out how many milliseconds to wait between taking samples
-
-    // TODO: target confidence can't be max value if data isn't old enough
+    // TODO: show winning ray as well as its confidence
 
     public class GazeBufferVisualizer
     {
@@ -41,6 +28,7 @@ namespace Jetpack.DebugCode
 
         private DebugRenderer3D _renderer = null;
 
+        private DebugItem _dominant_direction = null;
         private Dictionary<string, (DebugItem item, Color color)> _spheres = new Dictionary<string, (DebugItem item, Color color)>();
         private int _hit_index = -1;
         private List<DebugItem> _hits = new List<DebugItem>();
@@ -66,17 +54,22 @@ namespace Jetpack.DebugCode
 
                 _gazeBuffer.AddSample_Target(pos, look, velocity.magnitude);
 
-                if (_gazeBuffer.TryGetDominantDirection_Target(out Vector3 dominant_direction, out float confidence, pos))
+                float? confidence = null;
+                //if (_gazeBuffer.TryGetDominantDirection_Target(out Vector3 dominant_direction, out float confidence2, pos))
+                if (_gazeBuffer.TryGetDominantDirection_Target_Debug(out Vector3 dominant_direction, out float confidence2, out float sphere_radius, out Vector3 sphere_origin, pos))
                 {
-                    //DrawDirection();
+                    confidence = confidence2;
+                    DrawDirection(dominant_direction, confidence2, pos, sphere_radius, sphere_origin);
                 }
                 else
                 {
-
+                    if (_dominant_direction != null)
+                        _renderer.Remove(_dominant_direction);
+                    _dominant_direction = null;
                 }
 
                 DrawSpheresAndHits();
-                DrawStatus();
+                DrawStatus(confidence);
 
                 FinishHitsUpdate();
             }
@@ -97,6 +90,12 @@ namespace Jetpack.DebugCode
         {
             if (_renderer == null)
                 return;
+
+            // Dominant Direction
+            if (_dominant_direction != null)
+                _renderer.Remove(_dominant_direction);
+
+            _dominant_direction = null;
 
             // Spheres
             foreach (var item in _spheres.Values)
@@ -148,6 +147,28 @@ namespace Jetpack.DebugCode
                 _hits[i].Object.SetActive(i <= _hit_index);     // this should be cheaper than removing/adding
         }
 
+        private void DrawDirection(Vector3 dominant_direction, float confidence, Vector3 pos, float sphere_radius, Vector3 sphere_origin)
+        {
+            EnsureDebugActive();
+
+            // Get the color of the sphere
+            string key = GetSphereKey(sphere_radius, sphere_origin);
+            Color color = Color.magenta;
+            if (_spheres.TryGetValue(key, out var sphere))
+                color = sphere.color;
+
+            // Create or update the line
+            if (_dominant_direction == null)
+            {
+                _dominant_direction = _renderer.AddLine_Basic(pos, pos + dominant_direction, LINE_THICKNESS, color);
+            }
+            else
+            {
+                DebugRenderer3D.AdjustLinePositions(_dominant_direction, pos, pos + dominant_direction);
+                DebugRenderer3D.AdjustColor(_dominant_direction, color);
+            }
+        }
+
         private void DrawSpheresAndHits()
         {
             EnsureDebugActive();
@@ -168,13 +189,13 @@ namespace Jetpack.DebugCode
                         continue;
 
                     // Sphere
-                    string sphere_key = $"{GazeBuffer.GetRadiusKey(bucket[0].SphereRadius)} | {GazeBuffer.GetOriginKey(bucket[0].SphereOrigin)}";        // each bucket is for a sphere, so every hit in this bucket will have the same sphere origin
+                    string sphere_key = GetSphereKey(bucket[0].SphereRadius, bucket[0].SphereOrigin);     // each bucket is for a sphere, so every hit in this bucket will have the same sphere origin
                     sphere_keys.Add(sphere_key);
 
                     if (!_spheres.ContainsKey(sphere_key))
                     {
                         Color color = UtilityColor.RandomHSV(0, 1, 0.3f, 0.8f, 0.45f, 0.85f);
-                        var item = (_renderer.AddWireframeSphere(bucket[0].SphereOrigin, bucket[0].SphereRadius, LINE_THICKNESS, color), color);
+                        var item = (_renderer.AddWireframeSphere(bucket[0].SphereOrigin, bucket[0].SphereRadius, LINE_THICKNESS, color, isLowRes: false), color);
                         _spheres.Add(sphere_key, item);
                     }
 
@@ -208,8 +229,12 @@ namespace Jetpack.DebugCode
                 _spheres.Remove(dead_sphere);
             }
         }
+        private static string GetSphereKey(float radius, Vector3 origin)
+        {
+            return $"{GazeBuffer.GetRadiusKey(radius)} | {GazeBuffer.GetOriginKey(origin)}";
+        }
 
-        private void DrawStatus()
+        private void DrawStatus(float? confidence)
         {
             EnsureDebugActive();
 
@@ -230,8 +255,9 @@ namespace Jetpack.DebugCode
 
             text_list.Add($"num spheres: {buckets.Count}");
             text_list.Add($"total hits: {buckets.Sum(o => o.Count)}");
-            text_list.Add($"avg hits per sphere: {buckets.Average(o => o.Count)}");
+            text_list.Add($"avg hits per sphere: {buckets.Average(o => o.Count).ToStringSignificantDigits(1)}");
             text_list.Add($"max hits in sphere: {buckets.Max(o => o.Count)}");
+            text_list.Add($"confidence: {confidence?.ToStringSignificantDigits(2) ?? "--"}");
 
             string text = string.Join(Environment.NewLine, text_list);
 

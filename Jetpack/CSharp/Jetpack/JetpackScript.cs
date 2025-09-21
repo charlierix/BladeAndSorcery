@@ -381,9 +381,16 @@ namespace Jetpack
 
         [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
         [ModOptionSlider]
-        [ModOption(name: "Gaze Confidence", tooltip: "The average of look directions", order = 9)]
+        [ModOption(name: "Gaze Confidence", tooltip: "The average of look directions.  This is the min confidence before the look direction is considered", order = 9)]
         [ModOptionFloatValues(0, 1, 0.01f)]
         public static float YawToLook_Buffer_GazeConfidence = 0.7f;
+
+
+        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionSlider]
+        [ModOption(name: "Gaze Confidence StdDev Decay Mult", tooltip: "Does an exponential decay against standard deviation of dot products with avg.  Large number makes it require tighter groupings", order = 10)]
+        [ModOptionFloatValues(1, 300, 1)]
+        public static float YawToLook_Buffer_Confidence_StdDev_DecayMult = 100;
 
 
 
@@ -393,14 +400,14 @@ namespace Jetpack
         // This will produce between 1 and 2 spheres when calling GetRelevantSphereOrigins.  Radius doesn't have much influence
         //[ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
         //[ModOptionSlider]
-        //[ModOption(name: "Gaze Sphere Min Dist to Surface", tooltip: "The minimum allowed distance between head position and the surface of a sphere", order = 10)]
+        //[ModOption(name: "Gaze Sphere Min Dist to Surface", tooltip: "The minimum allowed distance between head position and the surface of a sphere", order = 11)]
         //[ModOptionFloatValues(0.25f, 2.5f, 0.05f)]
         //public static float YawToLook_GazeTarget_MinAllowedDistance = 1f;
 
 
         //[ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
         //[ModOptionSlider]
-        //[ModOption(name: "Gaze Sphere Spacing Ratio of Radius", tooltip: "How far apart spheres should be spaced", order = 11)]
+        //[ModOption(name: "Gaze Sphere Spacing Ratio of Radius", tooltip: "How far apart spheres should be spaced", order = 12)]
         //[ModOptionFloatValues(0.65f, 0.85f, 0.01f)]
         //public static float YawToLook_GazeTarget_SpacingRatio = 0.75f;
 
@@ -409,19 +416,19 @@ namespace Jetpack
 
         [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
         [ModOptionSlider]
-        [ModOption(name: "Gaze Sphere Min Radius", tooltip: "The smallest radius (when speed is zero)", order = 12)]
-        [ModOptionFloatValues(2, 7, 0.25f)]
-        public static float YawToLook_GazeTarget_RadiiForSpeed_Min = 3.5f;
+        [ModOption(name: "Gaze Sphere Min Radius", tooltip: "The smallest radius (when speed is zero)", order = 13)]
+        [ModOptionFloatValues(2, 9, 0.25f)]
+        public static float YawToLook_GazeTarget_RadiiForSpeed_Min = 5f;
 
         [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
         [ModOptionSlider]
-        [ModOption(name: "Gaze Sphere Radius Speed Ratio", tooltip: "Speed to base radius scaling factor", order = 13)]
+        [ModOption(name: "Gaze Sphere Radius Speed Ratio", tooltip: "Speed to base radius scaling factor", order = 14)]
         [ModOptionFloatValues(0.1f, 2, 0.05f)]
         public static float YawToLook_GazeTarget_RadiiForSpeed_SpeedRatio = 0.75f;
 
         [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
         [ModOptionSlider]
-        [ModOption(name: "Gaze Sphere Radius Step Mult", tooltip: "The size of the next largest radius (multiplied by base radius)", order = 14)]
+        [ModOption(name: "Gaze Sphere Radius Step Mult", tooltip: "The size of the next largest radius (multiplied by base radius)", order = 15)]
         [ModOptionFloatValues(1.5f, 5, 0.1f)]
         public static float YawToLook_GazeTarget_RadiiForSpeed_StepMult = 3;
 
