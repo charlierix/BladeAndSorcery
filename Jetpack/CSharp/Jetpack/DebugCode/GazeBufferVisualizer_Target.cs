@@ -10,18 +10,15 @@ using static ThunderRoad.ItemMagicAreaProjectile;
 
 namespace Jetpack.DebugCode
 {
-
-    // TODO: show winning ray as well as its confidence
-
-    public class GazeBufferVisualizer
+    public class GazeBufferVisualizer_Target
     {
         #region Declaration Section
-
-        private readonly GazeBuffer _gazeBuffer = new GazeBuffer();
 
         private const float DOT_SIZE = 0.05f;
         private const float LINE_THICKNESS = 0.005f;
         private const float TEXT_HEIGHT = 0.06f;
+
+        private readonly GazeBuffer _gazeBuffer = new GazeBuffer();
 
         private DebugRenderer3D _renderer = null;
 

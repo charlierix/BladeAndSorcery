@@ -20,6 +20,10 @@ namespace Jetpack.Scanning
     /// </remarks>
     public class ConfinedArea
     {
+        private const float DOT_SIZE = 0.05f;
+        private const float LINE_THICKNESS = 0.005f;
+        private const float TEXT_HEIGHT = 0.06f;
+
         /// <summary>
         /// Calling Update on a regular basis will set this property
         /// 
@@ -50,6 +54,7 @@ namespace Jetpack.Scanning
         private List<DebugItem> _rayvisual_lines = null;
         private List<DebugItem> _rayvisual_hits = null;
         private Dictionary<int, Color> _rayHitColors = null;
+        private DebugItem _text = null;
 
         public ConfinedArea(RayCastStorage raycast_storage)
         {
@@ -80,9 +85,8 @@ namespace Jetpack.Scanning
 
             _prev_tick = now;
 
-
-            // TODO: visual of ConfinedPercent (a text label with color border)
-
+            if (JetpackScript.ShowConfinedArea)
+                DrawConfinedPercent();
         }
 
         public void Clear()
@@ -291,6 +295,10 @@ namespace Jetpack.Scanning
 
                 _rayvisual_hits.Clear();
             }
+
+            if(_text != null)
+                _renderer.Remove(_text);
+            _text = null;
         }
 
         private void StartDrawingRays()
@@ -337,7 +345,7 @@ namespace Jetpack.Scanning
             }
             else
             {
-                _rayvisual_lines.Add(_renderer.AddLine_Basic(pos, pos_to, 0.02f, color));
+                _rayvisual_lines.Add(_renderer.AddLine_Basic(pos, pos_to, LINE_THICKNESS, color));
             }
 
             // Hit Dot
@@ -352,7 +360,7 @@ namespace Jetpack.Scanning
                 }
                 else
                 {
-                    _rayvisual_hits.Add(_renderer.AddDot(hit.Value.point, 0.1f, UtilityColor.FromHex("34F035")));
+                    _rayvisual_hits.Add(_renderer.AddDot(hit.Value.point, DOT_SIZE, UtilityColor.FromHex("34F035")));
                 }
             }
         }
@@ -373,7 +381,7 @@ namespace Jetpack.Scanning
             }
             else
             {
-                _rayvisual_lines.Add(_renderer.AddLine_Basic(pos, pos_to, 0.02f, color));
+                _rayvisual_lines.Add(_renderer.AddLine_Basic(pos, pos_to, LINE_THICKNESS, color));
             }
 
             // Hit Dots
@@ -401,10 +409,31 @@ namespace Jetpack.Scanning
                     }
                     else
                     {
-                        _rayvisual_hits.Add(_renderer.AddDot(hit2.point, 0.1f, hit_color));
+                        _rayvisual_hits.Add(_renderer.AddDot(hit2.point, DOT_SIZE, hit_color));
                     }
                 }
             }
+        }
+
+        private void DrawConfinedPercent()
+        {
+            EnsureDrawingSetup();
+
+            // text pos
+            Vector3 text_pos = Player.local.head.anchor.position +
+                Player.local.head.transform.forward * 1.5f +
+                Player.local.head.transform.right * 0.33f +
+                Player.local.head.transform.up * -0.15f;
+
+            string text = $"confined %: {ConfinedPercent.ToStringSignificantDigits(2)}";
+
+            if (_text == null)
+                _text = _renderer.AddText(text, text_pos, Player.local.head.transform.forward, Color.blue, Color.white, TEXT_HEIGHT);
+
+            _text.Object.transform.position = text_pos;
+            _text.Object.transform.rotation = Quaternion.LookRotation((text_pos - Player.local.head.anchor.position).normalized, Player.local.head.transform.up);
+
+            DebugRenderer3D.AdjustText(_text, new_text: text);
         }
 
         private static void RemoveDespawned(List<DebugItem> items)

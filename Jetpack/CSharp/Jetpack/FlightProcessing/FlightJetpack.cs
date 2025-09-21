@@ -17,7 +17,7 @@ namespace Jetpack.FlightProcessing
         private readonly RepelGround _repelGround;
         private readonly ObstacleAvoidance _obstacleAvoidance;
         private readonly PullYawToLook _pullYawToLook;
-        private readonly GazeBufferVisualizer _gazeBufferVisualizer;
+        private readonly GazeBufferVisualizer_Target _gazeBufferVisualizer;
 
         private FlightData _standardState = null;
 
@@ -33,7 +33,7 @@ namespace Jetpack.FlightProcessing
             _repelGround = new RepelGround(_raycast_storage);
             _obstacleAvoidance = new ObstacleAvoidance(_raycast_storage);
             _pullYawToLook = new PullYawToLook();
-            _gazeBufferVisualizer = new GazeBufferVisualizer();
+            _gazeBufferVisualizer = new GazeBufferVisualizer_Target();
         }
 
         public void Activate(float drag)
