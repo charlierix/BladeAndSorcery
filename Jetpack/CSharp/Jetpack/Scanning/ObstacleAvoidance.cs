@@ -48,8 +48,6 @@ namespace Jetpack.Scanning
 
         #region debug drawing vars
 
-        private const bool SHOULD_DRAW = false;
-
         private const float DOT_SIZE = 0.05f;
         private const float LINE_THICKNESS = 0.005f;
         private const float TEXT_HEIGHT = 0.06f;
@@ -96,7 +94,7 @@ namespace Jetpack.Scanning
         {
             if (!JetpackScript.ShouldAvoidObstacles)
             {
-                if (SHOULD_DRAW)
+                if (JetpackScript.ShowObstacleAvoidance)
                     ClearDebugVisuals();
                 return;
             }
@@ -112,7 +110,7 @@ namespace Jetpack.Scanning
             var ellipse_points = GetEllipsePoints2(_velocity);
             _pos = ellipse_points.origin;
 
-            if (SHOULD_DRAW)
+            if (JetpackScript.ShowObstacleAvoidance)
                 DrawEllipsePointsLines(ellipse_points.origin, ellipse_points.perimeter, _velocity);
 
             // Define the rays
@@ -127,7 +125,7 @@ namespace Jetpack.Scanning
         {
             if (!JetpackScript.ShouldAvoidObstacles)
             {
-                if (SHOULD_DRAW)
+                if (JetpackScript.ShowObstacleAvoidance)
                     ClearDebugVisuals();
                 return null;
             }
@@ -139,7 +137,7 @@ namespace Jetpack.Scanning
 
             if (rays == null || rays.Length == 0)
             {
-                if (SHOULD_DRAW)
+                if (JetpackScript.ShowObstacleAvoidance)
                 {
                     Debug.Log("empty rays");
                     DrawRayCasts(new RayCastStorage.RayInfo[0], _ray_len);
@@ -155,7 +153,7 @@ namespace Jetpack.Scanning
             // Suppress accel that is counter to the input (if they want to go down or into a wall, don't fight them)
             accel = DontFightInput(accel, input_dir);
 
-            if (SHOULD_DRAW)
+            if (JetpackScript.ShowObstacleAvoidance)
             {
                 DrawRayCasts(rays[0].Rays, _ray_len);
                 DrawHitAnalysis(hits, _pos, _velocity_dir);

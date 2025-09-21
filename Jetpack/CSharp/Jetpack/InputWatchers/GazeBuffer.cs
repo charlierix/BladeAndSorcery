@@ -709,7 +709,7 @@ namespace Jetpack.InputWatchers
 
 
 
-            Debug.Log($"final: {confidence * time_percent}, confidence: {confidence}, time_percent: {time_percent}, std_dev: {std_dev}, avg_confidence: {avg_confidence}, normalized_stddev: {normalized_stddev} (decay mult: {JetpackScript.YawToLook_Buffer_Confidence_StdDev_DecayMult})");
+            //Debug.Log($"final: {confidence * time_percent}, confidence: {confidence}, time_percent: {time_percent}, std_dev: {std_dev}, avg_confidence: {avg_confidence}, normalized_stddev: {normalized_stddev} (decay mult: {JetpackScript.YawToLook_Buffer_Confidence_StdDev_DecayMult})");
 
             // Reduce if the bucket is too new
             return confidence * time_percent;

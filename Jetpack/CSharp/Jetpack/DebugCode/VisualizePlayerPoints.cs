@@ -14,8 +14,6 @@ namespace Jetpack.DebugCode
     /// </summary>
     public class VisualizePlayerPoints
     {
-        //private const bool SHOULD_DRAW = true;
-
         private DebugRenderer3D _renderer = null;
 
         private DebugItem _player_pos = null;
@@ -33,10 +31,10 @@ namespace Jetpack.DebugCode
         private DebugItem _head_line1 = null;
         private DebugItem _head_line2 = null;
 
-        public void Update(bool should_draw, float scale)
+        public void Update(float scale)
         {
             // TODO: remove currently drawn objects?  if so, store in a wrapper object so there is only a single null check when they aren't there
-            if (!should_draw)
+            if (!JetpackScript.VisualizePlayerPoints)
                 return;
 
             if (_renderer == null)

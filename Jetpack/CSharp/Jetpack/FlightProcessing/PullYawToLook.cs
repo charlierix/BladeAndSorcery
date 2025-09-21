@@ -31,8 +31,6 @@ namespace Jetpack.FlightProcessing
 
         #region debug drawing vars
 
-        private const bool SHOULD_DRAW = true;
-
         private const float DOT_SIZE = 0.05f;
         private const float LINE_THICKNESS = 0.005f;
         private const float TEXT_HEIGHT = 0.06f;
@@ -61,7 +59,7 @@ namespace Jetpack.FlightProcessing
             _gazeBuffer.Clear();
             _prevTick = DateTime.UtcNow;
 
-            if (SHOULD_DRAW)
+            if (JetpackScript.ShowPullYawToLook)
                 ClearDebugVisuals();
         }
 
@@ -91,7 +89,7 @@ namespace Jetpack.FlightProcessing
 
             _capacitor = UpdateCapacitor3(_capacitor, look, forward, elapsedSeconds, upper_dot, lower_dot, bottom_dot);
 
-            if (SHOULD_DRAW)
+            if (JetpackScript.ShowPullYawToLook)
             {
                 DrawForwardLookDiagram(look, forward);
                 DrawForwardLookHUD(look, forward);

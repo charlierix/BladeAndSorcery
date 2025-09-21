@@ -20,8 +20,6 @@ namespace Jetpack.Scanning
     /// </remarks>
     public class ConfinedArea
     {
-        private const bool SHOULD_DRAW = false;
-
         /// <summary>
         /// Calling Update on a regular basis will set this property
         /// 
@@ -138,13 +136,13 @@ namespace Jetpack.Scanning
 
             Vector3 pos = Player.local.transform.position;      // TODO: put this on the player
 
-            if (SHOULD_DRAW)
+            if (JetpackScript.ShowConfinedArea)
                 StartDrawingRays();
 
             for (int i = 0; i < rays[0].Rays.Length; i++)
                 sum_score += ExamineRay(pos, rays[0].Rays[i], min_len, max_len);
 
-            if (SHOULD_DRAW)
+            if (JetpackScript.ShowConfinedArea)
                 FinishedDrawingRays();
 
             return sum_score / rays.Length;
@@ -172,7 +170,7 @@ namespace Jetpack.Scanning
 
                 float clamp = 1 - math.pow(dist, CLAMP_POW);
 
-                if (SHOULD_DRAW)
+                if (JetpackScript.ShowConfinedArea)
                     //DrawRay(pos + ray.origin, ray.direction, max_len, hit, gauss * clamp);
                     DrawRay2(pos + ray.origin, ray.direction, max_len, hit, gauss * clamp);
 
@@ -182,7 +180,7 @@ namespace Jetpack.Scanning
             }
             else
             {
-                if (SHOULD_DRAW)
+                if (JetpackScript.ShowConfinedArea)
                     DrawRay(pos + ray.origin, ray.direction, max_len, null, 0);
 
                 return 0;
@@ -210,7 +208,7 @@ namespace Jetpack.Scanning
 
                 float clamp = 1 - math.pow(dist, CLAMP_POW);
 
-                if (SHOULD_DRAW)
+                if (JetpackScript.ShowConfinedArea)
                     //DrawRay(pos + ray.origin, ray.direction, max_len, ray.Hit.Value, gauss * clamp);
                     DrawRay2(pos + ray.Origin, ray.Direction, max_len, ray.Hit.Value, gauss * clamp);
 
@@ -220,7 +218,7 @@ namespace Jetpack.Scanning
             }
             else
             {
-                if (SHOULD_DRAW)
+                if (JetpackScript.ShowConfinedArea)
                     DrawRay(pos + ray.Origin, ray.Direction, max_len, null, 0);
 
                 return 0;

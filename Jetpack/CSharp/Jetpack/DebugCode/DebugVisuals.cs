@@ -7,13 +7,11 @@ namespace Jetpack.DebugCode
 {
     public class DebugVisuals
     {
-        private const bool SHOULD_DRAW = false;
-
         private DebugRenderer3D _renderer = null;
 
         public void AddVisuals()
         {
-            if (!SHOULD_DRAW)
+            if (!JetpackScript.ShowDebugVisuals)
                 return;
 
             if (_renderer == null)

@@ -11,8 +11,6 @@ namespace Jetpack.DebugCode
 {
     public class DebugStats
     {
-        public const bool SHOULD_DRAW = false;
-
         private const float DOT_SIZE = 0.05f;
         private const float LINE_THICKNESS = 0.005f;
         private const float TEXT_HEIGHT = 0.06f;
@@ -29,7 +27,7 @@ namespace Jetpack.DebugCode
         }
         public void Update_Final()
         {
-            if (!SHOULD_DRAW)
+            if (!JetpackScript.ShowDebugStats)
                 return;
 
             EnsureDebugActive();

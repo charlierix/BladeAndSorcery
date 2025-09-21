@@ -17,9 +17,6 @@ namespace Jetpack.DebugCode
     {
         #region Declaration Section
 
-        private const bool SHOWTARGET = true;
-        private const bool SHOWOFFSET = false;
-
         private readonly GazeBuffer _gazeBuffer = new GazeBuffer();
 
         private const float DOT_SIZE = 0.05f;
@@ -48,7 +45,7 @@ namespace Jetpack.DebugCode
             Vector3 look = Player.local.head.transform.forward;
             Vector3 velocity = Player.local.locomotion.physicBody.velocity;
 
-            if (SHOWTARGET)
+            if (JetpackScript.ShowGazeBuffer_Target)
             {
                 PrepForHitsUpdate();
 

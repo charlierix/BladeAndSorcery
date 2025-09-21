@@ -543,6 +543,38 @@ namespace Jetpack
         [ModOption(name: "Visualize Player Points", tooltip: "Shows points/lines on various transforms of the player avatar", order = 1)]
         public static bool VisualizePlayerPoints = false;
 
+        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
+        [ModOption(name: "Show Debug Visuals", tooltip: "This one looks like an early tester of figuring out how to render debug visuals - pretty useless beyond that", order = 2)]
+        public static bool ShowDebugVisuals = false;
+
+        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
+        [ModOption(name: "Show Debug Status", tooltip: "Shows various properties in a textbox", order = 3)]
+        public static bool ShowDebugStats = false;
+
+        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
+        [ModOption(name: "Show Gaze Buffer - Target", tooltip: "Shows spheres that the gaze buffer hit scans and returns look when the user holds gaze long and steady enough", order = 4)]
+        public static bool ShowGazeBuffer_Target = false;
+
+        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
+        [ModOption(name: "Show Gaze Buffer - Offset", tooltip: "Shows lines that gaze buffer uses to detect when staring at a consistent offset from forward", order = 5)]
+        public static bool ShowGazeBuffer_Offset = false;
+
+        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
+        [ModOption(name: "Show Pull Yaw To Look", tooltip: "Shows visuals of 'pull yaw to look' using gaze buffer results", order = 6)]
+        public static bool ShowPullYawToLook = false;
+
+        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
+        [ModOption(name: "Show Confined Area", tooltip: "Shows what confined area scanner sees", order = 7)]
+        public static bool ShowConfinedArea = false;
+
+        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
+        [ModOption(name: "Show Obstacle Avoidance", tooltip: "Shows the rays and hits that obstacle avoidance uses", order = 8)]
+        public static bool ShowObstacleAvoidance = false;
+
+        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
+        [ModOption(name: "Show Repel Ground", tooltip: "Shows the rays and hits that repel ground uses", order = 9)]
+        public static bool ShowRepelGround = false;
+
         #endregion
 
         // PRE-FLIGHT DATA
@@ -608,7 +640,7 @@ namespace Jetpack
             if (!_isPlayerSpawned || Player.local == null)
                 return;
 
-            _visualizePlayerPoints.Update(VisualizePlayerPoints, playerScale / 100);
+            _visualizePlayerPoints.Update(playerScale / 100);
             _debugStats.Update_Pre();
 
             bool should_switch = _transitions.Update(_flightActivation_cast, RequireBothHands, DeactivateOnGround, _isFlying);
@@ -639,7 +671,7 @@ namespace Jetpack
             if (_markedToFly && !Player.local.locomotion.isGrounded)
                 ActivateFly();
 
-            if (DebugStats.SHOULD_DRAW && _isPlayerSpawned)
+            if (ShowDebugStats && _isPlayerSpawned)
             {
                 PopulateDebug();
                 _debugStats.Update_Final();
