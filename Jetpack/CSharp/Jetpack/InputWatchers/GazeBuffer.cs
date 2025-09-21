@@ -213,7 +213,7 @@ namespace Jetpack.InputWatchers
             // Calculate confidence
             float confidence2 = CalculateDirectionConfidence(_direct);
 
-            if (confidence2 > JetpackScript.YawToLook_Buffer_GazeConfidence)
+            if (confidence2 > JetpackScript.YawToLook_Buffer_GazeConfidence_Direct)
             {
                 dominant_direction = GetWeightedAverage(_direct);
                 confidence = confidence2;
@@ -233,7 +233,7 @@ namespace Jetpack.InputWatchers
             // Calculate confidence
             float confidence2 = CalculateDirectionConfidence(_offset);
 
-            if (confidence2 > JetpackScript.YawToLook_Buffer_GazeConfidence)
+            if (confidence2 > JetpackScript.YawToLook_Buffer_GazeConfidence_Offset)
             {
                 dominant_direction = GetWeightedAverage(_offset, relativeTo);
                 confidence = confidence2;
@@ -253,7 +253,7 @@ namespace Jetpack.InputWatchers
             {
                 float confidence2 = CalculateDirectionConfidence(bucket, pos);      // may not need to pass in pos
 
-                if (confidence2 < JetpackScript.YawToLook_Buffer_GazeConfidence)
+                if (confidence2 < JetpackScript.YawToLook_Buffer_GazeConfidence_Direct)
                     continue;
 
                 if (confidence2 < confidence)
@@ -279,7 +279,7 @@ namespace Jetpack.InputWatchers
             {
                 float confidence2 = CalculateDirectionConfidence(bucket, pos);      // may not need to pass in pos
 
-                if (confidence2 < JetpackScript.YawToLook_Buffer_GazeConfidence)
+                if (confidence2 < JetpackScript.YawToLook_Buffer_GazeConfidence_Target)
                     continue;
 
                 if (confidence2 < confidence)
@@ -317,7 +317,7 @@ namespace Jetpack.InputWatchers
                     Milliseconds_Between_Frames = GetMillisecondsBetweenFrames(count, seconds),
                 };
 
-                Debug.Log($"frameskip.Milliseconds_Between_Frames: {frameskip.Milliseconds_Between_Frames} (count: {count}, seconds: {seconds})");
+                //Debug.Log($"frameskip.Milliseconds_Between_Frames: {frameskip.Milliseconds_Between_Frames} (count: {count}, seconds: {seconds})");
 
                 frameskip.NextFrameTime = now.AddMilliseconds(frameskip.Milliseconds_Between_Frames);
 
@@ -547,6 +547,11 @@ namespace Jetpack.InputWatchers
         // Calculate confidence based on direction consistency
         private static float CalculateDirectionConfidence(List<GazeSample_Direct> samples)
         {
+            float time_percent = GetTimePercent(samples[0].Timestamp);
+
+            if (time_percent < JetpackScript.YawToLook_Buffer_GazeConfidence_Direct)
+                return 0f;
+
             Vector3 average = GetWeightedAverage(samples);
 
             if (average.IsNearZero())
@@ -561,14 +566,17 @@ namespace Jetpack.InputWatchers
                 confidence = Mathf.Min(confidence, normalized_dot);
             }
 
-            float time_percent = GetTimePercent(samples[0].Timestamp);
-
             return confidence * time_percent;
         }
         // Calculates confidence based on axis and angle similarity between samples
         private static float CalculateDirectionConfidence(List<GazeSample_Offset> samples)
         {
             if (samples.Count == 0)
+                return 0f;
+
+            float time_percent = GetTimePercent(samples[0].Timestamp);
+
+            if (time_percent < JetpackScript.YawToLook_Buffer_GazeConfidence_Offset)
                 return 0f;
 
             GazeSample_Offset referenceSample = samples[0];
@@ -597,40 +605,9 @@ namespace Jetpack.InputWatchers
                     minConfidence = sampleConfidence;
             }
 
-            float time_percent = GetTimePercent(samples[0].Timestamp);
-
             return minConfidence * time_percent;
         }
-
-
         // Calculates confience by subracting hit from pos, then very similar to direct overload
-        private static float CalculateDirectionConfidence_ATTEMPT1(List<GazeSample_SphereTarget> samples, Vector3 pos)
-        {
-            if (samples.Count == 0)
-                return 0f;
-
-            Vector3 average = GetWeightedAverage(samples, pos);
-
-            if (average.IsNearZero())
-                return 0;
-
-            average = average.normalized;
-            float confidence = 1f;
-
-            foreach (var sample in samples)
-            {
-                Vector3 direction = (sample.Hit - pos).normalized;
-                float normalized_dot = (Vector3.Dot(direction, average) + 1f) / 2f;
-
-                confidence = Mathf.Min(confidence, normalized_dot);
-            }
-
-            float time_percent = GetTimePercent(samples[0].Timestamp);
-
-            Debug.Log($"confidence: {confidence}, time_percent: {time_percent}, max time: {(DateTime.UtcNow - samples[0].Timestamp).TotalSeconds}");
-
-            return confidence * time_percent;
-        }
         private static float CalculateDirectionConfidence(List<GazeSample_SphereTarget> samples, Vector3 pos)
         {
             if (samples.Count == 0)
@@ -638,7 +615,7 @@ namespace Jetpack.InputWatchers
 
             float time_percent = GetTimePercent(samples[0].Timestamp);
 
-            if (time_percent < JetpackScript.YawToLook_Buffer_GazeConfidence)        // even if all the hits are perfectly aligned, the low amount of time they are around won't make it worth calculating
+            if (time_percent < JetpackScript.YawToLook_Buffer_GazeConfidence_Target)        // even if all the hits are perfectly aligned, the low amount of time they are around won't make it worth calculating
                 return 0f;
 
             Vector3 avg_dir = GetWeightedAverage(samples, pos);
@@ -714,8 +691,6 @@ namespace Jetpack.InputWatchers
             // Reduce if the bucket is too new
             return confidence * time_percent;
         }
-
-
 
         private static float GetTimePercent(DateTime oldest)
         {

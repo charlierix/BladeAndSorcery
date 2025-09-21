@@ -38,38 +38,36 @@ namespace Jetpack.DebugCode
 
         public void Update()
         {
+            if (!JetpackScript.ShowGazeBuffer_Target)
+                return;
+
             Vector3 pos = Player.local.head.anchor.position;
             Vector3 look = Player.local.head.transform.forward;
             Vector3 velocity = Player.local.locomotion.physicBody.velocity;
 
-            if (JetpackScript.ShowGazeBuffer_Target)
+            PrepForHitsUpdate();
+
+            _gazeBuffer.AddSample_Target(pos, look, velocity.magnitude);
+
+            float? confidence = null;
+            //if (_gazeBuffer.TryGetDominantDirection_Target(out Vector3 dominant_direction, out float confidence2, pos))
+            if (_gazeBuffer.TryGetDominantDirection_Target_Debug(out Vector3 dominant_direction, out float confidence2, out float sphere_radius, out Vector3 sphere_origin, pos))
             {
-                PrepForHitsUpdate();
-
-                _gazeBuffer.AddSample_Target(pos, look, velocity.magnitude);
-
-                float? confidence = null;
-                //if (_gazeBuffer.TryGetDominantDirection_Target(out Vector3 dominant_direction, out float confidence2, pos))
-                if (_gazeBuffer.TryGetDominantDirection_Target_Debug(out Vector3 dominant_direction, out float confidence2, out float sphere_radius, out Vector3 sphere_origin, pos))
-                {
-                    confidence = confidence2;
-                    DrawDirection(dominant_direction, confidence2, pos, sphere_radius, sphere_origin);
-                }
-                else
-                {
-                    if (_dominant_direction != null)
-                        _renderer.Remove(_dominant_direction);
-                    _dominant_direction = null;
-                }
-
-                DrawSpheresAndHits();
-                DrawStatus(confidence);
-
-                FinishHitsUpdate();
+                confidence = confidence2;
+                DrawDirection(dominant_direction, pos, sphere_radius, sphere_origin);
+            }
+            else
+            {
+                // Remove visual that DrawDirection populates
+                if (_dominant_direction != null)
+                    _renderer.Remove(_dominant_direction);
+                _dominant_direction = null;
             }
 
-            //if(SHOWOFFSET)
+            DrawSpheresAndHits();
+            DrawStatus(confidence);
 
+            FinishHitsUpdate();
         }
 
         #region Private Methods
@@ -141,7 +139,7 @@ namespace Jetpack.DebugCode
                 _hits[i].Object.SetActive(i <= _hit_index);     // this should be cheaper than removing/adding
         }
 
-        private void DrawDirection(Vector3 dominant_direction, float confidence, Vector3 pos, float sphere_radius, Vector3 sphere_origin)
+        private void DrawDirection(Vector3 dominant_direction, Vector3 pos, float sphere_radius, Vector3 sphere_origin)
         {
             EnsureDebugActive();
 
@@ -167,12 +165,6 @@ namespace Jetpack.DebugCode
         {
             EnsureDebugActive();
 
-            // Need to remove all hits, since each debugitem will store N dots
-            foreach (DebugItem item in _hits)
-                _renderer.Remove(item);
-
-            _hits.Clear();
-
             var sphere_keys = new List<string>();
 
             foreach (var by_radius in _gazeBuffer._target.Values)
@@ -193,11 +185,7 @@ namespace Jetpack.DebugCode
                         _spheres.Add(sphere_key, item);
                     }
 
-                    // the churn of dots is killing the game.  need to reuse existing where possible
-
                     // Hits
-                    //_hits.Add(_renderer.AddDots(bucket.Select(o => o.Hit), DOT_SIZE / 4, _spheres[sphere_key].color));
-
                     var color2 = _spheres[sphere_key].color;
 
                     foreach (var hit in bucket)

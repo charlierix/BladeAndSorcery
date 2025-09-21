@@ -397,7 +397,7 @@ namespace Jetpack.Scanning
                     {
                         hit_color = UtilityColor.RandomHSV();
                         _rayHitColors.Add(layer, hit_color);
-                        Debug.Log($"Layer Hit: {layer}, '{LayerMask.LayerToName(layer)}', {UtilityColor.ToHex(hit_color, false, false)}");
+                        //Debug.Log($"Layer Hit: {layer}, '{LayerMask.LayerToName(layer)}', {UtilityColor.ToHex(hit_color, false, false)}");
                     }
 
                     _hit_index++;

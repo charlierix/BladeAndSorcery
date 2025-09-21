@@ -139,7 +139,7 @@ namespace Jetpack.Scanning
             {
                 if (JetpackScript.ShowObstacleAvoidance)
                 {
-                    Debug.Log("empty rays");
+                    //Debug.Log("empty rays");
                     DrawRayCasts(new RayCastStorage.RayInfo[0], _ray_len);
                     DrawHitAnalysis(new HitDetails[0], _pos, _velocity_dir);
                 }

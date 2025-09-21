@@ -15,15 +15,8 @@ namespace Jetpack.FlightProcessing
     {
         private readonly ITriangle _xzplane = new Triangle(new Vector3(1, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 1));
 
-        private readonly List<Vector3> _ragdollforwards = new List<Vector3>();
-        private readonly RagdollPart.Type[] _spine_parts = new[]
-        {
-            //RagdollPart.Type.Tail,        // this also points down a bit
-            RagdollPart.Type.Torso,     // I think there are two parts labeled as torso
-            //RagdollPart.Type.Neck,        // this one points downward a little
-        };
-
         private readonly GazeBuffer _gazeBuffer = new GazeBuffer();
+        private readonly PlayerRagdollUtil _ragdollUtil = new PlayerRagdollUtil();
 
         private float _capacitor = 0f;
 
@@ -78,7 +71,7 @@ namespace Jetpack.FlightProcessing
 
             //Vector3 forward = Player.local.transform.forward.GetProjectedVector(_xzplane).normalized;     // relative to room, irl turning will move this around
             //Vector3 forward = Player.local.waist.ikAnchor.forward.GetProjectedVector(_xzplane).normalized;      // same as prev
-            Vector3 forward = GetRagdollForward().GetProjectedVector(_xzplane).normalized;
+            Vector3 forward = _ragdollUtil.GetRagdollForward().GetProjectedVector(_xzplane).normalized;
 
             // Update the capacitor
             //UpdateCapacitor2(look, forward, elapsedSeconds);
@@ -317,7 +310,7 @@ namespace Jetpack.FlightProcessing
 
             foreach (var part in ragdoll.parts)
             {
-                if (!part.type.In(_spine_parts))
+                if (!part.type.In(_ragdollUtil._spine_parts))
                     continue;
 
                 //part.root
@@ -333,21 +326,6 @@ namespace Jetpack.FlightProcessing
 
         #endregion
         #region Private Methods
-
-        // Returns average of the spine part's forward.  This works fairly well, but fails when one hand is in front of the
-        // player and the other is behind.  The spine kind of takes the average
-        private Vector3 GetRagdollForward()
-        {
-            var ragdoll = Player.currentCreature.ragdoll;
-
-            _ragdollforwards.Clear();
-
-            foreach (var part in ragdoll.parts)
-                if (part.type.In(_spine_parts))
-                    _ragdollforwards.Add(part.transform.forward);
-
-            return Math3D.GetAverage(_ragdollforwards);
-        }
 
         /// <summary>
         /// Updates the charge state of the capacitor based on the alignment between look and forward vectors.
