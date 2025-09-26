@@ -9,14 +9,19 @@ using UnityEngine;
 
 namespace Jetpack.FlightProcessing
 {
+
+    // TODO: in deactivate, make sure the player isn't roated
+
     public class FlightJetpack
     {
         private readonly RayCastStorage _raycast_storage;
+        private readonly PlayerRotator _rotator;
         private readonly DebugStats _debugStats;
         private readonly ConfinedArea _confinedScanner;
         private readonly RepelGround _repelGround;
         private readonly ObstacleAvoidance _obstacleAvoidance;
         private readonly PullYawToLook _pullYawToLook;
+        private readonly PullYawToLook2 _pullYawToLook2;
         private readonly GazeBufferVisualizer_Target _gazeBufferVisualizer_target;
         private readonly GazeBufferVisualizer_Offset _gazeBufferVisualizer_offset;
 
@@ -26,14 +31,16 @@ namespace Jetpack.FlightProcessing
 
         private DateTime _activation_time = DateTime.UtcNow;
 
-        public FlightJetpack(RayCastStorage raycast_storage, DebugStats debugStats)
+        public FlightJetpack(RayCastStorage raycast_storage, PlayerRotator rotator, DebugStats debugStats)
         {
             _raycast_storage = raycast_storage;
+            _rotator = rotator;
             _debugStats = debugStats;
             _confinedScanner = new ConfinedArea(_raycast_storage);
             _repelGround = new RepelGround(_raycast_storage);
             _obstacleAvoidance = new ObstacleAvoidance(_raycast_storage);
             _pullYawToLook = new PullYawToLook();
+            _pullYawToLook2 = new PullYawToLook2(rotator);
             _gazeBufferVisualizer_target = new GazeBufferVisualizer_Target();
             _gazeBufferVisualizer_offset = new GazeBufferVisualizer_Offset();
         }
@@ -66,6 +73,7 @@ namespace Jetpack.FlightProcessing
 
             // Others
             _pullYawToLook.Clear();
+            _pullYawToLook2.Clear();
             _gazeBufferVisualizer_target.Clear();
             _gazeBufferVisualizer_offset.Clear();
         }
@@ -90,6 +98,7 @@ namespace Jetpack.FlightProcessing
             _repelGround.Clear();
             _obstacleAvoidance.Clear();
             _pullYawToLook.Clear();
+            _pullYawToLook2.Clear();
             _gazeBufferVisualizer_target.Clear();
             _gazeBufferVisualizer_offset.Clear();
         }
@@ -105,7 +114,7 @@ namespace Jetpack.FlightProcessing
             }
 
             _raycast_storage.Clear();
-            _confinedScanner.Update_CastRays(12, 1, 1.75f);
+            _confinedScanner.Update_CastRays();
             _repelGround.Update_CastRays(loco);
             _obstacleAvoidance.Update_CastRays();
 
@@ -131,6 +140,7 @@ namespace Jetpack.FlightProcessing
                     loco.physicBody.AddForce(accel_obstacle.Value, ForceMode.Acceleration);
 
                 _pullYawToLook.Update();
+                _pullYawToLook2.Update();
                 _gazeBufferVisualizer_target.Update();
                 _gazeBufferVisualizer_offset.Update();
             }

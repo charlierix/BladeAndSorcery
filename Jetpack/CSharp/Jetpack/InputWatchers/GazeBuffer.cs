@@ -213,7 +213,7 @@ namespace Jetpack.InputWatchers
             // Calculate confidence
             float confidence2 = CalculateDirectionConfidence(_direct);
 
-            if (confidence2 > JetpackScript.YawToLook_Buffer_GazeConfidence_Direct)
+            if (confidence2 > JetpackScript.GazeBuffer_GazeConfidence_Direct)
             {
                 dominant_direction = GetWeightedAverage(_direct);
                 confidence = confidence2;
@@ -233,7 +233,7 @@ namespace Jetpack.InputWatchers
             // Calculate confidence
             float confidence2 = CalculateDirectionConfidence(_offset);
 
-            if (confidence2 > JetpackScript.YawToLook_Buffer_GazeConfidence_Offset)
+            if (confidence2 > JetpackScript.GazeBuffer_GazeConfidence_Offset)
             {
                 dominant_direction = GetWeightedAverage(_offset, relativeTo);
                 confidence = confidence2;
@@ -253,7 +253,7 @@ namespace Jetpack.InputWatchers
             {
                 float confidence2 = CalculateDirectionConfidence(bucket, pos);      // may not need to pass in pos
 
-                if (confidence2 < JetpackScript.YawToLook_Buffer_GazeConfidence_Direct)
+                if (confidence2 < JetpackScript.GazeBuffer_GazeConfidence_Direct)
                     continue;
 
                 if (confidence2 < confidence)
@@ -279,7 +279,7 @@ namespace Jetpack.InputWatchers
             {
                 float confidence2 = CalculateDirectionConfidence(bucket, pos);      // may not need to pass in pos
 
-                if (confidence2 < JetpackScript.YawToLook_Buffer_GazeConfidence_Target)
+                if (confidence2 < JetpackScript.GazeBuffer_GazeConfidence_Target)
                     continue;
 
                 if (confidence2 < confidence)
@@ -305,8 +305,8 @@ namespace Jetpack.InputWatchers
 
         private static bool EstimateFrameSkip(ref FrameSkip frameskip, DateTime now)
         {
-            int count = JetpackScript.YawToLook_Buffer_MaxCount;
-            float seconds = JetpackScript.YawToLook_Buffer_MaxSeconds;
+            int count = JetpackScript.GazeBuffer_MaxCount;
+            float seconds = JetpackScript.GazeBuffer_MaxSeconds;
 
             if (frameskip == null || frameskip.BasedOnCount != count || frameskip.BasedOnSeconds != seconds)
             {
@@ -343,7 +343,7 @@ namespace Jetpack.InputWatchers
 
         private static void RemoveOldEntries<T>(IList<T> items, DateTime now) where T : IGazeSample
         {
-            DateTime min_time = now - TimeSpan.FromSeconds(JetpackScript.YawToLook_Buffer_MaxSeconds);
+            DateTime min_time = now - TimeSpan.FromSeconds(JetpackScript.GazeBuffer_MaxSeconds);
 
             while (items.Count > 0)
             {
@@ -515,9 +515,9 @@ namespace Jetpack.InputWatchers
         /// </remarks>
         private static float[] GetRadiiForSpeed(float speed)
         {
-            float MIN = JetpackScript.YawToLook_GazeTarget_RadiiForSpeed_Min;                       // Minimum base radius
-            float SPEED_RATIO = JetpackScript.YawToLook_GazeTarget_RadiiForSpeed_SpeedRatio;        // Speed to base radius scaling factor
-            float MULT = JetpackScript.YawToLook_GazeTarget_RadiiForSpeed_StepMult;                 // Multiplier for step progression
+            float MIN = JetpackScript.GazeBuffer_GazeTarget_RadiiForSpeed_Min;                       // Minimum base radius
+            float SPEED_RATIO = JetpackScript.GazeBuffer_GazeTarget_RadiiForSpeed_SpeedRatio;        // Speed to base radius scaling factor
+            float MULT = JetpackScript.GazeBuffer_GazeTarget_RadiiForSpeed_StepMult;                 // Multiplier for step progression
 
             // Step 1: Calculate the base radius based on speed
             float calculatedBase = Math.Max(MIN, SPEED_RATIO * speed);
@@ -549,7 +549,7 @@ namespace Jetpack.InputWatchers
         {
             float time_percent = GetTimePercent(samples[0].Timestamp);
 
-            if (time_percent < JetpackScript.YawToLook_Buffer_GazeConfidence_Direct)
+            if (time_percent < JetpackScript.GazeBuffer_GazeConfidence_Direct)
                 return 0f;
 
             Vector3 average = GetWeightedAverage(samples);
@@ -576,7 +576,7 @@ namespace Jetpack.InputWatchers
 
             float time_percent = GetTimePercent(samples[0].Timestamp);
 
-            if (time_percent < JetpackScript.YawToLook_Buffer_GazeConfidence_Offset)
+            if (time_percent < JetpackScript.GazeBuffer_GazeConfidence_Offset)
                 return 0f;
 
             GazeSample_Offset referenceSample = samples[0];
@@ -615,7 +615,7 @@ namespace Jetpack.InputWatchers
 
             float time_percent = GetTimePercent(samples[0].Timestamp);
 
-            if (time_percent < JetpackScript.YawToLook_Buffer_GazeConfidence_Target)        // even if all the hits are perfectly aligned, the low amount of time they are around won't make it worth calculating
+            if (time_percent < JetpackScript.GazeBuffer_GazeConfidence_Target)        // even if all the hits are perfectly aligned, the low amount of time they are around won't make it worth calculating
                 return 0f;
 
             Vector3 avg_dir = GetWeightedAverage(samples, pos);
@@ -661,7 +661,7 @@ namespace Jetpack.InputWatchers
             // small standard deviations (tight clusters) dominate the confidence
 
             // Exponential decay for normalized standard deviation
-            float normalized_stddev = Mathf.Exp(-std_dev * JetpackScript.YawToLook_Buffer_Confidence_StdDev_DecayMult); // Aggressive drop for std_dev > 0.001 (even a value of 12 is pretty aggressive - add a slider for this)
+            float normalized_stddev = Mathf.Exp(-std_dev * JetpackScript.GazeBuffer_Confidence_StdDev_DecayMult); // Aggressive drop for std_dev > 0.001 (even a value of 12 is pretty aggressive - add a slider for this)
 
 
 
@@ -694,7 +694,7 @@ namespace Jetpack.InputWatchers
 
         private static float GetTimePercent(DateTime oldest)
         {
-            float max_seconds = JetpackScript.YawToLook_Buffer_MaxSeconds;
+            float max_seconds = JetpackScript.GazeBuffer_MaxSeconds;
 
             float elapsed = (float)(DateTime.UtcNow - oldest).TotalSeconds;
 

@@ -69,24 +69,30 @@ namespace Jetpack
         #region Mod Options
 
         private const string CATEGORY_ACTIVATE = "Activation / Deactivation";
+        private const string CATEGORY_CONFINEDAREA = "Confined Area";
         private const string CATEGORY_OBSTACLEAVOIDANCE = "Obstacle Avoidance";
         private const string CATEGORY_REPELGROUND = "Repel Ground";
         private const string CATEGORY_FLIGHTPROPS = "Flight Properties";
         private const string CATEGORY_SOUNDS = "Sounds";        // TODO: add this
-        private const string CATEGORY_LOOKYAW = "Yaw Toward Look";
+        private const string CATEGORY_GAZEBUFFER = "Gaze Buffer";
+        private const string CATEGORY_LOOKYAW = "Yaw Toward Look (old)";
+        private const string CATEGORY_LOOKYAW2 = "Yaw Toward Look";
         private const string CATEGORY_SCALE = "Player Size";
         private const string CATEGORY_VISIBILITY = "Player Visibility";
         private const string CATEGORY_DEBUGDRAWING = "Debug Drawing";
 
         private const int ORDER_ACTIVATE = 1;
-        private const int ORDER_OBSTACLEAVOIDANCE = 2;
-        private const int ORDER_REPELGROUND = 3;
-        private const int ORDER_FLIGHTPROPS = 4;
-        private const int ORDER_SOUNDS = 5;
-        private const int ORDER_LOOKYAW = 6;
-        private const int ORDER_SCALE = 7;
-        private const int ORDER_VISIBILITY = 8;
-        private const int ORDER_DEBUGDRAWING = 9;
+        private const int ORDER_CONFINEDAREA = 2;
+        private const int ORDER_OBSTACLEAVOIDANCE = 3;
+        private const int ORDER_REPELGROUND = 4;
+        private const int ORDER_FLIGHTPROPS = 5;
+        private const int ORDER_SOUNDS = 6;
+        private const int ORDER_GAZEBUFFER = 7;
+        private const int ORDER_LOOKYAW = 8;
+        private const int ORDER_LOOKYAW2 = 9;
+        private const int ORDER_SCALE = 10;
+        private const int ORDER_VISIBILITY = 11;
+        private const int ORDER_DEBUGDRAWING = 12;
 
         //[ModOptionTextDisplay("description of section", null)]
         //[ModOption("Info")]
@@ -136,6 +142,30 @@ namespace Jetpack
         [ModOptionCategory(CATEGORY_ACTIVATE, ORDER_ACTIVATE)]
         [ModOption(name: "Require Both Hands", tooltip: "Options that are double click or gestures can be required to be done at the same time by both hands or just one\n\nSingle hand is easier but may cause misreads", order = 2)]
         public static bool RequireBothHands = true;
+
+        // ******************** Confined Area ********************
+
+        [ModOptionCategory(CATEGORY_CONFINEDAREA, ORDER_CONFINEDAREA)]
+        [ModOption(name: "Should Detect Confined Area", tooltip: "Slows down accelerations when in tight spaces", order = 0)]
+        public static bool ShouldDetectConfinedArea = true;
+
+        [ModOptionCategory(CATEGORY_CONFINEDAREA, ORDER_CONFINEDAREA)]
+        [ModOptionSlider]
+        [ModOption(name: "Ray Length", tooltip: "How far the rays should go", order = 1)]
+        [ModOptionFloatValues(6, 36, 1)]
+        public static float ConfinedArea_RayLength = 18;
+
+        [ModOptionCategory(CATEGORY_CONFINEDAREA, ORDER_CONFINEDAREA)]
+        [ModOptionSlider]
+        [ModOption(name: "Gain Factor", tooltip: "Multiplied by delta time.  Larger values adjust final blocked percent faster", order = 2)]
+        [ModOptionFloatValues(0.5f, 4f, 0.05f)]
+        public static float ConfinedArea_GainFactor = 1.75f;
+
+        [ModOptionCategory(CATEGORY_CONFINEDAREA, ORDER_CONFINEDAREA)]
+        [ModOptionSlider]
+        [ModOption(name: "Falloff Power", tooltip: "Ray hit disance / Max Distance is run through a bell curve dropoff.  Higher power makes it drop off faster", order = 3)]
+        [ModOptionFloatValues(0f, 3f, 0.05f)]
+        public static float ConfinedArea_FalloffPower = 1f;
 
         // ******************** Obstacle Avoidance ********************
 
@@ -316,7 +346,80 @@ namespace Jetpack
         [ModOptionFloatValues(0, 18, 0.1f)]
         public static float GravitySetting = 0f;
 
+        // ******************** Gaze Buffer ********************
 
+        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionSlider]
+        [ModOption(name: "Buffer Max Time (seconds)", tooltip: "How long to keep previous look directions", order = 1)]
+        [ModOptionFloatValues(0, 3, 0.01f)]
+        public static float GazeBuffer_MaxSeconds = 1.1f;
+
+        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionSlider]
+        [ModOption(name: "Buffer Max Count", tooltip: "Max size of buffer", order = 2)]
+        [ModOptionIntValues(0, 500, 20)]
+        public static int GazeBuffer_MaxCount = 60;
+
+        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionSlider]
+        [ModOption(name: "Gaze Confidence (direct)", tooltip: "The average of look directions.  This is the min confidence before the look direction is considered", order = 3)]
+        [ModOptionFloatValues(0, 1, 0.01f)]
+        public static float GazeBuffer_GazeConfidence_Direct = 0.7f;
+
+        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionSlider]
+        [ModOption(name: "Gaze Confidence (offset)", tooltip: "The average of look directions.  This is the min confidence before the look direction is considered", order = 4)]
+        [ModOptionFloatValues(0, 1, 0.01f)]
+        public static float GazeBuffer_GazeConfidence_Offset = 0.7f;
+
+        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionSlider]
+        [ModOption(name: "Gaze Confidence (target)", tooltip: "The average of look directions.  This is the min confidence before the look direction is considered", order = 5)]
+        [ModOptionFloatValues(0, 1, 0.01f)]
+        public static float GazeBuffer_GazeConfidence_Target = 0.9f;
+
+        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionSlider]
+        [ModOption(name: "Gaze Confidence StdDev Decay Mult", tooltip: "Does an exponential decay against standard deviation of dot products with avg.  Large number makes it require tighter groupings", order = 6)]
+        [ModOptionFloatValues(1, 300, 1)]
+        public static float GazeBuffer_Confidence_StdDev_DecayMult = 100;
+
+
+        // NOTE: after running the numbers, this shouldn't be an independent slider, it should be based on spacing:
+        // MinAllowedDistance = -0.5721 * GazeBuffer_GazeTarget_SpacingRatio + 0.8997
+        //
+        // This will produce between 1 and 2 spheres when calling GetRelevantSphereOrigins.  Radius doesn't have much influence
+        //[ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        //[ModOptionSlider]
+        //[ModOption(name: "Gaze Sphere Min Dist to Surface", tooltip: "The minimum allowed distance between head position and the surface of a sphere", order = 7)]
+        //[ModOptionFloatValues(0.25f, 2.5f, 0.05f)]
+        //public static float GazeBuffer_GazeTarget_MinAllowedDistance = 1f;
+
+
+        //[ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        //[ModOptionSlider]
+        //[ModOption(name: "Gaze Sphere Spacing Ratio of Radius", tooltip: "How far apart spheres should be spaced", order = 8)]
+        //[ModOptionFloatValues(0.65f, 0.85f, 0.01f)]
+        //public static float GazeBuffer_GazeTarget_SpacingRatio = 0.75f;
+
+
+        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionSlider]
+        [ModOption(name: "Gaze Sphere Min Radius", tooltip: "The smallest radius (when speed is zero)", order = 9)]
+        [ModOptionFloatValues(2, 9, 0.25f)]
+        public static float GazeBuffer_GazeTarget_RadiiForSpeed_Min = 5f;
+
+        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionSlider]
+        [ModOption(name: "Gaze Sphere Radius Speed Ratio", tooltip: "Speed to base radius scaling factor", order = 10)]
+        [ModOptionFloatValues(0.1f, 2, 0.05f)]
+        public static float GazeBuffer_GazeTarget_RadiiForSpeed_SpeedRatio = 0.75f;
+
+        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionSlider]
+        [ModOption(name: "Gaze Sphere Radius Step Mult", tooltip: "The size of the next largest radius (multiplied by base radius)", order = 11)]
+        [ModOptionFloatValues(1.5f, 5, 0.1f)]
+        public static float GazeBuffer_GazeTarget_RadiiForSpeed_StepMult = 3;
 
         // ******************** Yaw Toward Look ********************
 
@@ -346,7 +449,7 @@ namespace Jetpack
         [ModOptionSlider]
         [ModOption(name: "Capacitor Charge Speed", tooltip: "Charge per second when look diff is above upper dot", order = 3)]
         [ModOptionFloatValues(0, 8, 0.05f)]
-        public static float YawToLook_Capacitor_ChargeSpeed = 1;
+        public static float YawToLook_Capacitor_ChargeSpeed = 0.5f;
 
         [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
         [ModOptionSlider]
@@ -366,84 +469,42 @@ namespace Jetpack
         [ModOptionFloatValues(1, 6, 0.1f)]
         public static float YawToLook_Capacitor_DischargePower = 2;
 
+        // ******************** Yaw Toward Look 2 ********************
 
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
+        [ModOption(name: "Should Yaw Toward Look", tooltip: "Will rotate the player toward the direction looking", order = 0)]
+        public static bool ShouldYawToLook2 = true;
+
+
+        // reusing capacitor settings from v1
+
+        // TODO: may want momentum.  try without first, but it may make it feel better
+
+
+
+        [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
         [ModOptionSlider]
-        [ModOption(name: "Buffer Max Time (seconds)", tooltip: "How long to keep previous look directions", order = 7)]
-        [ModOptionFloatValues(0, 3, 0.01f)]
-        public static float YawToLook_Buffer_MaxSeconds = 1.1f;
+        [ModOption(name: "Dead Zone Dot Product (full)", tooltip: "How far from center where there is no turning", order = 1)]
+        [ModOptionFloatValues(0.7f, 1, 0.005f)]
+        public static float YawToLook2_DeadZone_Full = 0.99f;
 
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
         [ModOptionSlider]
-        [ModOption(name: "Buffer Max Count", tooltip: "Max size of buffer", order = 8)]
-        [ModOptionIntValues(0, 500, 20)]
-        public static int YawToLook_Buffer_MaxCount = 60;
+        [ModOption(name: "Dead Zone Dot Product (start)", tooltip: "How far from center before it starts turning at max rate", order = 2)]
+        [ModOptionFloatValues(0.7f, 1, 0.005f)]
+        public static float YawToLook2_DeadZone_Start = 0.96f;
 
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
         [ModOptionSlider]
-        [ModOption(name: "Gaze Confidence (direct)", tooltip: "The average of look directions.  This is the min confidence before the look direction is considered", order = 9)]
-        [ModOptionFloatValues(0, 1, 0.01f)]
-        public static float YawToLook_Buffer_GazeConfidence_Direct = 0.7f;
+        [ModOption(name: "Max Turn Rate Degrees", tooltip: "Degrees per second", order = 3)]
+        [ModOptionFloatValues(1, 360, 1f)]
+        public static float YawToLook2_TurnRate = 45;
 
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
         [ModOptionSlider]
-        [ModOption(name: "Gaze Confidence (offset)", tooltip: "The average of look directions.  This is the min confidence before the look direction is considered", order = 10)]
-        [ModOptionFloatValues(0, 1, 0.01f)]
-        public static float YawToLook_Buffer_GazeConfidence_Offset = 0.7f;
-
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
-        [ModOptionSlider]
-        [ModOption(name: "Gaze Confidence (target)", tooltip: "The average of look directions.  This is the min confidence before the look direction is considered", order = 11)]
-        [ModOptionFloatValues(0, 1, 0.01f)]
-        public static float YawToLook_Buffer_GazeConfidence_Target = 0.9f;
-
-
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
-        [ModOptionSlider]
-        [ModOption(name: "Gaze Confidence StdDev Decay Mult", tooltip: "Does an exponential decay against standard deviation of dot products with avg.  Large number makes it require tighter groupings", order = 12)]
-        [ModOptionFloatValues(1, 300, 1)]
-        public static float YawToLook_Buffer_Confidence_StdDev_DecayMult = 100;
-
-
-
-        // NOTE: after running the numbers, this shouldn't be an independent slider, it should be based on spacing:
-        // MinAllowedDistance = -0.5721 * YawToLook_GazeTarget_SpacingRatio + 0.8997
-        //
-        // This will produce between 1 and 2 spheres when calling GetRelevantSphereOrigins.  Radius doesn't have much influence
-        //[ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
-        //[ModOptionSlider]
-        //[ModOption(name: "Gaze Sphere Min Dist to Surface", tooltip: "The minimum allowed distance between head position and the surface of a sphere", order = 13)]
-        //[ModOptionFloatValues(0.25f, 2.5f, 0.05f)]
-        //public static float YawToLook_GazeTarget_MinAllowedDistance = 1f;
-
-
-        //[ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
-        //[ModOptionSlider]
-        //[ModOption(name: "Gaze Sphere Spacing Ratio of Radius", tooltip: "How far apart spheres should be spaced", order = 14)]
-        //[ModOptionFloatValues(0.65f, 0.85f, 0.01f)]
-        //public static float YawToLook_GazeTarget_SpacingRatio = 0.75f;
-
-
-
-
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
-        [ModOptionSlider]
-        [ModOption(name: "Gaze Sphere Min Radius", tooltip: "The smallest radius (when speed is zero)", order = 15)]
-        [ModOptionFloatValues(2, 9, 0.25f)]
-        public static float YawToLook_GazeTarget_RadiiForSpeed_Min = 5f;
-
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
-        [ModOptionSlider]
-        [ModOption(name: "Gaze Sphere Radius Speed Ratio", tooltip: "Speed to base radius scaling factor", order = 16)]
-        [ModOptionFloatValues(0.1f, 2, 0.05f)]
-        public static float YawToLook_GazeTarget_RadiiForSpeed_SpeedRatio = 0.75f;
-
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
-        [ModOptionSlider]
-        [ModOption(name: "Gaze Sphere Radius Step Mult", tooltip: "The size of the next largest radius (multiplied by base radius)", order = 17)]
-        [ModOptionFloatValues(1.5f, 5, 0.1f)]
-        public static float YawToLook_GazeTarget_RadiiForSpeed_StepMult = 3;
-
+        [ModOption(name: "Forward Trim Degrees", tooltip: "Forward comes from ragdoll spine, which seems to always point to the right a little.  This angle is added to help get it close to zero", order = 4)]
+        [ModOptionFloatValues(-20, 20, 0.5f)]
+        public static float YawToLook2_ForwardTrimDegrees = -7;
 
         // ******************** Player Size ********************
 
@@ -552,16 +613,16 @@ namespace Jetpack
         // ******************** Debug Drawing ********************
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Visualize Player Points", tooltip: "Shows points/lines on various transforms of the player avatar", order = 1)]
-        public static bool VisualizePlayerPoints = false;
+        [ModOption(name: "Show Confined Area", tooltip: "Shows what confined area scanner sees", order = 1)]
+        public static bool ShowConfinedArea = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Debug Visuals", tooltip: "This one looks like an early tester of figuring out how to render debug visuals - pretty useless beyond that", order = 2)]
-        public static bool ShowDebugVisuals = false;
+        [ModOption(name: "Show Obstacle Avoidance", tooltip: "Shows the rays and hits that obstacle avoidance uses", order = 2)]
+        public static bool ShowObstacleAvoidance = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Debug Status", tooltip: "Shows various properties in a textbox", order = 3)]
-        public static bool ShowDebugStats = false;
+        [ModOption(name: "Show Repel Ground", tooltip: "Shows the rays and hits that repel ground uses", order = 3)]
+        public static bool ShowRepelGround = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
         [ModOption(name: "Show Gaze Buffer - Target", tooltip: "Shows spheres that the gaze buffer hit scans and returns look when the user holds gaze long and steady enough", order = 4)]
@@ -572,20 +633,24 @@ namespace Jetpack
         public static bool ShowGazeBuffer_Offset = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Pull Yaw To Look", tooltip: "Shows visuals of 'pull yaw to look' using gaze buffer results", order = 6)]
+        [ModOption(name: "Show Pull Yaw To Look (old)", tooltip: "Shows visuals of 'pull yaw to look' using gaze buffer results", order = 6)]
         public static bool ShowPullYawToLook = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Confined Area", tooltip: "Shows what confined area scanner sees", order = 7)]
-        public static bool ShowConfinedArea = false;
+        [ModOption(name: "Show Pull Yaw To Look", tooltip: "Shows visuals of 'pull yaw to look' using gaze buffer results", order = 7)]
+        public static bool ShowPullYawToLook2 = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Obstacle Avoidance", tooltip: "Shows the rays and hits that obstacle avoidance uses", order = 8)]
-        public static bool ShowObstacleAvoidance = false;
+        [ModOption(name: "Visualize Player Points", tooltip: "Shows points/lines on various transforms of the player avatar", order = 8)]
+        public static bool VisualizePlayerPoints = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Repel Ground", tooltip: "Shows the rays and hits that repel ground uses", order = 9)]
-        public static bool ShowRepelGround = false;
+        [ModOption(name: "Show Debug Visuals", tooltip: "This one looks like an early tester of figuring out how to render debug visuals - pretty useless beyond that", order = 9)]
+        public static bool ShowDebugVisuals = false;
+
+        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
+        [ModOption(name: "Show Debug Status", tooltip: "Shows various properties in a textbox", order = 10)]
+        public static bool ShowDebugStats = false;
 
         #endregion
 
@@ -599,6 +664,7 @@ namespace Jetpack
 
         private RayCastStorage _raycast_storage = null;
         private FlightTransitionWatcher _transitions = null;
+        private PlayerRotator _rotator = null;
         private FlightJetpack _flight_jetpack = null;
 
         private DebugVisuals _debugVisuals = new DebugVisuals();
@@ -614,7 +680,8 @@ namespace Jetpack
 
             _raycast_storage = new RayCastStorage();
             _transitions = new FlightTransitionWatcher();
-            _flight_jetpack = new FlightJetpack(_raycast_storage, _debugStats);
+            _rotator = new PlayerRotator();
+            _flight_jetpack = new FlightJetpack(_raycast_storage, _rotator, _debugStats);
 
             //MaterialShaderFinder.Report();
 
@@ -632,12 +699,14 @@ namespace Jetpack
                 Player.local.showMorphology = true;
             }
 
+            _rotator.OnPlayerSpawned();
             _debugStats.Clear();
         }
         private void Player_onDespawn(Player player)
         {
             _isPlayerSpawned = false;
 
+            _rotator.OnPlayerDespawned();
             _debugStats.Clear();
             _debugVisuals.RemoveVisuals();
             _visualizePlayerPoints.Clear();
@@ -733,6 +802,7 @@ namespace Jetpack
             _isFlying = false;
 
             _flight_jetpack.Deactivate();
+            _rotator.Reset();
 
             //PlaySounds.Play(SoundName.Jetpack_Deactivate);
         }

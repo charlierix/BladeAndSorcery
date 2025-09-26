@@ -23,6 +23,9 @@ namespace Jetpack.InputWatchers
         // player and the other is behind.  The spine kind of takes the average
         public Vector3 GetRagdollForward()
         {
+            //Vector3 forward = Player.local.transform.forward;     // relative to room, irl turning will move this around
+            //Vector3 forward = Player.local.waist.ikAnchor.forward;      // same as prev
+
             var ragdoll = Player.currentCreature.ragdoll;
 
             _ragdollforwards.Clear();

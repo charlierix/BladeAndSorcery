@@ -42,6 +42,8 @@ namespace Jetpack.Scanning
 
         #endregion
 
+        #region Declaration Section
+
         private readonly RayCastStorage _raycast_storage;
 
         private EllipsePoints _ellipsePoints = null;
@@ -75,6 +77,8 @@ namespace Jetpack.Scanning
         private Vector3 _velocity_dir;
         private float _speed;
         private float _ray_len;
+
+        #endregion
 
         // probably split this into two classes.  the low flying v class (repelground) should be generalized for ground or wall
 

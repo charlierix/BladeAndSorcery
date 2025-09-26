@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEngine;
 
 namespace PerfectlyNormalBaS
 {
@@ -306,6 +307,26 @@ namespace PerfectlyNormalBaS
                 return max;
             else
                 return value;
+        }
+
+        public static float Dot_to_Degrees(float dot)
+        {
+            float radians = Dot_to_Radians(dot);
+            return Mathf.Rad2Deg * radians;
+        }
+        public static float Degrees_to_Dot(float degrees)
+        {
+            float radians = Mathf.Deg2Rad * degrees;
+            return Radians_to_Dot(radians);
+        }
+
+        public static float Dot_to_Radians(float dot)
+        {
+            return Mathf.Acos(dot);
+        }
+        public static float Radians_to_Dot(float radians)
+        {
+            return Mathf.Cos(radians);
         }
 
         #endregion

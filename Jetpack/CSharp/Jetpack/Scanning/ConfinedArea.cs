@@ -20,9 +20,7 @@ namespace Jetpack.Scanning
     /// </remarks>
     public class ConfinedArea
     {
-        private const float DOT_SIZE = 0.05f;
-        private const float LINE_THICKNESS = 0.005f;
-        private const float TEXT_HEIGHT = 0.06f;
+        #region Declaration Section
 
         /// <summary>
         /// Calling Update on a regular basis will set this property
@@ -43,45 +41,72 @@ namespace Jetpack.Scanning
         // Update_CastRays and Update_Finish
         private float _ray_min_len;
         private float _ray_max_len;
-        private float _ray_gain_factor;
+        private Vector3 _pos;
 
         private DateTime _prev_tick = DateTime.UtcNow;
 
-        // Debug Visuals
+        #region debug drawing vars
+
+        private const float DOT_SIZE = 0.05f;
+        private const float LINE_THICKNESS = 0.005f;
+        private const float TEXT_HEIGHT = 0.06f;
+
         private DebugRenderer3D _renderer = null;
+
         private int _line_index = -1;
-        private int _hit_index = -1;
         private List<DebugItem> _rayvisual_lines = null;
+
+        private int _hit_index = -1;
         private List<DebugItem> _rayvisual_hits = null;
+
         private Dictionary<int, Color> _rayHitColors = null;
+
         private DebugItem _text = null;
+
+        #endregion
+
+        #endregion
 
         public ConfinedArea(RayCastStorage raycast_storage)
         {
             _raycast_storage = raycast_storage;
         }
 
-        public void Update_CastRays(float ray_length, float player_scale, float gain_factor)
+        public void Update_CastRays()
         {
+            if (!JetpackScript.ShouldDetectConfinedArea)
+                return;
+
+            float player_scale = 1;     // not sure if this should matter - maybe if the player is really small
+
+            Vector3 head_pos = Player.local.head.anchor.position;
+            Vector3 foot_pos = Math3D.GetAverage(Player.local.footLeft.ragdollFoot.root.position, Player.local.footRight.ragdollFoot.root.position);        // Player.local.transform.position is the room level origin
+            _pos = foot_pos + ((head_pos - foot_pos) * 0.5f);
+
             // Adjust the ray length based on the player's scale
-            var raylengths = GetRayMinMax(ray_length, player_scale);
+            var raylengths = GetRayMinMax(JetpackScript.ConfinedArea_RayLength, player_scale);
 
             _ray_min_len = raylengths.min;
             _ray_max_len = raylengths.max;
-            _ray_gain_factor = gain_factor;
 
             // Fire rays, store results
-            FireRays(raylengths.min, raylengths.max);
+            FireRays(_pos, raylengths.min, raylengths.max);
         }
         public void Update_Finish()
         {
+            if (!JetpackScript.ShouldDetectConfinedArea)
+            {
+                ConfinedPercent = 0f;
+                return;
+            }
+
             // Fire rays and get an average percent of how confined the area is
-            float how_blocked = GetHowBlocked(_ray_min_len, _ray_max_len);
+            float how_blocked = GetHowBlocked(_pos, _ray_min_len, _ray_max_len);
 
             // Pull the new value toward the current how_blocked value
             DateTime now = DateTime.UtcNow;
 
-            ConfinedPercent = GetNewConfinedSpace(ConfinedPercent, how_blocked, _ray_gain_factor, (float)(now - _prev_tick).TotalSeconds);
+            ConfinedPercent = GetNewConfinedSpace(ConfinedPercent, how_blocked, JetpackScript.ConfinedArea_GainFactor, (float)(now - _prev_tick).TotalSeconds);
 
             _prev_tick = now;
 
@@ -99,14 +124,12 @@ namespace Jetpack.Scanning
 
         #region Private Methods - fire rays
 
-        private void FireRays(float min_len, float max_len)
+        private void FireRays(Vector3 pos, float min_len, float max_len)
         {
             //Ray[] rays = _icos.Value[0];
             Ray[] rays = GetRandomRayBall();
 
             var results = new RayCastStorage.RayInfo[rays.Length];
-
-            Vector3 pos = Player.local.transform.position;      // TODO: put this on the player
 
             for (int i = 0; i < rays.Length; i++)
             {
@@ -129,16 +152,17 @@ namespace Jetpack.Scanning
                 });
         }
 
-        private float GetHowBlocked(float min_len, float max_len)
+        private float GetHowBlocked(Vector3 pos, float min_len, float max_len)
         {
             var rays = _raycast_storage.GetRayCasts(RayCastStorage.RayCategory.ConfinedArea_Ico);
 
             if (rays == null || rays.Length == 0)
+            {
+                Debug.Log("ConfinedArea: no rays were cast");       // shouldn't happen
                 return 0;
+            }
 
             float sum_score = 0;
-
-            Vector3 pos = Player.local.transform.position;      // TODO: put this on the player
 
             if (JetpackScript.ShowConfinedArea)
                 StartDrawingRays();
@@ -149,54 +173,15 @@ namespace Jetpack.Scanning
             if (JetpackScript.ShowConfinedArea)
                 FinishedDrawingRays();
 
-            return sum_score / rays.Length;
+            return sum_score / rays[0].Rays.Length;
         }
 
-        private float FireRay(Vector3 pos, Ray ray, float min_len, float max_len)
-        {
-            // paste this into desmos
-            // e^{-\left(mx\right)^{2}}\cdot\left(1-x^{o}\right)
-
-            const float GAUSS_PINCH = 1.6f;
-            const float CLAMP_POW = 2;
-
-            if (Physics.Raycast(pos + ray.origin, ray.direction, out RaycastHit hit, max_len, ScanningUtil.SolidObject_LayerMask.Value, QueryTriggerInteraction.Ignore))
-            {
-                float dist_sqr = (hit.point - pos).sqrMagnitude;      // don't want to use hit.distance, since the ray is from pos + ray.origin
-
-                if (dist_sqr <= min_len * min_len)
-                    return 1;
-
-                float dist = math.sqrt(dist_sqr) / max_len;     // need to make it between 0 and 1
-
-                float mx = GAUSS_PINCH * dist;
-                float gauss = math.exp(-(mx * mx));
-
-                float clamp = 1 - math.pow(dist, CLAMP_POW);
-
-                if (JetpackScript.ShowConfinedArea)
-                    //DrawRay(pos + ray.origin, ray.direction, max_len, hit, gauss * clamp);
-                    DrawRay2(pos + ray.origin, ray.direction, max_len, hit, gauss * clamp);
-
-                //Debug.Log($"FireRay dist: {dist.ToStringSignificantDigits(2)}, retVal: {(gauss * clamp).ToStringSignificantDigits(3)}");
-
-                return gauss * clamp;
-            }
-            else
-            {
-                if (JetpackScript.ShowConfinedArea)
-                    DrawRay(pos + ray.origin, ray.direction, max_len, null, 0);
-
-                return 0;
-            }
-        }
         private float ExamineRay(Vector3 pos, RayCastStorage.RayInfo ray, float min_len, float max_len)
         {
             // paste this into desmos
             // e^{-\left(mx\right)^{2}}\cdot\left(1-x^{o}\right)
 
-            const float GAUSS_PINCH = 1.6f;
-            const float CLAMP_POW = 2;
+            const float GAUSS_PINCH = 1.6f;     // no need for a slider with this one
 
             if (ray.Hit != null)
             {
@@ -207,14 +192,14 @@ namespace Jetpack.Scanning
 
                 float dist = math.sqrt(dist_sqr) / max_len;     // need to make it between 0 and 1
 
-                float mx = GAUSS_PINCH * dist;
+                float mx = JetpackScript.ConfinedArea_FalloffPower * dist;
                 float gauss = math.exp(-(mx * mx));
 
-                float clamp = 1 - math.pow(dist, CLAMP_POW);
+                float clamp = 1 - math.pow(dist, GAUSS_PINCH);      // this part sets curve=0 at dist=1 (otherwise, it's a guass curve that approaches but never hits 0)
 
                 if (JetpackScript.ShowConfinedArea)
-                    //DrawRay(pos + ray.origin, ray.direction, max_len, ray.Hit.Value, gauss * clamp);
-                    DrawRay2(pos + ray.Origin, ray.Direction, max_len, ray.Hit.Value, gauss * clamp);
+                    //DrawRay(pos, ray.direction, max_len, ray.Hit.Value, gauss * clamp);
+                    DrawRay2(pos, ray.Direction, max_len, ray.Hit.Value, gauss * clamp);
 
                 //Debug.Log($"FireRay dist: {dist.ToStringSignificantDigits(2)}, retVal: {(gauss * clamp).ToStringSignificantDigits(3)}");
 
@@ -223,7 +208,7 @@ namespace Jetpack.Scanning
             else
             {
                 if (JetpackScript.ShowConfinedArea)
-                    DrawRay(pos + ray.Origin, ray.Direction, max_len, null, 0);
+                    DrawRay(pos, ray.Direction, max_len, null, 0);
 
                 return 0;
             }
@@ -296,9 +281,11 @@ namespace Jetpack.Scanning
                 _rayvisual_hits.Clear();
             }
 
-            if(_text != null)
+            if (_text != null)
                 _renderer.Remove(_text);
             _text = null;
+
+            _renderer = null;
         }
 
         private void StartDrawingRays()
@@ -352,7 +339,6 @@ namespace Jetpack.Scanning
             if (hit != null)
             {
                 _hit_index++;
-
                 if (_hit_index < _rayvisual_hits.Count)
                 {
                     _rayvisual_hits[_hit_index].Object.transform.position = hit.Value.point;
@@ -395,13 +381,12 @@ namespace Jetpack.Scanning
 
                     if (!_rayHitColors.TryGetValue(layer, out Color hit_color))
                     {
-                        hit_color = UtilityColor.RandomHSV();
+                        hit_color = UtilityColor.RandomHSV(0, 1, 0.4f, 0.8f, 0.5f, 0.9f);
                         _rayHitColors.Add(layer, hit_color);
                         //Debug.Log($"Layer Hit: {layer}, '{LayerMask.LayerToName(layer)}', {UtilityColor.ToHex(hit_color, false, false)}");
                     }
 
                     _hit_index++;
-
                     if (_hit_index < _rayvisual_hits.Count)
                     {
                         _rayvisual_hits[_hit_index].Object.transform.position = hit2.point;
@@ -425,7 +410,7 @@ namespace Jetpack.Scanning
                 Player.local.head.transform.right * 0.33f +
                 Player.local.head.transform.up * -0.15f;
 
-            string text = $"confined %: {ConfinedPercent.ToStringSignificantDigits(2)}";
+            string text = $"confined%: {Mathf.RoundToInt(ConfinedPercent * 100f)}";
 
             if (_text == null)
                 _text = _renderer.AddText(text, text_pos, Player.local.head.transform.forward, Color.blue, Color.white, TEXT_HEIGHT);
