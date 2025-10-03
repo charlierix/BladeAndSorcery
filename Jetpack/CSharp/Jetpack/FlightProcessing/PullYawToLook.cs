@@ -20,8 +20,6 @@ namespace Jetpack.FlightProcessing
 
         private float _capacitor = 0f;
 
-        DateTime _prevTick = DateTime.UtcNow;
-
         #region debug drawing vars
 
         private const float DOT_SIZE = 0.05f;
@@ -50,19 +48,14 @@ namespace Jetpack.FlightProcessing
         {
             _capacitor = 0f;
             _gazeBuffer.Clear();
-            _prevTick = DateTime.UtcNow;
 
             if (JetpackScript.ShowPullYawToLook)
                 ClearDebugVisuals();
         }
 
         // This should only be called while in flight
-        public void Update()
+        public void Update(float elapsedSeconds)
         {
-            DateTime now = DateTime.UtcNow;
-            float elapsedSeconds = (float)Math1D.Clamp((now - _prevTick).TotalSeconds, 0, 0.25);
-            _prevTick = now;
-
             if (!JetpackScript.ShouldYawToLook)
                 return;
 
@@ -71,7 +64,7 @@ namespace Jetpack.FlightProcessing
 
             //Vector3 forward = Player.local.transform.forward.GetProjectedVector(_xzplane).normalized;     // relative to room, irl turning will move this around
             //Vector3 forward = Player.local.waist.ikAnchor.forward.GetProjectedVector(_xzplane).normalized;      // same as prev
-            Vector3 forward = _ragdollUtil.GetRagdollForward().GetProjectedVector(_xzplane).normalized;
+            Vector3 forward = _ragdollUtil.GetRagdollForwardUp().forward.GetProjectedVector(_xzplane).normalized;
 
             // Update the capacitor
             //UpdateCapacitor2(look, forward, elapsedSeconds);

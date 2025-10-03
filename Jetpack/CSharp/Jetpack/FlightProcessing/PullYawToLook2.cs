@@ -31,8 +31,6 @@ namespace Jetpack.FlightProcessing
 
         private float _capacitor = 0f;
 
-        DateTime _prevTick = DateTime.UtcNow;
-
         #region debug drawing vars
 
         private const float DOT_SIZE = 0.05f;
@@ -80,26 +78,21 @@ namespace Jetpack.FlightProcessing
         {
             _capacitor = 0f;
             _gazeBuffer.Clear();
-            _prevTick = DateTime.UtcNow;
 
             if (JetpackScript.ShowPullYawToLook2)
                 ClearDebugVisuals();
         }
 
         // This should only be called while in flight
-        public void Update()
+        public void Update(float elapsed_seconds)
         {
-            DateTime now = DateTime.UtcNow;
-            float elapsed_seconds = (float)Math1D.Clamp((now - _prevTick).TotalSeconds, 0, 0.25);
-            _prevTick = now;
-
             if (!JetpackScript.ShouldYawToLook2)
                 return;
 
             // Get some values needed by the rest of the function
             Vector3 pos = Player.local.head.anchor.position;
             Vector3 look = Player.local.head.transform.forward.GetProjectedVector(_xzplane).normalized;
-            Vector3 forward = _ragdollUtil.GetRagdollForward().GetProjectedVector(_xzplane).normalized;
+            Vector3 forward = _ragdollUtil.GetRagdollForwardUp().forward.GetProjectedVector(_xzplane).normalized;
             Vector3 velocity = Player.local.locomotion.physicBody.velocity;
 
             forward = TrimForward(forward);
@@ -122,7 +115,7 @@ namespace Jetpack.FlightProcessing
 
             // Get percent inside dead zone
             float deadzone_percent = final.confidence != null ?
-                GetDeadZonePercent(forward, final.direction) :
+                GetDeadZonePercent(forward, final.direction, JetpackScript.YawToLook2_DeadZone_Full, JetpackScript.YawToLook2_DeadZone_Start) :
                 0;
 
             // Update the capacitor
@@ -210,6 +203,7 @@ namespace Jetpack.FlightProcessing
                 _hud_text = null;
             }
 
+            // dead zone
             if (_deadzone_inner_l != null)
             {
                 _renderer.Remove(_deadzone_inner_l);
@@ -234,6 +228,7 @@ namespace Jetpack.FlightProcessing
                 _deadzone_outer_r = null;
             }
 
+            // capacitor
             if (_capa_vert != null)
             {
                 _renderer.Remove(_capa_vert);
@@ -252,6 +247,7 @@ namespace Jetpack.FlightProcessing
                 _capa_text = null;
             }
 
+            // turn rate
             if (_turnrate != null)
             {
                 _renderer.Remove(_turnrate);
@@ -444,8 +440,8 @@ namespace Jetpack.FlightProcessing
 
             Vector3 text_pos = Player.local.head.anchor.position +
                 Player.local.head.transform.forward * 1.5f +
-                Player.local.head.transform.right * 0.3f +
-                Player.local.head.transform.up * -0.2f;
+                Player.local.head.transform.right * 0.35f +
+                Player.local.head.transform.up * -0.25f;
 
             string deg_text = turn_rate != null ?
                 Mathf.Round(turn_rate.Value.degrees_per_sec).ToString() :
@@ -465,7 +461,7 @@ namespace Jetpack.FlightProcessing
         #endregion
         #region Private Methods - merge confidence
 
-        private static (Vector3 direction, float? confidence) GetFinalConfidence(Vector3 direction_offset, float? confidence_offset, Vector3 direction_target, float? confidence_target)
+        internal static (Vector3 direction, float? confidence) GetFinalConfidence(Vector3 direction_offset, float? confidence_offset, Vector3 direction_target, float? confidence_target)
         {
             const float RETURN_CONFIDENCE_THRESHOLD = 0.7f;
             float THRESHOLD_OFFSET = JetpackScript.GazeBuffer_GazeConfidence_Offset;
@@ -544,7 +540,7 @@ namespace Jetpack.FlightProcessing
         #endregion
         #region Private Methods - capacitor
 
-        private static float UpdateCapacitor(float capacitor, Vector3 target, Vector3 look, float? confidence, float deadzone_percent, float elapsed_seconds)
+        internal static float UpdateCapacitor(float capacitor, Vector3 target, Vector3 look, float? confidence, float deadzone_percent, float elapsed_seconds)
         {
             float upper_dot = JetpackScript.YawToLook_Capacitor_UpperDot;
             float lower_dot = JetpackScript.YawToLook_Capacitor_LowerDot;
@@ -650,27 +646,27 @@ namespace Jetpack.FlightProcessing
 
         private Vector3 TrimForward(Vector3 forward)
         {
-            if (!_trim_basedon.IsNearValue(JetpackScript.YawToLook2_ForwardTrimDegrees))
+            if (!_trim_basedon.IsNearValue(JetpackScript.YawToLook2_ForwardTrimDegrees_Yaw))
             {
-                _trim_basedon = JetpackScript.YawToLook2_ForwardTrimDegrees;
+                _trim_basedon = JetpackScript.YawToLook2_ForwardTrimDegrees_Yaw;
                 _trim = Quaternion.AngleAxis(_trim_basedon, Vector3.up);        // in this yaw class, it's always xz
             }
 
             return _trim * forward;
         }
 
-        private static float GetDeadZonePercent(Vector3 forward, Vector3 direction)
+        internal static float GetDeadZonePercent(Vector3 forward, Vector3 direction, float dot_full, float dot_start)
         {
             float dot = Vector3.Dot(forward, direction);
 
-            if (dot >= JetpackScript.YawToLook2_DeadZone_Full)      // using > because 1 is directly looking along forward, down to -1 which is directly away
+            if (dot >= dot_full)      // using > because 1 is directly looking along forward, down to -1 which is directly away
                 return 1;       // desired direction is in the dead zone (too close to forward)
 
             // if between start and full deadzones, run it through 1-cos so that there are no sharp speed changes
-            if (dot >= JetpackScript.YawToLook2_DeadZone_Start)
+            if (dot >= dot_start)
             {
-                float gap = JetpackScript.YawToLook2_DeadZone_Full - JetpackScript.YawToLook2_DeadZone_Start;
-                float percent_gap = (dot - JetpackScript.YawToLook2_DeadZone_Start) / gap;
+                float gap = dot_full - dot_start;
+                float percent_gap = (dot - dot_start) / gap;
                 return (1 - Mathf.Cos(Mathf.PI * percent_gap)) / 2;
             }
 

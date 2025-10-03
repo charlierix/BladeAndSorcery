@@ -43,8 +43,6 @@ namespace Jetpack.Scanning
         private float _ray_max_len;
         private Vector3 _pos;
 
-        private DateTime _prev_tick = DateTime.UtcNow;
-
         #region debug drawing vars
 
         private const float DOT_SIZE = 0.05f;
@@ -92,7 +90,7 @@ namespace Jetpack.Scanning
             // Fire rays, store results
             FireRays(_pos, raylengths.min, raylengths.max);
         }
-        public void Update_Finish()
+        public void Update_Finish(float elapsed_seconds)
         {
             if (!JetpackScript.ShouldDetectConfinedArea)
             {
@@ -104,11 +102,7 @@ namespace Jetpack.Scanning
             float how_blocked = GetHowBlocked(_pos, _ray_min_len, _ray_max_len);
 
             // Pull the new value toward the current how_blocked value
-            DateTime now = DateTime.UtcNow;
-
-            ConfinedPercent = GetNewConfinedSpace(ConfinedPercent, how_blocked, JetpackScript.ConfinedArea_GainFactor, (float)(now - _prev_tick).TotalSeconds);
-
-            _prev_tick = now;
+            ConfinedPercent = GetNewConfinedSpace(ConfinedPercent, how_blocked, JetpackScript.ConfinedArea_GainFactor, elapsed_seconds);
 
             if (JetpackScript.ShowConfinedArea)
                 DrawConfinedPercent();
@@ -117,7 +111,6 @@ namespace Jetpack.Scanning
         public void Clear()
         {
             ConfinedPercent = 0.5f;
-            _prev_tick = DateTime.UtcNow;
 
             ClearDebugVisuals();
         }
@@ -234,12 +227,12 @@ namespace Jetpack.Scanning
         #endregion
         #region Private Methods - adjust final
 
-        private static float GetNewConfinedSpace(float prev_confined_percent, float how_blocked, float gain_factor, float delta_time)
+        private static float GetNewConfinedSpace(float prev_confined_percent, float how_blocked, float gain_factor, float elapsed_seconds)
         {
-            if (delta_time > 0.5)       // avoid lag spikes wrecking the function
-                delta_time = 0.5f;
+            if (elapsed_seconds > 0.5)       // avoid lag spikes wrecking the function
+                elapsed_seconds = 0.5f;
 
-            return (1 - gain_factor * delta_time) * prev_confined_percent + gain_factor * delta_time * how_blocked;
+            return (1 - gain_factor * elapsed_seconds) * prev_confined_percent + gain_factor * elapsed_seconds * how_blocked;
         }
 
         #endregion

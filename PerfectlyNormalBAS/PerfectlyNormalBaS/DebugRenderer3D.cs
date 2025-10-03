@@ -185,7 +185,9 @@ namespace PerfectlyNormalBaS
 
             return retVal;
         }
-        public DebugItem AddLine_Basic(Vector3[] points, bool isClosed, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+
+
+        private DebugItem AddLine_Basic_FAIL(Vector3[] points, bool isClosed, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
             EnsureContainerExists();
 
@@ -197,6 +199,20 @@ namespace PerfectlyNormalBaS
 
             return retVal;
         }
+        public DebugItem AddLine_Basic(Vector3[] points, bool isClosed, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        {
+            var segments = new List<(Vector3, Vector3)>();
+
+            for (int i = 0; i < points.Length - 1; i++)
+                segments.Add((points[i], points[i + 1]));
+
+            if (isClosed)
+                segments.Add((points[points.Length - 1], points[0]));
+
+            return AddLine_Basic(segments.ToArray(), thickness, color, relativeToComponent, relativeToGameObject);
+        }
+
+
         public DebugItem AddLine_Basic((Vector3, Vector3)[] segments, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
             EnsureContainerExists();
@@ -330,6 +346,8 @@ namespace PerfectlyNormalBaS
             Vector3[] points = new Vector3[unit_circle.Length];
             for (int i = 0; i < unit_circle.Length; i++)
                 points[i] = position + (quat * (new Vector3(unit_circle[i].x, unit_circle[i].y, 0) * radius));
+
+            Debug.Log($"creating circle: {string.Join(" | ", points.Select(o => o.ToStringSignificantDigits(3)))}");
 
             return AddLine_Basic(points, true, thickness, color, relativeToComponent, relativeToGameObject);
         }
@@ -737,6 +755,9 @@ namespace PerfectlyNormalBaS
 
         private static GameObject GetNewBasicLine(Vector3[] points, float thickness, Color color, int numCornerVertices, int numCapVertices, bool shouldLoop, GameObject parent = null)
         {
+            if (shouldLoop)
+                points = UtilityCore.ArrayAdd(points, points[0]);       // telling it to loop made it invisible, add the extra point manually
+
             GameObject retVal = new GameObject(PREFIX + "line (basic)");
 
             if (parent != null)
@@ -755,7 +776,8 @@ namespace PerfectlyNormalBaS
             for (int i = 0; i < points.Length; i++)
                 line.SetPosition(i, points[i]);
 
-            line.loop = shouldLoop;
+            //line.loop = shouldLoop;       // nothing was showing when loop is true
+            line.loop = false;
 
             //line.material = new Material(Shader.Find("Unlit/Texture"));       //NOTE: every example I see only uses this string, but it's color that's wanted, not texture
             //line.material = new Material(Shader.Find("Unlit/Color"));

@@ -207,7 +207,7 @@ namespace Jetpack.InputWatchers
             dominant_direction = Vector3.zero;
             confidence = 0f;
 
-            if (_direct.Count < 2)
+            if (_direct.Count < JetpackScript.GazeBuffer_MaxCount * 0.8)
                 return false;
 
             // Calculate confidence
@@ -227,7 +227,7 @@ namespace Jetpack.InputWatchers
             dominant_direction = Vector3.zero;
             confidence = 0f;
 
-            if (_offset.Count < 2)
+            if (_offset.Count < JetpackScript.GazeBuffer_MaxCount * 0.8)
                 return false;
 
             // Calculate confidence
@@ -610,7 +610,7 @@ namespace Jetpack.InputWatchers
         // Calculates confience by subracting hit from pos, then very similar to direct overload
         private static float CalculateDirectionConfidence(List<GazeSample_SphereTarget> samples, Vector3 pos)
         {
-            if (samples.Count == 0)
+            if (samples.Count < JetpackScript.GazeBuffer_MaxCount * 0.8)
                 return 0f;
 
             float time_percent = GetTimePercent(samples[0].Timestamp);

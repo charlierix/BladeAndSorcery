@@ -22,6 +22,7 @@ namespace Jetpack.FlightProcessing
         private readonly ObstacleAvoidance _obstacleAvoidance;
         private readonly PullYawToLook _pullYawToLook;
         private readonly PullYawToLook2 _pullYawToLook2;
+        private readonly RotateToLook _rotateToLook;
         private readonly GazeBufferVisualizer_Target _gazeBufferVisualizer_target;
         private readonly GazeBufferVisualizer_Offset _gazeBufferVisualizer_offset;
 
@@ -30,6 +31,7 @@ namespace Jetpack.FlightProcessing
         private float _last_applied_drag = -1;
 
         private DateTime _activation_time = DateTime.UtcNow;
+        private DateTime _prevTick = DateTime.UtcNow;
 
         public FlightJetpack(RayCastStorage raycast_storage, PlayerRotator rotator, DebugStats debugStats)
         {
@@ -41,12 +43,15 @@ namespace Jetpack.FlightProcessing
             _obstacleAvoidance = new ObstacleAvoidance(_raycast_storage);
             _pullYawToLook = new PullYawToLook();
             _pullYawToLook2 = new PullYawToLook2(rotator);
+            _rotateToLook = new RotateToLook(rotator);
             _gazeBufferVisualizer_target = new GazeBufferVisualizer_Target();
             _gazeBufferVisualizer_offset = new GazeBufferVisualizer_Offset();
         }
 
         public void Activate(float drag)
         {
+            _prevTick = DateTime.UtcNow;
+
             if (_standardState == null)
                 _standardState = GetCurrentState();
 
@@ -74,11 +79,14 @@ namespace Jetpack.FlightProcessing
             // Others
             _pullYawToLook.Clear();
             _pullYawToLook2.Clear();
+            _rotateToLook.Clear();
             _gazeBufferVisualizer_target.Clear();
             _gazeBufferVisualizer_offset.Clear();
         }
         public void Deactivate()
         {
+            _prevTick = DateTime.UtcNow;
+
             Locomotion loco = Player.local.locomotion;
 
             if (_standardState != null)
@@ -99,12 +107,18 @@ namespace Jetpack.FlightProcessing
             _obstacleAvoidance.Clear();
             _pullYawToLook.Clear();
             _pullYawToLook2.Clear();
+            _rotateToLook.Clear();
             _gazeBufferVisualizer_target.Clear();
             _gazeBufferVisualizer_offset.Clear();
         }
 
         public void Update(float drag, float horz_accel, float vert_accel, float gravity)
         {
+            // TODO: may need a second elapsed that considers time slowdown
+            DateTime now = DateTime.UtcNow;
+            float elapsed_seconds = (float)Math1D.Clamp((now - _prevTick).TotalSeconds, 0, 0.25);       
+            _prevTick = now;
+
             Locomotion loco = Player.local.locomotion;
 
             if (_last_applied_drag != drag)
@@ -118,7 +132,7 @@ namespace Jetpack.FlightProcessing
             _repelGround.Update_CastRays(loco);
             _obstacleAvoidance.Update_CastRays();
 
-            _confinedScanner.Update_Finish();
+            _confinedScanner.Update_Finish(elapsed_seconds);
             float percent_accel = UtilityMath.GetScaledValue_Capped(0.25f, 1f, 1f, 0f, _confinedScanner.ConfinedPercent);
 
             DestabilizeHeldNPC(Player.local.handLeft);
@@ -139,8 +153,9 @@ namespace Jetpack.FlightProcessing
                 if (accel_obstacle != null)
                     loco.physicBody.AddForce(accel_obstacle.Value, ForceMode.Acceleration);
 
-                _pullYawToLook.Update();
-                _pullYawToLook2.Update();
+                _pullYawToLook.Update(elapsed_seconds);
+                _pullYawToLook2.Update(elapsed_seconds);
+                _rotateToLook.Update(elapsed_seconds);
                 _gazeBufferVisualizer_target.Update();
                 _gazeBufferVisualizer_offset.Update();
             }

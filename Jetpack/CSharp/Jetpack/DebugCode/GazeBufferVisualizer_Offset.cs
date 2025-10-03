@@ -51,7 +51,7 @@ namespace Jetpack.DebugCode
 
             Vector3 pos = Player.local.head.anchor.position;
             Vector3 look = Player.local.head.transform.forward;
-            Vector3 forward = _ragdollUtil.GetRagdollForward();
+            Vector3 forward = _ragdollUtil.GetRagdollForwardUp().forward;
 
             PrepForBufferUpdate();
 

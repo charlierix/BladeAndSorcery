@@ -77,6 +77,7 @@ namespace Jetpack
         private const string CATEGORY_GAZEBUFFER = "Gaze Buffer";
         private const string CATEGORY_LOOKYAW = "Yaw Toward Look (old)";
         private const string CATEGORY_LOOKYAW2 = "Yaw Toward Look";
+        private const string CATEGORY_ROTATELOOK = "Rotate Toward Look";
         private const string CATEGORY_SCALE = "Player Size";
         private const string CATEGORY_VISIBILITY = "Player Visibility";
         private const string CATEGORY_DEBUGDRAWING = "Debug Drawing";
@@ -90,9 +91,10 @@ namespace Jetpack
         private const int ORDER_GAZEBUFFER = 7;
         private const int ORDER_LOOKYAW = 8;
         private const int ORDER_LOOKYAW2 = 9;
-        private const int ORDER_SCALE = 10;
-        private const int ORDER_VISIBILITY = 11;
-        private const int ORDER_DEBUGDRAWING = 12;
+        private const int ORDER_ROTATELOOK = 10;
+        private const int ORDER_SCALE = 11;
+        private const int ORDER_VISIBILITY = 12;
+        private const int ORDER_DEBUGDRAWING = 13;
 
         //[ModOptionTextDisplay("description of section", null)]
         //[ModOption("Info")]
@@ -425,7 +427,7 @@ namespace Jetpack
 
         [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
         [ModOption(name: "Should Yaw Toward Look", tooltip: "Will rotate the player toward the direction looking", order = 0)]
-        public static bool ShouldYawToLook = true;
+        public static bool ShouldYawToLook = false;
 
         [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
         [ModOptionSlider]
@@ -473,7 +475,7 @@ namespace Jetpack
 
         [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
         [ModOption(name: "Should Yaw Toward Look", tooltip: "Will rotate the player toward the direction looking", order = 0)]
-        public static bool ShouldYawToLook2 = true;
+        public static bool ShouldYawToLook2 = false;
 
 
         // reusing capacitor settings from v1
@@ -485,14 +487,14 @@ namespace Jetpack
         [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
         [ModOptionSlider]
         [ModOption(name: "Dead Zone Dot Product (full)", tooltip: "How far from center where there is no turning", order = 1)]
-        [ModOptionFloatValues(0.7f, 1, 0.005f)]
-        public static float YawToLook2_DeadZone_Full = 0.99f;
+        [ModOptionFloatValues(0.9f, 1, 0.001f)]
+        public static float YawToLook2_DeadZone_Full = 0.995f;
 
         [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
         [ModOptionSlider]
         [ModOption(name: "Dead Zone Dot Product (start)", tooltip: "How far from center before it starts turning at max rate", order = 2)]
-        [ModOptionFloatValues(0.7f, 1, 0.005f)]
-        public static float YawToLook2_DeadZone_Start = 0.96f;
+        [ModOptionFloatValues(0.9f, 1, 0.001f)]
+        public static float YawToLook2_DeadZone_Start = 0.98f;
 
         [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
         [ModOptionSlider]
@@ -502,9 +504,41 @@ namespace Jetpack
 
         [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
         [ModOptionSlider]
-        [ModOption(name: "Forward Trim Degrees", tooltip: "Forward comes from ragdoll spine, which seems to always point to the right a little.  This angle is added to help get it close to zero", order = 4)]
+        [ModOption(name: "Forward Trim Degrees (yaw)", tooltip: "Forward comes from ragdoll spine, which seems to always point to the right a little.  This angle is added to help get it close to zero.  Negative pulls to the left, positive to the right", order = 4)]
         [ModOptionFloatValues(-20, 20, 0.5f)]
-        public static float YawToLook2_ForwardTrimDegrees = -7;
+        public static float YawToLook2_ForwardTrimDegrees_Yaw = -7;
+
+
+        // ******************** Rotate Toward Look ********************
+
+        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
+        [ModOption(name: "Should Rotate Toward Look", tooltip: "Will rotate the player toward the direction looking", order = 0)]
+        public static bool ShouldRotateToLook = false;
+
+        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
+        [ModOptionSlider]
+        [ModOption(name: "Forward Trim Degrees (pitch)", tooltip: "Forward comes from ragdoll spine, so may point up/down a little.  This angle is added to help get it close to zero.  Negative  pulls down, positive pulls up", order = 1)]
+        [ModOptionFloatValues(-20, 20, 0.5f)]
+        public static float RotToLook_ForwardTrimDegrees_Pitch = 0;
+
+        // TODO: these dot products need to be presented differently in the sliders.  the game rounds to 2 decimals when displaying value
+
+        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
+        [ModOptionSlider]
+        [ModOption(name: "Dead Zone Dot Product - roll (full)", tooltip: "How far from center where there is no turning", order = 2)]
+        [ModOptionFloatValues(0.9f, 1, 0.001f)]
+        public static float RotToLook_DeadZone_Roll_Full = 0.995f;
+
+        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
+        [ModOptionSlider]
+        [ModOption(name: "Dead Zone Dot Product - roll (start)", tooltip: "How far from center before it starts turning at max rate", order = 3)]
+        [ModOptionFloatValues(0.9f, 1, 0.001f)]
+        public static float RotToLook_DeadZone_Roll_Start = 0.985f;
+
+
+
+
+
 
         // ******************** Player Size ********************
 
@@ -641,15 +675,19 @@ namespace Jetpack
         public static bool ShowPullYawToLook2 = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Visualize Player Points", tooltip: "Shows points/lines on various transforms of the player avatar", order = 8)]
+        [ModOption(name: "Show Rotate To Look", tooltip: "Shows visuals of 'rotate to look' using gaze buffer results", order = 8)]
+        public static bool ShowRotateToLook = false;
+
+        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
+        [ModOption(name: "Visualize Player Points", tooltip: "Shows points/lines on various transforms of the player avatar", order = 9)]
         public static bool VisualizePlayerPoints = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Debug Visuals", tooltip: "This one looks like an early tester of figuring out how to render debug visuals - pretty useless beyond that", order = 9)]
+        [ModOption(name: "Show Debug Visuals", tooltip: "This one looks like an early tester of figuring out how to render debug visuals - pretty useless beyond that", order = 10)]
         public static bool ShowDebugVisuals = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Debug Status", tooltip: "Shows various properties in a textbox", order = 10)]
+        [ModOption(name: "Show Debug Status", tooltip: "Shows various properties in a textbox", order = 11)]
         public static bool ShowDebugStats = false;
 
         #endregion

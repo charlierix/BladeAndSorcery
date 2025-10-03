@@ -320,6 +320,21 @@ namespace PerfectlyNormalBaS
             return Radians_to_Dot(radians);
         }
 
+        /// <summary>
+        /// Converts a normalized dot product (cos(theta)) to an angle in [0, π] radians
+        /// </summary>
+        /// <remarks>
+        /// Input: dot = cos(theta) (range: -1 to 1)
+        /// 
+        ///        dot = 1 → 0 radians (vectors aligned)
+        ///        dot = 0 → π/2 radians (90°, perpendicular)
+        ///        dot = -1 → π radians (180°, vectors opposite)
+        ///        
+        /// Output: Angle in radians (range: 0 to π)
+        /// WARNING: Use direct cosine value (dot product) as input. Do NOT invert (1 - dot)
+        /// </remarks>
+        /// <param name="dot">-1 to 1</param>
+        /// <returns>radians away from forward (pi to 0)</returns>
         public static float Dot_to_Radians(float dot)
         {
             return Mathf.Acos(dot);
