@@ -57,6 +57,8 @@ namespace Jetpack.FlightProcessing
         public void Reset()
         {
             var local = Player.local;
+            if (local == null)
+                return;
 
             //local.creature.ragdoll.ik.turnBodyByHeadAndHands = _turnBodyByHeadAndHands;
             //local.locomotion.allowMove = _allowMove;

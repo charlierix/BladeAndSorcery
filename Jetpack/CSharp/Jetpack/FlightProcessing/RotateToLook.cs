@@ -4,11 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ThunderRoad;
-using ThunderRoad.AI.Decorator;
 using UnityEngine;
-using UnityEngine.Profiling;
-using static ThunderRoad.AnimationData.Clip;
-using static ThunderRoad.ItemMagicAreaProjectile;
 
 namespace Jetpack.FlightProcessing
 {
@@ -45,7 +41,11 @@ namespace Jetpack.FlightProcessing
         private DebugItem _body_forward = null;
         private DebugItem _lookline = null;
         private DebugItem _lookorth = null;
+
+        private float _deadzone_inner_dot = float.MinValue;
         private DebugItem _deadzone_inner = null;
+
+        private float _deadzone_outer_dot = float.MinValue;
         private DebugItem _deadzone_outer = null;
 
         private int _line_index = -1;
@@ -66,9 +66,6 @@ namespace Jetpack.FlightProcessing
         private DebugItem _capa_roll_vert = null;
         private DebugItem _capa_roll_tick = null;
         private DebugItem _capa_text = null;
-
-        private DebugItem _circle1 = null;
-        private DebugItem _circle2 = null;
 
         #endregion
 
@@ -98,16 +95,36 @@ namespace Jetpack.FlightProcessing
             // Get some values needed by the rest of the function
             Vector3 pos = Player.local.head.anchor.position;
             Vector3 look = Player.local.head.transform.forward;
+
             var (body_forward, body_up) = _ragdollUtil.GetRagdollForwardUp();
+            TrimForwardUp(ref body_forward, ref body_up);
+
             Vector3 head_up = GetProjecteHeadUp(Player.local.head.transform.up, body_forward, body_up);
             Vector3 velocity = Player.local.locomotion.physicBody.velocity;
 
-            TrimForwardUp(ref body_forward, ref body_up);
+
+
+
+
+
+
+            // TODO: may need to rotate both body_up and head_up so that body_up is along 0,1,0 and body_forward is along 0,0,1
+            // that is what gets stored in gaze buffer
+            // this should make it so that as the player is yawing and pitching, roll should be isolated
+            // call these body_up2 and head_up2 so that the originals can still be drawn
+            var local_ups = RotateUps(body_forward, body_up, head_up);
+
+
+
+            // TODO: I think yawpitch offset needs to be rotated into local coords as well
+            // target doesn't, since it's keeping track of looking at a fixed point regardless of personal rotation
+
+
 
             // Populate gaze buffers
             _gazebuffer.AddSample_Offset(look, body_forward);
             _gazebuffer.AddSample_Target(pos, look, velocity.magnitude);
-            _gazebuffer_roll.AddSample_Offset(head_up, body_up);
+            _gazebuffer_roll.AddSample_Offset(local_ups.head_up, local_ups.body_up);
 
             // Get gazed vectors
             float? confidence_yawpitch_offset = null;
@@ -121,8 +138,10 @@ namespace Jetpack.FlightProcessing
             var yawpitch = PullYawToLook2.GetFinalConfidence(direction_yawpitch_offset, confidence_yawpitch_offset, direction_yawpitch_target, confidence_yawpitch_target);
 
             float? confidence_roll = null;
-            if (_gazebuffer_roll.TryGetDominantDirection_Offset(out Vector3 direction_roll, out confidence, body_up))
+            if (_gazebuffer_roll.TryGetDominantDirection_Offset(out Vector3 direction_roll_local, out confidence, local_ups.body_up))
                 confidence_roll = confidence;
+
+            Vector3 direction_roll = Quaternion.Inverse(local_ups.quat) * direction_roll_local;
 
             // Get percent inside dead zone
             float deadzone_yawpitch_percent = yawpitch.confidence != null ?
@@ -149,7 +168,7 @@ namespace Jetpack.FlightProcessing
                 DrawRoll(body_forward, body_up, head_up, deadzone_roll_percent, direction_roll, confidence_roll);
                 DrawCapacitors(deadzone_yawpitch_percent, deadzone_roll_percent, yawpitch.confidence, confidence_roll);
 
-                DrawCircles(pos, look);
+                //DrawCircles(pos, look);
 
                 // text for final turn rates (yawpitch, roll)
                 //DrawTurnRates();
@@ -267,18 +286,6 @@ namespace Jetpack.FlightProcessing
                 _capa_text = null;
             }
 
-
-
-            if (_circle1 != null)
-            {
-                _renderer.Remove(_circle1);
-                _circle1 = null;
-            }
-
-            
-
-
-
             foreach (DebugItem item in _lines.Concat(_dots))
                 _renderer.Remove(item);
             _lines.Clear();
@@ -335,7 +342,6 @@ namespace Jetpack.FlightProcessing
             EnsureDebugActive();
 
             Vector3 head_pos = Player.local.head.anchor.position;
-
             Vector3 plane_point = head_pos + body_forward * PLANE_DIST;
 
             // Forward
@@ -362,8 +368,8 @@ namespace Jetpack.FlightProcessing
             }
 
             // Draw dead zones as circles
-            DrawYawPitch_DeadzoneCircle(ref _deadzone_inner, JetpackScript.YawToLook2_DeadZone_Full, plane_point, body_forward, PLANE_DIST, _renderer);
-            DrawYawPitch_DeadzoneCircle(ref _deadzone_outer, JetpackScript.YawToLook2_DeadZone_Start, plane_point, body_forward, PLANE_DIST, _renderer);
+            DrawYawPitch_DeadzoneCircle(ref _deadzone_inner, ref _deadzone_inner_dot, JetpackScript.YawToLook2_DeadZone_Full, plane_point, body_forward, PLANE_DIST, _renderer);
+            DrawYawPitch_DeadzoneCircle(ref _deadzone_outer, ref _deadzone_outer_dot, JetpackScript.YawToLook2_DeadZone_Start, plane_point, body_forward, PLANE_DIST, _renderer);
 
             // Gaze buffer results
             DrawGazeOffsets(PLANE_DIST, INNER_DIST, head_pos, body_forward, direction_offset, confidence_offset);
@@ -377,27 +383,32 @@ namespace Jetpack.FlightProcessing
                 DrawGazeOffsets_AddLine(body_forward, head_pos, PLANE_DIST, INNER_DIST, color, direction: direction_final);
             }
         }
-        private static void DrawYawPitch_DeadzoneCircle(ref DebugItem debug_item, float dead_zone, Vector3 origin, Vector3 normal, float plane_dist, DebugRenderer3D renderer)
+        private static void DrawYawPitch_DeadzoneCircle(ref DebugItem debug_item, ref float basedon_dot, float dead_zone, Vector3 origin, Vector3 normal, float plane_dist, DebugRenderer3D renderer)
         {
             if (dead_zone.IsNearValue(1))
             {
                 if (debug_item != null)
                     renderer.Remove(debug_item);        // this would only happen when dragging the slider to one.  so just remove it
                 debug_item = null;
+                basedon_dot = 1;
                 return;
+            }
+
+            if (debug_item != null && !basedon_dot.IsNearValue(dead_zone))
+            {
+                renderer.Remove(debug_item);        // the value changed, need to recalculate radius
+                debug_item = null;
             }
 
             if (debug_item == null)
             {
                 float radius = plane_dist * Mathf.Tan(Math1D.Dot_to_Radians(dead_zone));
+                basedon_dot = dead_zone;
                 debug_item = renderer.AddCircle(origin, normal, radius, LINE_THICKNESS, Color.gray);
-
-                Debug.Log($"added circle.  origin: {origin.ToStringSignificantDigits(3)}, normal: {normal.ToStringSignificantDigits(3)}, radius: {radius.ToStringSignificantDigits(3)}");
             }
             else
             {
-                debug_item.Object.transform.position = origin;
-                debug_item.Object.transform.rotation = Quaternion.LookRotation(normal, Player.local.head.transform.up);
+                DebugRenderer3D.AdjustCirclePosition(debug_item, origin, normal);
             }
         }
 
@@ -490,8 +501,8 @@ namespace Jetpack.FlightProcessing
             // start point
             Vector3 origin = Player.local.head.anchor.position +
                 forward * 1.25f +
-                right * -0.2f +
-                up * 0.2f;
+                right * -0.15f +
+                up * 0.15f;
 
             // NOTE: head_up has been pulled into the plane where body_forward is the normal (see GetProjecteHeadUp)
 
@@ -663,23 +674,6 @@ namespace Jetpack.FlightProcessing
                 DebugRenderer3D.AdjustLinePositions(tick, tick_mid - right * tick_half_width, tick_mid + right * tick_half_width);
         }
 
-        private void DrawCircles(Vector3 pos, Vector3 look)
-        {
-            EnsureDebugActive();
-
-            Vector3 center = pos + look * 1;
-
-            if (_circle1 == null)
-                _circle1 = _renderer.AddCircle(center, look, 0.25f, LINE_THICKNESS, Color.green);
-            else
-                _circle1.Object.transform.position = center;
-
-            if (_circle2 == null)
-                _circle2 = _renderer.AddCircle(center, Vector3.up, 0.25f, LINE_THICKNESS, Color.red);
-            else
-                _circle2.Object.transform.position = center;
-        }
-
         private void DrawTurnRates()
         {
             EnsureDebugActive();
@@ -723,6 +717,16 @@ namespace Jetpack.FlightProcessing
             Vector3 body_right = Vector3.Cross(body_forward, body_up);
             var plane = new Triangle(body_up, new Vector3(0, 0, 0), body_right);
             return head_up.GetProjectedVector(plane).normalized;
+        }
+
+        private static (Vector3 body_up, Vector3 head_up, Quaternion quat) RotateUps(Vector3 body_forward, Vector3 body_up, Vector3 head_up)
+        {
+            DoubleVector from = new DoubleVector(body_forward, body_up);
+            DoubleVector to = new DoubleVector(new Vector3(0, 0, 1), new Vector3(0, 1, 0));
+
+            Quaternion quat = Math3D.GetRotation(from, to);
+
+            return (quat * body_up, quat * head_up, quat);
         }
 
         #endregion

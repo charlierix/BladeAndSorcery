@@ -185,35 +185,7 @@ namespace PerfectlyNormalBaS
 
             return retVal;
         }
-
-
-        private DebugItem AddLine_Basic_FAIL(Vector3[] points, bool isClosed, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
-        {
-            EnsureContainerExists();
-
-            GameObject obj = GetNewBasicLine(points, thickness, color, 4, 4, isClosed, _container);
-
-            var retVal = new DebugItem(NextToken(), obj, null, GetCenter(points), relativeToComponent, relativeToGameObject, true);
-
-            AddItem(retVal);
-
-            return retVal;
-        }
-        public DebugItem AddLine_Basic(Vector3[] points, bool isClosed, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
-        {
-            var segments = new List<(Vector3, Vector3)>();
-
-            for (int i = 0; i < points.Length - 1; i++)
-                segments.Add((points[i], points[i + 1]));
-
-            if (isClosed)
-                segments.Add((points[points.Length - 1], points[0]));
-
-            return AddLine_Basic(segments.ToArray(), thickness, color, relativeToComponent, relativeToGameObject);
-        }
-
-
-        public DebugItem AddLine_Basic((Vector3, Vector3)[] segments, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        public DebugItem AddLine_Basic(Vector3 position, (Vector3, Vector3)[] segments, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
             EnsureContainerExists();
 
@@ -226,7 +198,21 @@ namespace PerfectlyNormalBaS
             for (int i = 0; i < segments.Length; i++)
                 children.Add(GetNewBasicLine(new[] { segments[i].Item1, segments[i].Item2 }, thickness, color, 0, 4, false, parent));
 
-            var retVal = new DebugItem(NextToken(), parent, children.ToArray(), new Vector3(), relativeToComponent, relativeToGameObject, true);
+            var retVal = new DebugItem(NextToken(), parent, children.ToArray(), position, relativeToComponent, relativeToGameObject, true);
+
+            AddItem(retVal);
+
+            return retVal;
+        }
+        private DebugItem AddLine_Basic(Vector3 position, Vector3[] points, bool isClosed, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        {
+            EnsureContainerExists();
+
+            GameObject obj = GetNewBasicLine(points, thickness, color, 4, 4, isClosed, _container);
+
+            obj.transform.position = position;      // NOTE: since this is used, can't call AdjustLinePositions, since that expects only one line segment, and directly modifies the points)
+
+            var retVal = new DebugItem(NextToken(), obj, null, position, relativeToComponent, relativeToGameObject, true);
 
             AddItem(retVal);
 
@@ -248,7 +234,7 @@ namespace PerfectlyNormalBaS
 
             return retVal;
         }
-        public DebugItem AddLine_Pipe((Vector3, Vector3)[] segments, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        public DebugItem AddLine_Pipe(Vector3 position, (Vector3, Vector3)[] segments, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
             EnsureContainerExists();
 
@@ -261,7 +247,7 @@ namespace PerfectlyNormalBaS
             for (int i = 0; i < segments.Length; i++)
                 children.Add(GetNewPipeLine(segments[i].Item1, segments[i].Item2, thickness, color, parent));
 
-            var retVal = new DebugItem(NextToken(), parent, children.ToArray(), new Vector3(), relativeToComponent, relativeToGameObject, true);
+            var retVal = new DebugItem(NextToken(), parent, children.ToArray(), position, relativeToComponent, relativeToGameObject, true);
 
             AddItem(retVal);
 
@@ -339,17 +325,17 @@ namespace PerfectlyNormalBaS
 
         public DebugItem AddCircle(Vector3 position, Vector3 normal, float radius, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
-            Quaternion quat = Quaternion.FromToRotation(new Vector3(0, 0, 1), normal);
-
             Vector2[] unit_circle = Math2D.GetCircle_Cached(36);
 
             Vector3[] points = new Vector3[unit_circle.Length];
             for (int i = 0; i < unit_circle.Length; i++)
-                points[i] = position + (quat * (new Vector3(unit_circle[i].x, unit_circle[i].y, 0) * radius));
+                points[i] = new Vector3(unit_circle[i].x, unit_circle[i].y, 0) * radius;
 
-            Debug.Log($"creating circle: {string.Join(" | ", points.Select(o => o.ToStringSignificantDigits(3)))}");
+            var retVal = AddLine_Basic(position, points, true, thickness, color, relativeToComponent, relativeToGameObject);
 
-            return AddLine_Basic(points, true, thickness, color, relativeToComponent, relativeToGameObject);
+            retVal.Object.transform.rotation = Quaternion.FromToRotation(new Vector3(0, 0, 1), normal);
+
+            return retVal;
         }
 
         public DebugItem AddWireframeSphere(Vector3 position, float radius, float line_thickness, Color color, bool isBasic = true, bool isLowRes = true, Component relativeToComponent = null, GameObject relativeToGameObject = null)
@@ -365,12 +351,16 @@ namespace PerfectlyNormalBaS
             var lines = new (Vector3, Vector3)[lines_shared.Length];        // need to store the tranformed vectors in a new array
 
             for (int i = 0; i < lines.Length; i++)
-                lines[i] = (position + quat * lines_shared[i].Item1 * radius, position + quat * lines_shared[i].Item2 * radius);
+                lines[i] = (quat * lines_shared[i].Item1 * radius, quat * lines_shared[i].Item2 * radius);
 
             // Call the line segments overload
-            return isBasic ?
-                AddLine_Basic(lines, line_thickness, color, relativeToComponent, relativeToGameObject) :
-                AddLine_Pipe(lines, line_thickness, color, relativeToComponent, relativeToGameObject);
+            var retVal = isBasic ?
+                AddLine_Basic(position, lines, line_thickness, color, relativeToComponent, relativeToGameObject) :
+                AddLine_Pipe(position, lines, line_thickness, color, relativeToComponent, relativeToGameObject);
+
+            retVal.Object.transform.position = position;
+
+            return retVal;
         }
 
         public DebugItem AddText(string text, Vector3 pos, Vector3 normal, Color back_color, Color fore_color, float world_height, Component relativeToComponent = null, GameObject relativeToGameObject = null)
@@ -431,6 +421,16 @@ namespace PerfectlyNormalBaS
 
                 obj.transform.rotation = Quaternion.FromToRotation(new Vector3(0, 1, 0), directionHalf);
             }
+        }
+
+        public static void AdjustCirclePosition(DebugItem item, Vector3 position, Vector3 normal)
+        {
+            AdjustCirclePosition(item.Object, position, normal);
+        }
+        private static void AdjustCirclePosition(GameObject obj, Vector3 position, Vector3 normal)
+        {
+            obj.transform.position = position;
+            obj.transform.rotation = Quaternion.FromToRotation(new Vector3(0, 0, 1), normal);
         }
 
         // TODO: public static void AdjustPlane(DebugItem item, Plane plane) -- and the other three
@@ -755,9 +755,6 @@ namespace PerfectlyNormalBaS
 
         private static GameObject GetNewBasicLine(Vector3[] points, float thickness, Color color, int numCornerVertices, int numCapVertices, bool shouldLoop, GameObject parent = null)
         {
-            if (shouldLoop)
-                points = UtilityCore.ArrayAdd(points, points[0]);       // telling it to loop made it invisible, add the extra point manually
-
             GameObject retVal = new GameObject(PREFIX + "line (basic)");
 
             if (parent != null)
@@ -776,8 +773,7 @@ namespace PerfectlyNormalBaS
             for (int i = 0; i < points.Length; i++)
                 line.SetPosition(i, points[i]);
 
-            //line.loop = shouldLoop;       // nothing was showing when loop is true
-            line.loop = false;
+            line.loop = shouldLoop;
 
             //line.material = new Material(Shader.Find("Unlit/Texture"));       //NOTE: every example I see only uses this string, but it's color that's wanted, not texture
             //line.material = new Material(Shader.Find("Unlit/Color"));
