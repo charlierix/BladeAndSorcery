@@ -16,12 +16,8 @@ using UnityEngine;
 
 
 // TODOS:
-
-
-// Options to reduce accel if in confined space (probably just a checkbox, the raycast dist and % reduction can probably be hardcoded - it may not be linear)
-//  Physics.OverlapSphere
-//  Physics.SphereCastAll
-//  Physics.Raycast
+// add a button that creates a json of all the config settings
+//  use reflection, include the category constants
 
 
 // activate sound sounds more like a fireball than flight
@@ -679,15 +675,19 @@ namespace Jetpack
         public static bool ShowRotateToLook = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Visualize Player Points", tooltip: "Shows points/lines on various transforms of the player avatar", order = 9)]
+        [ModOption(name: "Show HeadUpRotateVisualizer", tooltip: "Focused tester showing world to model rotations and back of head up vector", order = 9)]
+        public static bool ShowHeadUpRotateVisualizer = false;
+
+        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
+        [ModOption(name: "Visualize Player Points", tooltip: "Shows points/lines on various transforms of the player avatar", order = 10)]
         public static bool VisualizePlayerPoints = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Debug Visuals", tooltip: "This one looks like an early tester of figuring out how to render debug visuals - pretty useless beyond that", order = 10)]
+        [ModOption(name: "Show Debug Visuals", tooltip: "This one looks like an early tester of figuring out how to render debug visuals - pretty useless beyond that", order = 11)]
         public static bool ShowDebugVisuals = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Debug Status", tooltip: "Shows various properties in a textbox", order = 11)]
+        [ModOption(name: "Show Debug Status", tooltip: "Shows various properties in a textbox", order = 12)]
         public static bool ShowDebugStats = false;
 
         #endregion

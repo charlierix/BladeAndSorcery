@@ -15,6 +15,58 @@ namespace Jetpack.FlightProcessing
     /// </summary>
     public class RotateToLook
     {
+        #region class: Directions
+
+        private class Directions
+        {
+            // world
+            public Vector3 pos { get; set; }
+            public Vector3 velocity { get; set; }
+
+            public Vector3 body_forward { get; set; }
+            public Vector3 body_up { get; set; }
+            public Vector3 head_forward { get; set; }       // look
+            public Vector3 head_up { get; set; }
+
+            // local
+            //public Vector3 localroll_body_forward { get; set; }
+            public Vector3 localroll_body_up { get; set; }
+            //public Vector3 localroll_head_forward { get; set; }     // this should be the same as localroll_body_forward
+            public Vector3 localroll_head_up { get; set; }
+
+            public Quaternion quat_tolocalroll { get; set; }
+            public Quaternion quat_fromlocalroll { get; set; }
+        }
+
+        #endregion
+        #region class: GazeResults
+
+        private class GazeResults
+        {
+            public float? yawpitch_confidence { get; set; }
+            public Vector3 yawpitch_direction { get; set; }
+
+            public float? roll_confidence { get; set; }
+            public Vector3 roll_direction { get; set; }
+
+            // --- these are only used for drawing ---
+            public float? confidence_yawpitch_offset { get; set; }
+            public Vector3 direction_yawpitch_offset { get; set; }
+            public float? confidence_yawpitch_target { get; set; }
+            public Vector3 direction_yawpitch_target { get; set; }
+        }
+
+        #endregion
+        #region struct: DeadzonePercents
+
+        private struct DeadzonePercents
+        {
+            public float yawpitch {  get; set; }
+            public float roll { get; set; }
+        }
+
+        #endregion
+
         #region Declaration Section
 
         private readonly PlayerRotator _rotator;
@@ -92,69 +144,18 @@ namespace Jetpack.FlightProcessing
             if (!JetpackScript.ShouldRotateToLook)
                 return;
 
-            // Get some values needed by the rest of the function
-            Vector3 pos = Player.local.head.anchor.position;
-            Vector3 look = Player.local.head.transform.forward;
+            // Get body and head directions (also pos, velocity)
+            var dirs = GetDirections();
 
-            var (body_forward, body_up) = _ragdollUtil.GetRagdollForwardUp();
-            TrimForwardUp(ref body_forward, ref body_up);
+            // Update gaze buffers, get their averaged directions
+            var gaze = UpdateGazeBuffers(dirs);
 
-            Vector3 head_up = GetProjecteHeadUp(Player.local.head.transform.up, body_forward, body_up);
-            Vector3 velocity = Player.local.locomotion.physicBody.velocity;
-
-
-
-
-
-
-
-            // TODO: may need to rotate both body_up and head_up so that body_up is along 0,1,0 and body_forward is along 0,0,1
-            // that is what gets stored in gaze buffer
-            // this should make it so that as the player is yawing and pitching, roll should be isolated
-            // call these body_up2 and head_up2 so that the originals can still be drawn
-            var local_ups = RotateUps(body_forward, body_up, head_up);
-
-
-
-            // TODO: I think yawpitch offset needs to be rotated into local coords as well
-            // target doesn't, since it's keeping track of looking at a fixed point regardless of personal rotation
-
-
-
-            // Populate gaze buffers
-            _gazebuffer.AddSample_Offset(look, body_forward);
-            _gazebuffer.AddSample_Target(pos, look, velocity.magnitude);
-            _gazebuffer_roll.AddSample_Offset(local_ups.head_up, local_ups.body_up);
-
-            // Get gazed vectors
-            float? confidence_yawpitch_offset = null;
-            if (_gazebuffer.TryGetDominantDirection_Offset(out Vector3 direction_yawpitch_offset, out float confidence, body_forward))
-                confidence_yawpitch_offset = confidence;
-
-            float? confidence_yawpitch_target = null;
-            if (_gazebuffer.TryGetDominantDirection_Target_Debug(out Vector3 direction_yawpitch_target, out confidence, out float sphere_radius, out Vector3 sphere_origin, pos))
-                confidence_yawpitch_target = confidence;
-
-            var yawpitch = PullYawToLook2.GetFinalConfidence(direction_yawpitch_offset, confidence_yawpitch_offset, direction_yawpitch_target, confidence_yawpitch_target);
-
-            float? confidence_roll = null;
-            if (_gazebuffer_roll.TryGetDominantDirection_Offset(out Vector3 direction_roll_local, out confidence, local_ups.body_up))
-                confidence_roll = confidence;
-
-            Vector3 direction_roll = Quaternion.Inverse(local_ups.quat) * direction_roll_local;
-
-            // Get percent inside dead zone
-            float deadzone_yawpitch_percent = yawpitch.confidence != null ?
-                PullYawToLook2.GetDeadZonePercent(body_forward, yawpitch.direction, JetpackScript.YawToLook2_DeadZone_Full, JetpackScript.YawToLook2_DeadZone_Start) :
-                0;
-
-            float deadzone_roll_percent = confidence_roll != null ?
-                PullYawToLook2.GetDeadZonePercent(body_up, direction_roll, JetpackScript.RotToLook_DeadZone_Roll_Full, JetpackScript.RotToLook_DeadZone_Roll_Start) :
-                0;
+            // Get percents inside dead zones
+            var deadzones = GetDeadzonePercents(dirs, gaze);
 
             // Update the capacitors
-            _capacitor_yawpitch = PullYawToLook2.UpdateCapacitor(_capacitor_yawpitch, yawpitch.direction, look, yawpitch.confidence, deadzone_yawpitch_percent, elapsed_seconds);
-            _capacitor_roll = PullYawToLook2.UpdateCapacitor(_capacitor_roll, direction_roll, head_up, confidence_roll, deadzone_roll_percent, elapsed_seconds);
+            _capacitor_yawpitch = PullYawToLook2.UpdateCapacitor(_capacitor_yawpitch, gaze.yawpitch_direction, dirs.head_forward, gaze.yawpitch_confidence, deadzones.yawpitch, elapsed_seconds);
+            _capacitor_roll = PullYawToLook2.UpdateCapacitor(_capacitor_roll, gaze.roll_direction, dirs.head_up, gaze.roll_confidence, deadzones.roll, elapsed_seconds);
 
 
             // once drawing confirms it's good, add in the actual turning
@@ -164,9 +165,9 @@ namespace Jetpack.FlightProcessing
             {
                 PrepareForDraw();
 
-                DrawYawPitch(body_forward, look, deadzone_yawpitch_percent, direction_yawpitch_offset, confidence_yawpitch_offset, direction_yawpitch_target, confidence_yawpitch_target, yawpitch.direction, yawpitch.confidence);
-                DrawRoll(body_forward, body_up, head_up, deadzone_roll_percent, direction_roll, confidence_roll);
-                DrawCapacitors(deadzone_yawpitch_percent, deadzone_roll_percent, yawpitch.confidence, confidence_roll);
+                DrawYawPitch(dirs.body_forward, dirs.head_forward, deadzones.yawpitch, gaze.direction_yawpitch_offset, gaze.confidence_yawpitch_offset, gaze.direction_yawpitch_target, gaze.confidence_yawpitch_target, gaze.yawpitch_direction, gaze.yawpitch_confidence);
+                DrawRoll(dirs.body_forward, dirs.body_up, dirs.head_up, deadzones.roll, gaze.roll_direction, gaze.roll_confidence);
+                DrawCapacitors(deadzones.yawpitch, deadzones.roll, gaze.yawpitch_confidence, gaze.roll_confidence);
 
                 //DrawCircles(pos, look);
 
@@ -685,6 +686,96 @@ namespace Jetpack.FlightProcessing
         #endregion
         #region Private Methods
 
+        private Directions GetDirections()
+        {
+            // initial values (world coords)
+            var (body_forward, body_up) = _ragdollUtil.GetRagdollForwardUp();
+            Vector3 head_forward = Player.local.head.transform.forward;
+            Vector3 head_up = Player.local.head.transform.up;
+
+            // trimmed (world coords)
+            TrimForwardUp(ref body_forward, ref body_up);
+
+            // ---- FOR ROLL ----
+            var (head_up2, head_forward2) = GetProjecteHeadUp(head_up, head_forward, body_forward);      // pull head into the plane of body up and right
+
+            // rotated so that forward is Z, up is Y
+            var (body_up3, head_up3, quat3) = RotateUps(body_forward, body_up, head_up2);
+            //Vector3 body_forward3 = quat3 * body_forward;
+            //Vector3 head_forward3 = quat3 * head_forward2;
+
+            return new Directions
+            {
+                pos = Player.local.head.anchor.position,
+                velocity = Player.local.locomotion.physicBody.velocity,
+
+                body_forward = body_forward,
+                body_up = body_up,
+                head_forward = head_forward,
+                head_up = head_up,
+
+                //localroll_body_forward = body_forward3,
+                localroll_body_up = body_up3,
+                //localroll_head_forward = head_forward3,
+                localroll_head_up = head_up3,
+
+                quat_tolocalroll = quat3,
+                quat_fromlocalroll = Quaternion.Inverse(quat3),
+            };
+        }
+
+        private GazeResults UpdateGazeBuffers(Directions dirs)
+        {
+            // Populate gaze buffers
+            _gazebuffer.AddSample_Offset(dirs.head_forward, dirs.body_forward);
+            _gazebuffer.AddSample_Target(dirs.pos, dirs.head_forward, dirs.velocity.magnitude);
+            _gazebuffer_roll.AddSample_Offset(dirs.localroll_head_up, dirs.localroll_body_up);
+
+            // Get gazed vectors
+            float? confidence_yawpitch_offset = null;
+            if (_gazebuffer.TryGetDominantDirection_Offset(out Vector3 direction_yawpitch_offset, out float confidence, dirs.body_forward))
+                confidence_yawpitch_offset = confidence;
+
+            float? confidence_yawpitch_target = null;
+            if (_gazebuffer.TryGetDominantDirection_Target_Debug(out Vector3 direction_yawpitch_target, out confidence, out float sphere_radius, out Vector3 sphere_origin, dirs.pos))
+                confidence_yawpitch_target = confidence;
+
+            var yawpitch = PullYawToLook2.GetFinalConfidence(direction_yawpitch_offset, confidence_yawpitch_offset, direction_yawpitch_target, confidence_yawpitch_target);
+
+            float? confidence_roll = null;
+            if (_gazebuffer_roll.TryGetDominantDirection_Offset(out Vector3 direction_roll_local, out confidence, dirs.localroll_body_up))
+                confidence_roll = confidence;
+
+            Vector3 direction_roll = dirs.quat_fromlocalroll * direction_roll_local;
+
+            return new GazeResults
+            {
+                yawpitch_confidence = yawpitch.confidence,
+                yawpitch_direction = yawpitch.direction,
+                roll_confidence = confidence_roll,
+                roll_direction = direction_roll,
+
+                confidence_yawpitch_offset = confidence_yawpitch_offset,
+                direction_yawpitch_offset = direction_yawpitch_offset,
+                confidence_yawpitch_target = confidence_yawpitch_target,
+                direction_yawpitch_target = direction_yawpitch_target,
+            };
+        }
+
+        private static DeadzonePercents GetDeadzonePercents(Directions dirs, GazeResults gaze)
+        {
+            return new DeadzonePercents
+            {
+                yawpitch = gaze.yawpitch_confidence != null ?
+                    PullYawToLook2.GetDeadZonePercent(dirs.body_forward, gaze.yawpitch_direction, JetpackScript.YawToLook2_DeadZone_Full, JetpackScript.YawToLook2_DeadZone_Start) :
+                    0,
+
+                roll = gaze.roll_confidence != null ?
+                    PullYawToLook2.GetDeadZonePercent(dirs.body_up, gaze.roll_direction, JetpackScript.RotToLook_DeadZone_Roll_Full, JetpackScript.RotToLook_DeadZone_Roll_Start) :
+                    0,
+            };
+        }
+
         private void TrimForwardUp(ref Vector3 forward, ref Vector3 up)
         {
             // Yaw Trim
@@ -712,11 +803,10 @@ namespace Jetpack.FlightProcessing
         /// <summary>
         /// Projects head_up into the plane of body_up and body_right
         /// </summary>
-        private static Vector3 GetProjecteHeadUp(Vector3 head_up, Vector3 body_forward, Vector3 body_up)
+        private static (Vector3 up, Vector3 forward) GetProjecteHeadUp(Vector3 head_up, Vector3 head_forward, Vector3 body_forward)
         {
-            Vector3 body_right = Vector3.Cross(body_forward, body_up);
-            var plane = new Triangle(body_up, new Vector3(0, 0, 0), body_right);
-            return head_up.GetProjectedVector(plane).normalized;
+            var quat = Quaternion.FromToRotation(head_forward, body_forward);
+            return (quat * head_up, quat * head_forward);
         }
 
         private static (Vector3 body_up, Vector3 head_up, Quaternion quat) RotateUps(Vector3 body_forward, Vector3 body_up, Vector3 head_up)

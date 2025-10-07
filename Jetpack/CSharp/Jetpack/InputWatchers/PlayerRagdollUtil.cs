@@ -9,6 +9,10 @@ using UnityEngine;
 
 namespace Jetpack.InputWatchers
 {
+    // TODO: instead of relying on in game ragdoll, make a custom one that is just torso and gives the
+    // hips some momentum.  Also tell it when rotations are being applied by this mod so that the whole
+    // ik body can be rotated
+
     public class PlayerRagdollUtil
     {
         private readonly List<Vector3> _ragdoll_forwards = new List<Vector3>();

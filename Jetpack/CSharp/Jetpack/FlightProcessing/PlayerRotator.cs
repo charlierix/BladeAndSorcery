@@ -57,14 +57,15 @@ namespace Jetpack.FlightProcessing
         public void Reset()
         {
             var local = Player.local;
-            if (local == null)
-                return;
 
             //local.creature.ragdoll.ik.turnBodyByHeadAndHands = _turnBodyByHeadAndHands;
             //local.locomotion.allowMove = _allowMove;
 
-            local.creature.ragdoll.ik.turnBodyByHeadAndHands = true;
-            local.locomotion.allowMove = true;
+            if (local?.creature?.ragdoll?.ik?.turnBodyByHeadAndHands != null)
+                local.creature.ragdoll.ik.turnBodyByHeadAndHands = true;
+
+            if (local?.locomotion?.allowMove != null)
+                local.locomotion.allowMove = true;
         }
     }
 }

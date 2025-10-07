@@ -25,6 +25,7 @@ namespace Jetpack.FlightProcessing
         private readonly RotateToLook _rotateToLook;
         private readonly GazeBufferVisualizer_Target _gazeBufferVisualizer_target;
         private readonly GazeBufferVisualizer_Offset _gazeBufferVisualizer_offset;
+        private readonly HeadUpRotateVisualizer _headUpRotateVisualizer;
 
         private FlightData _standardState = null;
 
@@ -46,6 +47,7 @@ namespace Jetpack.FlightProcessing
             _rotateToLook = new RotateToLook(rotator);
             _gazeBufferVisualizer_target = new GazeBufferVisualizer_Target();
             _gazeBufferVisualizer_offset = new GazeBufferVisualizer_Offset();
+            _headUpRotateVisualizer = new HeadUpRotateVisualizer();
         }
 
         public void Activate(float drag)
@@ -82,6 +84,7 @@ namespace Jetpack.FlightProcessing
             _rotateToLook.Clear();
             _gazeBufferVisualizer_target.Clear();
             _gazeBufferVisualizer_offset.Clear();
+            _headUpRotateVisualizer.Clear();
         }
         public void Deactivate()
         {
@@ -110,6 +113,7 @@ namespace Jetpack.FlightProcessing
             _rotateToLook.Clear();
             _gazeBufferVisualizer_target.Clear();
             _gazeBufferVisualizer_offset.Clear();
+            _headUpRotateVisualizer.Clear();
         }
 
         public void Update(float drag, float horz_accel, float vert_accel, float gravity)
@@ -158,6 +162,7 @@ namespace Jetpack.FlightProcessing
                 _rotateToLook.Update(elapsed_seconds);
                 _gazeBufferVisualizer_target.Update();
                 _gazeBufferVisualizer_offset.Update();
+                _headUpRotateVisualizer.Update(elapsed_seconds);
             }
 
             // TODO: make an option for horiztonal control mode (direct or accel)
