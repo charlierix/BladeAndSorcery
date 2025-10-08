@@ -39,13 +39,7 @@ using UnityEngine;
 //  fpv drone - try to emulate a drone with thumbstick inputs
 
 
-// option to slowly pull yaw toward look direction
-
-
 // separate out mod config ui settings from json settings (fine details of ground repel should be json)
-
-
-// figure out how to change orientation of the player, maybe a combination of look direction and wrists
 
 
 // make a way to virtually grab stationary items like trees, boulders and swing around
@@ -504,7 +498,6 @@ namespace Jetpack
         [ModOptionFloatValues(-20, 20, 0.5f)]
         public static float YawToLook2_ForwardTrimDegrees_Yaw = -7;
 
-
         // ******************** Rotate Toward Look ********************
 
         [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
@@ -532,9 +525,17 @@ namespace Jetpack
         public static float RotToLook_DeadZone_Roll_Start = 0.985f;
 
 
+        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
+        [ModOptionSlider]
+        [ModOption(name: "Dead Zone Dot Product - pitch (full)", tooltip: "How far from center where there is no turning", order = 4)]
+        [ModOptionFloatValues(0.9f, 1, 0.001f)]
+        public static float RotToLook_DeadZone_Pitch_Full = 0.995f;
 
-
-
+        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
+        [ModOptionSlider]
+        [ModOption(name: "Dead Zone Dot Product - pitch (start)", tooltip: "How far from center before it starts turning at max rate", order = 5)]
+        [ModOptionFloatValues(0.9f, 1, 0.001f)]
+        public static float RotToLook_DeadZone_Pitch_Start = 0.98f;
 
         // ******************** Player Size ********************
 

@@ -337,6 +337,20 @@ namespace PerfectlyNormalBaS
 
             return retVal;
         }
+        public DebugItem AddEllipse(Vector3 position, Vector3 normal, Vector3 up, float radius_leftright, float radius_updown, float thickness, Color color, Component relativeToComponent = null, GameObject relativeToGameObject = null)
+        {
+            Vector2[] unit_circle = Math2D.GetCircle_Cached(36);
+
+            Vector3[] points = new Vector3[unit_circle.Length];
+            for (int i = 0; i < unit_circle.Length; i++)
+                points[i] = new Vector3(unit_circle[i].x * radius_leftright, unit_circle[i].y * radius_updown, 0);
+
+            var retVal = AddLine_Basic(position, points, true, thickness, color, relativeToComponent, relativeToGameObject);
+
+            retVal.Object.transform.rotation = Math3D.GetRotation(new DoubleVector(new Vector3(0, 0, 1), new Vector3(0, -1, 0)), new DoubleVector(normal, up));
+
+            return retVal;
+        }
 
         public DebugItem AddWireframeSphere(Vector3 position, float radius, float line_thickness, Color color, bool isBasic = true, bool isLowRes = true, Component relativeToComponent = null, GameObject relativeToGameObject = null)
         {
@@ -432,6 +446,17 @@ namespace PerfectlyNormalBaS
             obj.transform.position = position;
             obj.transform.rotation = Quaternion.FromToRotation(new Vector3(0, 0, 1), normal);
         }
+
+        public static void AdjustEllipsePosition(DebugItem item, Vector3 position, Vector3 normal, Vector3 up)
+        {
+            AdjustEllipsePosition(item.Object, position, normal, up);
+        }
+        private static void AdjustEllipsePosition(GameObject obj, Vector3 position, Vector3 normal, Vector3 up)
+        {
+            obj.transform.position = position;
+            obj.transform.rotation = Math3D.GetRotation(new DoubleVector(new Vector3(0, 0, 1), new Vector3(0, -1, 0)), new DoubleVector(normal, up));
+        }
+
 
         // TODO: public static void AdjustPlane(DebugItem item, Plane plane) -- and the other three
 

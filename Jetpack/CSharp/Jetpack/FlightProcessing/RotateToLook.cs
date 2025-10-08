@@ -97,10 +97,12 @@ namespace Jetpack.FlightProcessing
         private DebugItem _lookline = null;
         private DebugItem _lookorth = null;
 
-        private float _deadzone_inner_dot = float.MinValue;
+        private float _deadzone_inner_dot_yaw = float.MinValue;
+        private float _deadzone_inner_dot_pitch = float.MinValue;
         private DebugItem _deadzone_inner = null;
 
-        private float _deadzone_outer_dot = float.MinValue;
+        private float _deadzone_outer_dot_yaw = float.MinValue;
+        private float _deadzone_outer_dot_pitch = float.MinValue;
         private DebugItem _deadzone_outer = null;
 
         private int _line_index = -1;
@@ -168,7 +170,7 @@ namespace Jetpack.FlightProcessing
             {
                 PrepareForDraw();
 
-                DrawYawPitch(dirs.body_forward, dirs.head_forward, deadzones.yawpitch, gaze.direction_yawpitch_offset, gaze.confidence_yawpitch_offset, gaze.direction_yawpitch_target, gaze.confidence_yawpitch_target, gaze.yawpitch_direction, gaze.yawpitch_confidence);
+                DrawYawPitch(dirs.body_forward, dirs.body_up, dirs.head_forward, deadzones.yawpitch, gaze.direction_yawpitch_offset, gaze.confidence_yawpitch_offset, gaze.direction_yawpitch_target, gaze.confidence_yawpitch_target, gaze.yawpitch_direction, gaze.yawpitch_confidence);
 
                 DrawRoll(dirs.localroll_forward, dirs.localroll_body_up, dirs.localroll_head_up, deadzones.roll, gaze.roll_direction, gaze.roll_confidence, dirs.quat_fromlocalroll);
 
@@ -339,7 +341,7 @@ namespace Jetpack.FlightProcessing
                 items[i].Object.SetActive(i < count);     // this should be cheaper than removing/adding
         }
 
-        private void DrawYawPitch(Vector3 body_forward, Vector3 look, float deadzone_percent, Vector3 direction_offset, float? confidence_offset, Vector3 direction_target, float? confidence_target, Vector3 direction_final, float? confidence_final)
+        private void DrawYawPitch(Vector3 body_forward, Vector3 body_up, Vector3 look, float deadzone_percent, Vector3 direction_offset, float? confidence_offset, Vector3 direction_target, float? confidence_target, Vector3 direction_final, float? confidence_final)
         {
             // NOTE: trying to avoid lines coming out of head position, so the lines go from INNER_DIST to PLANE_DIST
             const float PLANE_DIST = 1.5f;      // NOTE: calling it a plane, which it is for the deadzone circles, but all other graphics will go to the surface of the sphere at this radius
@@ -374,8 +376,8 @@ namespace Jetpack.FlightProcessing
             }
 
             // Draw dead zones as circles
-            DrawYawPitch_DeadzoneCircle(ref _deadzone_inner, ref _deadzone_inner_dot, JetpackScript.YawToLook2_DeadZone_Full, plane_point, body_forward, PLANE_DIST, _renderer);
-            DrawYawPitch_DeadzoneCircle(ref _deadzone_outer, ref _deadzone_outer_dot, JetpackScript.YawToLook2_DeadZone_Start, plane_point, body_forward, PLANE_DIST, _renderer);
+            DrawYawPitch_DeadzoneEllipse(ref _deadzone_inner, ref _deadzone_inner_dot_yaw, ref _deadzone_inner_dot_pitch, JetpackScript.YawToLook2_DeadZone_Full, JetpackScript.RotToLook_DeadZone_Pitch_Full, plane_point, body_forward, body_up, PLANE_DIST, _renderer);
+            DrawYawPitch_DeadzoneEllipse(ref _deadzone_outer, ref _deadzone_outer_dot_yaw, ref _deadzone_outer_dot_pitch, JetpackScript.YawToLook2_DeadZone_Start, JetpackScript.RotToLook_DeadZone_Pitch_Start, plane_point, body_forward, body_up, PLANE_DIST, _renderer);
 
             // Gaze buffer results
             DrawGazeOffsets(PLANE_DIST, INNER_DIST, head_pos, body_forward, direction_offset, confidence_offset);
@@ -389,6 +391,9 @@ namespace Jetpack.FlightProcessing
                 DrawGazeOffsets_AddLine(body_forward, head_pos, PLANE_DIST, INNER_DIST, color, direction: direction_final);
             }
         }
+
+
+
         private static void DrawYawPitch_DeadzoneCircle(ref DebugItem debug_item, ref float basedon_dot, float dead_zone, Vector3 origin, Vector3 normal, float plane_dist, DebugRenderer3D renderer)
         {
             if (dead_zone.IsNearValue(1))
@@ -417,6 +422,39 @@ namespace Jetpack.FlightProcessing
                 DebugRenderer3D.AdjustCirclePosition(debug_item, origin, normal);
             }
         }
+        private static void DrawYawPitch_DeadzoneEllipse(ref DebugItem debug_item, ref float basedon_dot_yaw, ref float basedon_dot_pitch, float dead_zone_yaw, float dead_zone_pitch, Vector3 origin, Vector3 normal, Vector3 up, float plane_dist, DebugRenderer3D renderer)
+        {
+            if (dead_zone_yaw.IsNearValue(1) && dead_zone_pitch.IsNearValue(1))
+            {
+                if (debug_item != null)
+                    renderer.Remove(debug_item);        // this would only happen when dragging the slider to one.  so just remove it
+                debug_item = null;
+                basedon_dot_yaw = 1;
+                basedon_dot_pitch = 1;
+                return;
+            }
+
+            if (debug_item != null && (!basedon_dot_yaw.IsNearValue(dead_zone_yaw) || !basedon_dot_pitch.IsNearValue(dead_zone_pitch)))
+            {
+                renderer.Remove(debug_item);        // the value changed, need to recalculate radius
+                debug_item = null;
+            }
+
+            if (debug_item == null)
+            {
+                float radius_yaw = plane_dist * Mathf.Tan(Math1D.Dot_to_Radians(dead_zone_yaw));
+                float radius_pitch = plane_dist * Mathf.Tan(Math1D.Dot_to_Radians(dead_zone_pitch));
+                basedon_dot_yaw = dead_zone_yaw;
+                basedon_dot_pitch = dead_zone_pitch;
+                debug_item = renderer.AddEllipse(origin, normal, up, radius_yaw, radius_pitch, LINE_THICKNESS, Color.gray);
+            }
+            else
+            {
+                DebugRenderer3D.AdjustEllipsePosition(debug_item, origin, normal, up);
+            }
+        }
+
+
 
         private void DrawGazeOffsets(float plane_dist, float inner_dist, Vector3 head_pos, Vector3 body_forward, Vector3 direction, float? confidence)
         {
@@ -756,11 +794,21 @@ namespace Jetpack.FlightProcessing
 
         private static DeadzonePercents GetDeadzonePercents(Directions dirs, GazeResults gaze)
         {
+            float yawpitch = 0;
+            if (gaze.yawpitch_confidence != null)
+            {
+                Vector3 dir_yaw = gaze.yawpitch_direction.GetProjectedVector(Vector3.Cross(dirs.body_forward, dirs.body_up));       // project onto right
+                Vector3 dir_pitch = gaze.yawpitch_direction.GetProjectedVector(dirs.body_up);
+
+                float yaw = PullYawToLook2.GetDeadZonePercent(dirs.body_forward, dir_yaw, JetpackScript.YawToLook2_DeadZone_Full, JetpackScript.YawToLook2_DeadZone_Start);
+                float pitch = PullYawToLook2.GetDeadZonePercent(dirs.body_forward, dir_pitch, JetpackScript.RotToLook_DeadZone_Pitch_Full, JetpackScript.RotToLook_DeadZone_Pitch_Start);
+
+                yawpitch = Mathf.Max(yaw, pitch);
+            }
+
             return new DeadzonePercents
             {
-                yawpitch = gaze.yawpitch_confidence != null ?
-                    PullYawToLook2.GetDeadZonePercent(dirs.body_forward, gaze.yawpitch_direction, JetpackScript.YawToLook2_DeadZone_Full, JetpackScript.YawToLook2_DeadZone_Start) :
-                    0,
+                yawpitch = yawpitch,
 
                 roll = gaze.roll_confidence != null ?
                     PullYawToLook2.GetDeadZonePercent(dirs.body_up, gaze.roll_direction, JetpackScript.RotToLook_DeadZone_Roll_Full, JetpackScript.RotToLook_DeadZone_Roll_Start) :
