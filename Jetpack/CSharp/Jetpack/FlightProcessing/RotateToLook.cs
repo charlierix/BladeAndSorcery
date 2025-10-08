@@ -36,6 +36,9 @@ namespace Jetpack.FlightProcessing
 
             public Quaternion quat_tolocalroll { get; set; }
             public Quaternion quat_fromlocalroll { get; set; }
+
+            // --- these are only used for drawing ---
+            public Vector3 localroll_forward { get; set; }
         }
 
         #endregion
@@ -61,7 +64,7 @@ namespace Jetpack.FlightProcessing
 
         private struct DeadzonePercents
         {
-            public float yawpitch {  get; set; }
+            public float yawpitch { get; set; }
             public float roll { get; set; }
         }
 
@@ -166,7 +169,9 @@ namespace Jetpack.FlightProcessing
                 PrepareForDraw();
 
                 DrawYawPitch(dirs.body_forward, dirs.head_forward, deadzones.yawpitch, gaze.direction_yawpitch_offset, gaze.confidence_yawpitch_offset, gaze.direction_yawpitch_target, gaze.confidence_yawpitch_target, gaze.yawpitch_direction, gaze.yawpitch_confidence);
-                DrawRoll(dirs.body_forward, dirs.body_up, dirs.head_up, deadzones.roll, gaze.roll_direction, gaze.roll_confidence);
+
+                DrawRoll(dirs.localroll_forward, dirs.localroll_body_up, dirs.localroll_head_up, deadzones.roll, gaze.roll_direction, gaze.roll_confidence, dirs.quat_fromlocalroll);
+
                 DrawCapacitors(deadzones.yawpitch, deadzones.roll, gaze.yawpitch_confidence, gaze.roll_confidence);
 
                 //DrawCircles(pos, look);
@@ -418,7 +423,7 @@ namespace Jetpack.FlightProcessing
             if (_gazebuffer._offset.Count < JetpackScript.GazeBuffer_MaxCount * 0.8 && confidence == null)
                 return;
 
-            Color color_sample = UtilityColor.FromHex("3F4F6");     // blue
+            Color color_sample = UtilityColor.FromHex("3F4F68");     // blue
             Color color_derived = UtilityColor.FromHex("2176F4");
 
             // NOTE: only drawing the first and last to avoid clutter and better performance
@@ -489,53 +494,37 @@ namespace Jetpack.FlightProcessing
             }
         }
 
-        private void DrawRoll(Vector3 body_forward, Vector3 body_up, Vector3 head_up, float deadzone_percent, Vector3 direction_roll, float? confidence_roll)
+        private void DrawRoll(Vector3 body_forward, Vector3 body_up, Vector3 head_up, float deadzone_percent, Vector3 direction_roll, float? confidence_roll, Quaternion from_local)
         {
             const float LINE_LEN = 0.35f;
 
             EnsureDebugActive();
 
-            Vector3 up = Player.local.head.transform.up;
-            Vector3 right = Player.local.head.transform.right;
-            Vector3 forward = Player.local.head.transform.forward;
-
             // start point
             Vector3 origin = Player.local.head.anchor.position +
-                forward * 1.25f +
-                right * -0.15f +
-                up * 0.15f;
-
-            // NOTE: head_up has been pulled into the plane where body_forward is the normal (see GetProjecteHeadUp)
-
-            // the other vectors should be in the plane where body_forward is the normal.  so get a rotation that will put them
-            // in a plane where head forward is the normal
-            //Quaternion quat = Quaternion.FromToRotation(body_forward, forward);
-            //Quaternion quat = Quaternion.identity;      // seeing what it looks like without
-
-            //body_up = quat * body_up;
-            //head_up = quat * head_up;
-            //direction_roll = quat * direction_roll;
+                Player.local.head.transform.forward * 1.25f +
+                Player.local.head.transform.right * -0.15f +
+                Player.local.head.transform.up * 0.15f;
 
             // body_up
             if (_body_up == null)
-                _body_up = _renderer.AddLine_Basic(origin, origin + body_up * LINE_LEN, LINE_THICKNESS, Color.cyan);
+                _body_up = _renderer.AddLine_Basic(origin, origin + from_local * body_up * LINE_LEN, LINE_THICKNESS, Color.cyan);
             else
-                DebugRenderer3D.AdjustLinePositions(_body_up, origin, origin + body_up * LINE_LEN);
+                DebugRenderer3D.AdjustLinePositions(_body_up, origin, origin + from_local * body_up * LINE_LEN);
 
             // head_up
             if (_head_up == null)
-                _head_up = _renderer.AddLine_Basic(origin, origin + head_up * LINE_LEN, LINE_THICKNESS, Color.white);
+                _head_up = _renderer.AddLine_Basic(origin, origin + from_local * head_up * LINE_LEN, LINE_THICKNESS, Color.white);
             else
-                DebugRenderer3D.AdjustLinePositions(_head_up, origin, origin + head_up * LINE_LEN);
+                DebugRenderer3D.AdjustLinePositions(_head_up, origin, origin + from_local * head_up * LINE_LEN);
 
             // dead zones
-            DrawRoll_DeadzoneLines(ref _deadzone_inner_left, ref _deadzone_inner_right, JetpackScript.RotToLook_DeadZone_Roll_Full, origin, body_up, forward, LINE_LEN, _renderer);
-            DrawRoll_DeadzoneLines(ref _deadzone_outer_left, ref _deadzone_outer_right, JetpackScript.RotToLook_DeadZone_Roll_Start, origin, body_up, forward, LINE_LEN, _renderer);
+            DrawRoll_DeadzoneLines(ref _deadzone_inner_left, ref _deadzone_inner_right, JetpackScript.RotToLook_DeadZone_Roll_Full, origin, from_local * body_up, from_local * body_forward, LINE_LEN, _renderer);
+            DrawRoll_DeadzoneLines(ref _deadzone_outer_left, ref _deadzone_outer_right, JetpackScript.RotToLook_DeadZone_Roll_Start, origin, from_local * body_up, from_local * body_forward, LINE_LEN, _renderer);
 
             // buffer samples
-
             // sample[0] has quat that needs to be multiplied by body_up.  then multiply by this function's quat to rotate onto the radar display's plane
-            DrawGazeRoll(origin, direction_roll, confidence_roll, body_up, LINE_LEN);
+            DrawGazeRoll(origin, direction_roll, confidence_roll, body_up, LINE_LEN, from_local);
         }
         private static void DrawRoll_DeadzoneLines(ref DebugItem debug_item_left, ref DebugItem debug_item_right, float dead_zone, Vector3 origin, Vector3 up, Vector3 normal, float line_len, DebugRenderer3D renderer)
         {
@@ -581,7 +570,7 @@ namespace Jetpack.FlightProcessing
                 DebugRenderer3D.AdjustColor(_lines[_line_index], color);
             }
         }
-        private void DrawGazeRoll(Vector3 origin, Vector3 direction, float? confidence, Vector3 body_up, float line_len)
+        private void DrawGazeRoll(Vector3 origin, Vector3 direction, float? confidence, Vector3 body_up, float line_len, Quaternion from_local)
         {
             if (_gazebuffer_roll._offset.Count < JetpackScript.GazeBuffer_MaxCount * 0.8 && confidence == null)
                 return;
@@ -593,9 +582,9 @@ namespace Jetpack.FlightProcessing
             Vector3 line_0 = _gazebuffer_roll._offset[0].Quaternion * body_up * line_len;
             Vector3 line_N = _gazebuffer_roll._offset[_gazebuffer_roll._offset.Count - 1].Quaternion * body_up * line_len;
 
-            // then rotate using quat, which makes it perpendicular to normal
-            //line_0 = quat * line_0;
-            //line_N = quat * line_N;
+            // now rotate to world
+            line_0 = from_local * line_0;
+            line_N = from_local * line_N;
 
             DrawRoll_AddLine(origin, origin + line_0, color_sample);
             DrawRoll_AddLine(origin, origin + line_N, color_sample);
@@ -604,6 +593,7 @@ namespace Jetpack.FlightProcessing
             if (confidence != null)
             {
                 Color color = Color.Lerp(UtilityColor.FromHex(FINALLINE_COLOR_MAX), UtilityColor.FromHex(FINALLINE_COLOR_MIN), confidence.Value);
+                // NOTE: direction is already world coords
                 DrawRoll_AddLine(origin, origin + direction * line_len, color);
             }
         }
@@ -701,7 +691,7 @@ namespace Jetpack.FlightProcessing
 
             // rotated so that forward is Z, up is Y
             var (body_up3, head_up3, quat3) = RotateUps(body_forward, body_up, head_up2);
-            //Vector3 body_forward3 = quat3 * body_forward;
+            Vector3 body_forward3 = quat3 * body_forward;
             //Vector3 head_forward3 = quat3 * head_forward2;
 
             return new Directions
@@ -714,10 +704,12 @@ namespace Jetpack.FlightProcessing
                 head_forward = head_forward,
                 head_up = head_up,
 
-                //localroll_body_forward = body_forward3,
                 localroll_body_up = body_up3,
-                //localroll_head_forward = head_forward3,
                 localroll_head_up = head_up3,
+
+                //localroll_body_forward = body_forward3,
+                //localroll_head_forward = head_forward3,
+                localroll_forward = body_forward3,      // body_forward3 and head_forward3 should be identical after rotation
 
                 quat_tolocalroll = quat3,
                 quat_fromlocalroll = Quaternion.Inverse(quat3),
