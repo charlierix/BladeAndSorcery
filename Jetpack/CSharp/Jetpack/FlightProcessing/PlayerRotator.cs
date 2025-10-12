@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ThunderRoad;
-using ThunderRoad.DebugViz;
+﻿using ThunderRoad;
 using UnityEngine;
 
 namespace Jetpack.FlightProcessing
@@ -13,6 +6,7 @@ namespace Jetpack.FlightProcessing
     // this logic was copied from flip spell by jenix106
     public class PlayerRotator
     {
+        private bool _isStored = false;
         private bool _allowMove;
         private bool _turnBodyByHeadAndHands;
 
@@ -20,35 +14,76 @@ namespace Jetpack.FlightProcessing
         {
             var local = Player.local;
 
-            //_turnBodyByHeadAndHands = local.creature.ragdoll.ik.turnBodyByHeadAndHands;
-            //_allowMove = local.locomotion.allowMove;
+            if (local == null)
+                Debug.Log("OnPlayerSpawned local is null");
+
+            // OnGroundEvent
+            if (local?.locomotion == null)
+                Debug.Log("OnPlayerSpawned local?.locomotion is null");
+            else
+                local.locomotion.OnGroundEvent += Locomotion_OnGroundEvent;
+
+            // turnBodyByHeadAndHands
+            if (local?.creature?.ragdoll?.ik?.turnBodyByHeadAndHands == null)
+            {
+                if (local?.creature == null)
+                    Debug.Log("OnPlayerSpawned local?.creature is null");       // this is the one that's null.  so this mod is using player spawned, backflip is using spell's loaded
+                else if (local?.creature?.ragdoll?.ik == null)
+                    Debug.Log("OnPlayerSpawned local?.creature?.ragdoll?.ik is null");
+                else
+                    Debug.Log("OnPlayerSpawned local?.creature?.ragdoll?.ik?.turnBodyByHeadAndHands is null");
+
+                _turnBodyByHeadAndHands = true;
+            }
+            else
+            {
+                _turnBodyByHeadAndHands = local.creature.ragdoll.ik.turnBodyByHeadAndHands;
+                Debug.Log($"OnPlayerSpawned local.creature.ragdoll.ik.turnBodyByHeadAndHands: {local.creature.ragdoll.ik.turnBodyByHeadAndHands}");
+            }
+
+            // allowMove
+            if(local?.locomotion?.allowMove == null)
+            {
+                Debug.Log("OnPlayerSpawned local?.locomotion?.allowMove is null");
+                _allowMove = true;
+            }
+            else
+            {
+                _allowMove = local.locomotion.allowMove;
+                Debug.Log($"OnPlayerSpawned local.locomotion.allowMove: {local.locomotion.allowMove}");
+            }
+
+            _isStored = true;
         }
+
+        private void Locomotion_OnGroundEvent(Locomotion locomotion, Vector3 groundPoint, Vector3 velocity, Collider groundCollider)
+        {
+            Reset();
+        }
+
         public void OnPlayerDespawned()
         {
-            //var local = Player.local;
+            var loco = Player.local?.locomotion;
 
-            //local.creature.ragdoll.ik.turnBodyByHeadAndHands = _turnBodyByHeadAndHands;
-            //local.locomotion.allowMove = _allowMove;
+            if (loco != null)
+                loco.OnGroundEvent += Locomotion_OnGroundEvent;
+
+            Reset();
         }
 
         public void RotateAround(Vector3 point, Vector3 axis, float degrees_per_sec, float elapsedSeconds)
         {
             var local = Player.local;
 
-            //Quaternion rotation1 = local.transform.rotation;
-            //Quaternion rotation2 = local.head.cam.transform.rotation;
-            //rotation2.Set(0f, rotation2.y, 0f, 0f);
+            var headTransform = local.head.cam.transform;
 
+            Quaternion rot = local.transform.rotation;
 
-
-            // this may be improperly sending world axis to local transform
             local.transform.RotateAround(point, axis, degrees_per_sec * elapsedSeconds);
 
-
-
-            //local.autoAlign = false;
-            //local.creature.ragdoll.ik.turnBodyByHeadAndHands = false;
-            //local.creature.ragdoll.ik.AddLocomotionDeltaRotation(local.transform.rotation * Quaternion.Inverse(rotation1), local.creature.ragdoll.targetPart.transform.position);
+            local.autoAlign = false;
+            local.creature.ragdoll.ik.turnBodyByHeadAndHands = false;
+            local.creature.ragdoll.ik.AddLocomotionDeltaRotation(local.transform.rotation * Quaternion.Inverse(rot), local.creature.ragdoll.targetPart.transform.position);
         }
 
         /// <summary>
@@ -58,14 +93,14 @@ namespace Jetpack.FlightProcessing
         {
             var local = Player.local;
 
-            //local.creature.ragdoll.ik.turnBodyByHeadAndHands = _turnBodyByHeadAndHands;
-            //local.locomotion.allowMove = _allowMove;
+            if (local?.autoAlign != null)
+                local.autoAlign = true;
 
             if (local?.creature?.ragdoll?.ik?.turnBodyByHeadAndHands != null)
-                local.creature.ragdoll.ik.turnBodyByHeadAndHands = true;
+                local.creature.ragdoll.ik.turnBodyByHeadAndHands = _isStored ? _turnBodyByHeadAndHands : true;
 
             if (local?.locomotion?.allowMove != null)
-                local.locomotion.allowMove = true;
+                local.locomotion.allowMove = _isStored ? _allowMove : true;
         }
     }
 }
