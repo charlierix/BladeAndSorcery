@@ -52,8 +52,6 @@ namespace Jetpack.Scanning
 
         #endregion
 
-        private static Triangle _horz = new Triangle(Vector3.right, Vector3.zero, Vector3.forward);
-
         private readonly RayCastStorage _raycast_storage;
 
         // These get reset each time Update_CastRays, and are then used by the corresponding call to GetGroundAccel
@@ -93,7 +91,7 @@ namespace Jetpack.Scanning
             _foot_pos = Math3D.GetAverage(Player.local.footLeft.ragdollFoot.root.position, Player.local.footRight.ragdollFoot.root.position);        // Player.local.transform.position is the room level origin
 
             // Split velocity into horizontal and vertical components
-            _vel_horz = _velocity.GetProjectedVector(_horz);
+            _vel_horz = _velocity.GetProjectedVector_plane(Vector3.up);
             _vel_vert = _velocity.GetProjectedVector(Vector3.up);
 
             float speed_horz = _vel_horz.magnitude;

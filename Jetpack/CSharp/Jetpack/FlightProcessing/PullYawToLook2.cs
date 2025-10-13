@@ -15,8 +15,6 @@ namespace Jetpack.FlightProcessing
     {
         #region Declaration Section
 
-        private readonly ITriangle _xzplane = new Triangle(new Vector3(1, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 1));
-
         private readonly PlayerRotator _rotator;
 
         // NOTE: both offset and target are used in the same instance of gazebuffer, simply because it
@@ -91,8 +89,8 @@ namespace Jetpack.FlightProcessing
 
             // Get some values needed by the rest of the function
             Vector3 pos = Player.local.head.anchor.position;
-            Vector3 look = Player.local.head.transform.forward.GetProjectedVector(_xzplane).normalized;
-            Vector3 forward = _ragdollUtil.GetRagdollForwardUp().forward.GetProjectedVector(_xzplane).normalized;
+            Vector3 look = Player.local.head.transform.forward.GetProjectedVector_plane(Vector3.up).normalized;
+            Vector3 forward = _ragdollUtil.GetRagdollForwardUp().forward.GetProjectedVector_plane(Vector3.up).normalized;
             Vector3 velocity = Player.local.locomotion.physicBody.velocity;
 
             forward = TrimForward(forward);

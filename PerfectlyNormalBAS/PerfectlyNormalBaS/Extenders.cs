@@ -1014,9 +1014,12 @@ namespace PerfectlyNormalBaS
         }
         public static Vector3 GetProjectedVector(this Vector3 vector, ITriangle alongPlane)
         {
+            return vector.GetProjectedVector_plane(alongPlane.Normal);
+        }
+        public static Vector3 GetProjectedVector_plane(this Vector3 vector, Vector3 normal)
+        {
             // Get a line that is parallel to the plane, but along the direction of the vector
-            Vector3 planeNormal = alongPlane.Normal;
-            var alongLine = Vector3.Cross(planeNormal, Vector3.Cross(vector, planeNormal));
+            var alongLine = Vector3.Cross(normal, Vector3.Cross(vector, normal));
 
             // Use the other overload to get the portion of the vector along this line
             return vector.GetProjectedVector(alongLine);

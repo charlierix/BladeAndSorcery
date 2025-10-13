@@ -202,12 +202,15 @@ namespace Jetpack.FlightProcessing
 
             var transform = Player.local.transform;
 
-            // TODO: need to project transform's forward and right to horizontal plane (needed when player's up isn't Z)
-            // this would make sense for jetpack hovering type of flight, not for a bird
-
             loco.physicBody.AddForce(transform.forward * horz_accel * axis.y, ForceMode.Acceleration);
             loco.physicBody.AddForce(transform.right * horz_accel * axis.x, ForceMode.Acceleration);
         }
+
+
+
+        // TODO: change this to be relative to transform.up
+        // take that gravity logic into account, but only the component of accel that is along y
+
         private void AccelUp(Vector2 axis, Locomotion loco, float vert_accel, float gravity)
         {
             float up_accel = 0f;
@@ -229,6 +232,8 @@ namespace Jetpack.FlightProcessing
 
             loco.physicBody.AddForce(Vector3.up * up_accel, ForceMode.Acceleration);
         }
+
+
 
         private static void DestabilizeHeldNPC(PlayerHand side)
         {

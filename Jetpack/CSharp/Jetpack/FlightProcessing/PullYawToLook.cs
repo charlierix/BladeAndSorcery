@@ -13,8 +13,6 @@ namespace Jetpack.FlightProcessing
     /// </summary>
     public class PullYawToLook
     {
-        private readonly ITriangle _xzplane = new Triangle(new Vector3(1, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 1));
-
         private readonly GazeBuffer _gazeBuffer = new GazeBuffer();
         private readonly PlayerRagdollUtil _ragdollUtil = new PlayerRagdollUtil();
 
@@ -60,11 +58,11 @@ namespace Jetpack.FlightProcessing
                 return;
 
             // Get look and forward snapped to the xz plane
-            Vector3 look = Player.local.head.transform.forward.GetProjectedVector(_xzplane).normalized;
+            Vector3 look = Player.local.head.transform.forward.GetProjectedVector_plane(Vector3.up).normalized;
 
             //Vector3 forward = Player.local.transform.forward.GetProjectedVector(_xzplane).normalized;     // relative to room, irl turning will move this around
             //Vector3 forward = Player.local.waist.ikAnchor.forward.GetProjectedVector(_xzplane).normalized;      // same as prev
-            Vector3 forward = _ragdollUtil.GetRagdollForwardUp().forward.GetProjectedVector(_xzplane).normalized;
+            Vector3 forward = _ragdollUtil.GetRagdollForwardUp().forward.GetProjectedVector_plane(Vector3.up).normalized;
 
             // Update the capacitor
             //UpdateCapacitor2(look, forward, elapsedSeconds);
