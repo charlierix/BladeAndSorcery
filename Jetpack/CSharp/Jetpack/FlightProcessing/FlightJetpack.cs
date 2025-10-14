@@ -12,6 +12,12 @@ namespace Jetpack.FlightProcessing
 
     // TODO: in deactivate, make sure the player isn't roated
 
+    // TODO: listen for grounded event
+
+    // TODO: boost excel during time dilation?
+
+    // TODO: notice when picking up an item and compensate for the added weight
+
     public class FlightJetpack
     {
         private readonly RayCastStorage _raycast_storage;
@@ -144,7 +150,7 @@ namespace Jetpack.FlightProcessing
 
             Vector2 left_stick = InputUtil.GetLeftStick();
             Vector2 right_stick = InputUtil.GetRightStick();
-            Vector3? input_dir = GetInputDirection(left_stick, right_stick, loco);
+            Vector3? input_dir = ThumbstickToAccel.GetInputDirection(left_stick, right_stick, loco);
 
             // Only do these when already in the air
             if (!Player.local.locomotion.isGrounded && (DateTime.UtcNow - _activation_time).TotalMilliseconds > 500)
@@ -168,72 +174,8 @@ namespace Jetpack.FlightProcessing
             // TODO: make an option for horiztonal control mode (direct or accel)
             //loco.horizontalAirSpeed = horizontalSpeed / 100f;
 
-            AccelHorz(left_stick, loco, horz_accel * percent_accel);
-            AccelUp(right_stick, loco, vert_accel * percent_accel, gravity);
+            ThumbstickToAccel.ApplyAccel(input_dir, loco, horz_accel, vert_accel, gravity);
         }
-
-        // This is kind of a copy of AccelHorz and AccelUp.  The output is sent to classes that avoid hitting things, and
-        // is used so they don't fight with the desired input direction
-        private Vector3? GetInputDirection(Vector2 left_stick, Vector2 right_stick, Locomotion loco)
-        {
-            var pointer = Pointer.GetActive();
-            if (pointer.isPointingUI)
-                return null;
-
-            Vector3 retVal = Vector3.zero;
-
-            var transform = Player.local.transform;
-
-            retVal += transform.forward * left_stick.y;
-            retVal += transform.right * left_stick.x;
-            retVal += Vector3.up * right_stick.y;
-
-            if (retVal.IsNearZero())
-                return null;
-
-            return retVal.normalized;
-        }
-
-        // These two actually apply accelerations
-        private void AccelHorz(Vector2 axis, Locomotion loco, float horz_accel)
-        {
-            if (axis.x == 0 && axis.y == 0)
-                return;
-
-            var transform = Player.local.transform;
-
-            loco.physicBody.AddForce(transform.forward * horz_accel * axis.y, ForceMode.Acceleration);
-            loco.physicBody.AddForce(transform.right * horz_accel * axis.x, ForceMode.Acceleration);
-        }
-
-
-
-        // TODO: change this to be relative to transform.up
-        // take that gravity logic into account, but only the component of accel that is along y
-
-        private void AccelUp(Vector2 axis, Locomotion loco, float vert_accel, float gravity)
-        {
-            float up_accel = 0f;
-
-            float axis_y = axis.y;
-
-            if (!axis_y.IsNearZero())
-            {
-                var pointer = Pointer.GetActive();
-                if (!pointer.isPointingUI)
-                {
-                    up_accel = vert_accel * axis_y;
-
-                    if (axis_y > 0)
-                        up_accel += gravity;     // when pushing up, cancel out gravity.  When pushing down, it's accelerating down in addition to gravity
-                }
-            }
-            up_accel -= gravity;
-
-            loco.physicBody.AddForce(Vector3.up * up_accel, ForceMode.Acceleration);
-        }
-
-
 
         private static void DestabilizeHeldNPC(PlayerHand side)
         {

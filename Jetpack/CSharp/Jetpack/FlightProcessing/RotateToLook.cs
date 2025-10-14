@@ -13,6 +13,9 @@ namespace Jetpack.FlightProcessing
 
     // TODO: need dead zones pre rotate and during rotate, also speed based.  that way, once rotating for some time, dead zones shrink, maybe capacitors stay longer
 
+    // TODO: have the opposite of dead zone so if they look past that dot product, it speeds up capacitor
+    // TODO: if they snap their head in a direction, that should also speed up the capcitor
+
     // TODO: this class has enough to test and visualize.  but once a lot of values are json config, focus on adding pitch and roll limits in RotateToLook2
 
     /// <summary>

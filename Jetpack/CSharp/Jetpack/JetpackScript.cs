@@ -16,8 +16,17 @@ using UnityEngine;
 
 
 // TODOS:
-// add a button that creates a json of all the config settings
-//  use reflection, include the category constants
+// have floating orbs that make it easy to toggle rotate to looks.  digging through the menu is tedious, this may
+// be a decision to toggle for only a small amount of time
+
+
+// make a class that rotates to velocity
+
+
+// have an option to muffle accels when in odd orientations.  especially when indoors
+
+
+// have an option for gravity to be relative to player's feet direction
 
 
 // activate sound sounds more like a fireball than flight
