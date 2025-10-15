@@ -1,15 +1,10 @@
-﻿using Jetpack.DebugCode;
-using Jetpack.FlightProcessing;
-using Jetpack.InputWatchers;
-using Jetpack.Models;
-using Jetpack.Scanning;
+﻿using Jetpack2.DebugCode;
+using Jetpack2.FlightProcessing;
+using Jetpack2.InputWatchers;
+using Jetpack2.Models;
+using Jetpack2.Scanning;
 using PerfectlyNormalBaS;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Xml.Linq;
 using ThunderRoad;
 using UnityEngine;
 

@@ -1,7 +1,7 @@
-using Jetpack.DebugCode;
-using Jetpack.InputWatchers;
-using Jetpack.Models;
-using Jetpack.Scanning;
+using Jetpack2.DebugCode;
+using Jetpack2.InputWatchers;
+using Jetpack2.Models;
+using Jetpack2.Scanning;
 using PerfectlyNormalBaS;
 using System;
 using ThunderRoad;
