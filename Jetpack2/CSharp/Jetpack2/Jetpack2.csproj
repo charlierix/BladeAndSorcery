@@ -49,8 +49,6 @@
     <Compile Include="DebugCode\ScaleAdjuster.cs" />
     <Compile Include="DebugCode\VisualizePlayerPoints.cs" />
     <Compile Include="FlightProcessing\PlayerRotator.cs" />
-    <Compile Include="FlightProcessing\PullYawToLook2.cs" />
-    <Compile Include="FlightProcessing\PullYawToLook.cs" />
     <Compile Include="FlightProcessing\RotateToLook.cs" />
     <Compile Include="FlightProcessing\ThumbstickToAccel.cs" />
     <Compile Include="InputWatchers\GazeBuffer.cs" />

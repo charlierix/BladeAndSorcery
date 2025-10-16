@@ -26,8 +26,6 @@ namespace Jetpack2.FlightProcessing
         private readonly ConfinedArea _confinedScanner;
         private readonly RepelGround _repelGround;
         private readonly ObstacleAvoidance _obstacleAvoidance;
-        private readonly PullYawToLook _pullYawToLook;
-        private readonly PullYawToLook2 _pullYawToLook2;
         private readonly RotateToLook _rotateToLook;
         private readonly GazeBufferVisualizer_Target _gazeBufferVisualizer_target;
         private readonly GazeBufferVisualizer_Offset _gazeBufferVisualizer_offset;
@@ -48,8 +46,6 @@ namespace Jetpack2.FlightProcessing
             _confinedScanner = new ConfinedArea(_raycast_storage);
             _repelGround = new RepelGround(_raycast_storage);
             _obstacleAvoidance = new ObstacleAvoidance(_raycast_storage);
-            _pullYawToLook = new PullYawToLook();
-            _pullYawToLook2 = new PullYawToLook2(rotator);
             _rotateToLook = new RotateToLook(rotator);
             _gazeBufferVisualizer_target = new GazeBufferVisualizer_Target();
             _gazeBufferVisualizer_offset = new GazeBufferVisualizer_Offset();
@@ -85,8 +81,6 @@ namespace Jetpack2.FlightProcessing
             _obstacleAvoidance.Clear();
 
             // Others
-            _pullYawToLook.Clear();
-            _pullYawToLook2.Clear();
             _rotateToLook.Clear();
             _gazeBufferVisualizer_target.Clear();
             _gazeBufferVisualizer_offset.Clear();
@@ -114,8 +108,6 @@ namespace Jetpack2.FlightProcessing
             _confinedScanner.Clear();
             _repelGround.Clear();
             _obstacleAvoidance.Clear();
-            _pullYawToLook.Clear();
-            _pullYawToLook2.Clear();
             _rotateToLook.Clear();
             _gazeBufferVisualizer_target.Clear();
             _gazeBufferVisualizer_offset.Clear();
@@ -163,8 +155,6 @@ namespace Jetpack2.FlightProcessing
                 if (accel_obstacle != null)
                     loco.physicBody.AddForce(accel_obstacle.Value, ForceMode.Acceleration);
 
-                _pullYawToLook.Update(elapsed_seconds);
-                _pullYawToLook2.Update(elapsed_seconds);
                 _rotateToLook.Update(elapsed_seconds);
                 _gazeBufferVisualizer_target.Update();
                 _gazeBufferVisualizer_offset.Update();

@@ -8,6 +8,8 @@ using UnityEngine;
 
 namespace Jetpack2.FlightProcessing
 {
+    // TODO: this class good huge, and will get much larger.  a lot of those private regions will need to be their own classes
+
     // TODO: need settings for free rotate vs align to any N degrees (15, 30, 45)
     // TODO: need optional settings for min/max pitch, min/max roll
 
@@ -190,9 +192,9 @@ namespace Jetpack2.FlightProcessing
             Vector3 look_yaw = dirs.head_forward.GetProjectedVector_plane(dirs.body_up).normalized;
             Vector3 look_pitch = dirs.head_forward.GetProjectedVector_plane(Vector3.Cross(dirs.body_forward, dirs.body_up)).normalized;        // normal is to the right
 
-            _capacitor_yaw = PullYawToLook2.UpdateCapacitor(_capacitor_yaw, gaze.yaw_direction, look_yaw, gaze.yawpitch_confidence, deadzones.yaw, elapsed_seconds);
-            _capacitor_pitch = PullYawToLook2.UpdateCapacitor(_capacitor_pitch, gaze.pitch_direction, look_pitch, gaze.yawpitch_confidence, deadzones.pitch, elapsed_seconds);
-            _capacitor_roll = PullYawToLook2.UpdateCapacitor(_capacitor_roll, gaze.roll_direction, dirs.head_up, gaze.roll_confidence, deadzones.roll, elapsed_seconds);
+            _capacitor_yaw = UpdateCapacitor(_capacitor_yaw, gaze.yaw_direction, look_yaw, gaze.yawpitch_confidence, deadzones.yaw, elapsed_seconds);
+            _capacitor_pitch = UpdateCapacitor(_capacitor_pitch, gaze.pitch_direction, look_pitch, gaze.yawpitch_confidence, deadzones.pitch, elapsed_seconds);
+            _capacitor_roll = UpdateCapacitor(_capacitor_roll, gaze.roll_direction, dirs.head_up, gaze.roll_confidence, deadzones.roll, elapsed_seconds);
 
             // Get turn rates
             var turnrate_yaw = GetTurnRate(dirs.body_forward, gaze.yaw_direction, gaze.yawpitch_confidence, deadzones.yaw, _capacitor_yaw);
@@ -831,7 +833,7 @@ namespace Jetpack2.FlightProcessing
         }
 
         #endregion
-        #region Private Methods
+        #region Private Methods - directions
 
         private Directions GetDirections()
         {
@@ -878,6 +880,28 @@ namespace Jetpack2.FlightProcessing
             };
         }
 
+        /// <summary>
+        /// Projects head_up into the plane of body_up and body_right
+        /// </summary>
+        private static (Vector3 up, Vector3 forward) GetProjecteHeadUp(Vector3 head_up, Vector3 head_forward, Vector3 body_forward)
+        {
+            var quat = Quaternion.FromToRotation(head_forward, body_forward);
+            return (quat * head_up, quat * head_forward);
+        }
+
+        private static (Vector3 body_up, Vector3 head_up, Quaternion quat) RotateUps(Vector3 body_forward, Vector3 body_up, Vector3 head_up)
+        {
+            DoubleVector from = new DoubleVector(body_forward, body_up);
+            DoubleVector to = new DoubleVector(new Vector3(0, 0, 1), new Vector3(0, 1, 0));
+
+            Quaternion quat = Math3D.GetRotation(from, to);
+
+            return (quat * body_up, quat * head_up, quat);
+        }
+
+        #endregion
+        #region Private Methods - gaze buffers
+
         private GazeResults UpdateGazeBuffers(Directions dirs)
         {
             // Populate gaze buffers
@@ -894,7 +918,7 @@ namespace Jetpack2.FlightProcessing
             if (_gazebuffer.TryGetDominantDirection_Target_Debug(out Vector3 direction_yawpitch_target, out confidence, out float sphere_radius, out Vector3 sphere_origin, dirs.pos))
                 confidence_yawpitch_target = confidence;
 
-            var yawpitch = PullYawToLook2.GetFinalConfidence(direction_yawpitch_offset, confidence_yawpitch_offset, direction_yawpitch_target, confidence_yawpitch_target);
+            var yawpitch = GetFinalConfidence(direction_yawpitch_offset, confidence_yawpitch_offset, direction_yawpitch_target, confidence_yawpitch_target);
 
             Vector3 dir_yaw = Vector3.right;
             Vector3 dir_pitch = Vector3.down;
@@ -927,66 +951,187 @@ namespace Jetpack2.FlightProcessing
             };
         }
 
+        private static (Vector3 direction, float? confidence) GetFinalConfidence(Vector3 direction_offset, float? confidence_offset, Vector3 direction_target, float? confidence_target)
+        {
+            const float RETURN_CONFIDENCE_THRESHOLD = 0.7f;
+            float THRESHOLD_OFFSET = JetpackScript.GazeBuffer_GazeConfidence_Offset;
+            float THRESHOLD_TARGET = JetpackScript.GazeBuffer_GazeConfidence_Target;
+
+            if (confidence_offset == null && confidence_target == null)
+                return (Vector3.zero, null);
+
+            if (confidence_offset != null && confidence_target != null)
+            {
+                float scaledcon_offset = GetScaledConfidence(confidence_offset.Value, THRESHOLD_OFFSET, RETURN_CONFIDENCE_THRESHOLD);
+                float scaledcon_target = GetScaledConfidence(confidence_target.Value, THRESHOLD_TARGET, RETURN_CONFIDENCE_THRESHOLD);
+
+                var combined = GetFinalConfidence_Combined(direction_offset, scaledcon_offset, direction_target, scaledcon_target);
+
+                return (combined.direction, combined.confidence);
+            }
+
+            if (confidence_offset != null)
+                return (direction_offset, GetScaledConfidence(confidence_offset.Value, THRESHOLD_OFFSET, RETURN_CONFIDENCE_THRESHOLD));
+
+            if (confidence_target != null)
+                return (direction_target, GetScaledConfidence(confidence_target.Value, THRESHOLD_TARGET, RETURN_CONFIDENCE_THRESHOLD));
+
+            throw new ApplicationException($"Execution shouldn't get here: {confidence_offset}, {confidence_target}");
+        }
+
+        /// <summary>
+        /// Does an average of the two directions, weighted by confidence percents.  So if one is high confidence and one
+        /// is low, the average will point mostly along the high confidence direction, even if they are in opposite directions
+        /// 
+        /// The returned confidence favors the input with higher confidence.  If both are similar confidence, then normalized
+        /// dot product has a strong influence over final (two strong opinions in opposing directions make a weak final opinion
+        /// in the avg direction)
+        /// </summary>
+        private static (Vector3 direction, float confidence) GetFinalConfidence_Combined(Vector3 dir1, float con1, Vector3 dir2, float con2)
+        {
+            // Clamping shouldn't be needed, but it ensures no odd bugs pop up
+            con1 = Mathf.Clamp01(con1);
+            con2 = Mathf.Clamp01(con2);
+
+            // Compute normalized dot product (alignment 0 to 1)
+            float dot = Vector3.Dot(dir1, dir2);
+            float norm_dot = (dot + 1) / 2;
+
+            float c_min = Mathf.Min(con1, con2);
+            float c_max = Mathf.Max(con1, con2);
+
+            float c_avg = (c_min + c_max) / 2;
+            float weight = c_min / c_max;
+
+            float c_final = weight * norm_dot * c_avg + (1 - weight) * c_max;
+
+            // Get weighted average of directions
+            Vector3 dir_combined = (dir1 * con1 + dir2 * con2) / (con1 + con2);
+            dir_combined = dir_combined.normalized;
+
+            return (dir_combined, c_final);
+        }
+
+        private static float GetScaledConfidence(float value, float from_threshold, float to_threshold)
+        {
+            if (value >= from_threshold)
+            {
+                // .95 of .9 is 50% from .9 to 1
+                float percent = (value - from_threshold) / (1 - from_threshold);
+                return to_threshold + (1 - to_threshold) * percent;
+            }
+            else
+            {
+                float percent = value / from_threshold;
+                return to_threshold * percent;
+            }
+        }
+
+        #endregion
+        #region Private Methods - dead zones
+
         private static DeadzonePercents GetDeadzonePercents(Directions dirs, GazeResults gaze)
         {
             return new DeadzonePercents
             {
                 yaw = gaze.yawpitch_confidence != null ?
-                    PullYawToLook2.GetDeadZonePercent(dirs.body_forward, gaze.yaw_direction, JetpackScript.YawToLook2_DeadZone_Full, JetpackScript.YawToLook2_DeadZone_Start) :
+                    GetDeadZonePercent(dirs.body_forward, gaze.yaw_direction, JetpackScript.YawToLook2_DeadZone_Full, JetpackScript.YawToLook2_DeadZone_Start) :
                     1,
 
                 pitch = gaze.yawpitch_confidence != null ?
-                    PullYawToLook2.GetDeadZonePercent(dirs.body_forward, gaze.pitch_direction, JetpackScript.RotToLook_DeadZone_Pitch_Full, JetpackScript.RotToLook_DeadZone_Pitch_Start) :
+                    GetDeadZonePercent(dirs.body_forward, gaze.pitch_direction, JetpackScript.RotToLook_DeadZone_Pitch_Full, JetpackScript.RotToLook_DeadZone_Pitch_Start) :
                     1,
 
                 roll = gaze.roll_confidence != null ?
-                    PullYawToLook2.GetDeadZonePercent(dirs.body_up, gaze.roll_direction, JetpackScript.RotToLook_DeadZone_Roll_Full, JetpackScript.RotToLook_DeadZone_Roll_Start) :
+                    GetDeadZonePercent(dirs.body_up, gaze.roll_direction, JetpackScript.RotToLook_DeadZone_Roll_Full, JetpackScript.RotToLook_DeadZone_Roll_Start) :
                     1,
             };
         }
 
-        private void TrimForwardUp(ref Vector3 forward, ref Vector3 up)
+        private static float GetDeadZonePercent(Vector3 forward, Vector3 direction, float dot_full, float dot_start)
         {
-            // Yaw Trim
-            if (!JetpackScript.YawToLook2_ForwardTrimDegrees_Yaw.IsNearZero())
-            {
-                Quaternion yaw = Quaternion.AngleAxis(JetpackScript.YawToLook2_ForwardTrimDegrees_Yaw, up);
+            float dot = Vector3.Dot(forward, direction);
 
-                // Apply Yaw Rotation to both forward and up
-                forward = yaw * forward;
-                up = yaw * up;
+            if (dot >= dot_full)      // using > because 1 is directly looking along forward, down to -1 which is directly away
+                return 1;       // desired direction is in the dead zone (too close to forward)
+
+            // if between start and full deadzones, run it through 1-cos so that there are no sharp speed changes
+            if (dot >= dot_start)
+            {
+                float gap = dot_full - dot_start;
+                float percent_gap = (dot - dot_start) / gap;
+                return (1 - Mathf.Cos(Mathf.PI * percent_gap)) / 2;
             }
 
-            // Pitch Trim
-            if (!JetpackScript.RotToLook_ForwardTrimDegrees_Pitch.IsNearZero())
+            return 0;
+        }
+
+        #endregion
+        #region Private Methods - capicitors
+
+        private static float UpdateCapacitor(float capacitor, Vector3 target, Vector3 look, float? confidence, float deadzone_percent, float elapsed_seconds)
+        {
+            float upper_dot = JetpackScript.YawToLook_Capacitor_UpperDot;
+            float lower_dot = JetpackScript.YawToLook_Capacitor_LowerDot;
+            float bottom_dot = JetpackScript.YawToLook_Capacitor_BottomDot;
+
+            float discharge_speed = JetpackScript.YawToLook_Capacitor_DischargeSpeed;
+
+            // Calculate alignment between target and look directions
+            float dot = Vector3.Dot(target, look);
+
+            var retVal = capacitor;
+
+            // Determine which region we're in
+            if (confidence == null || deadzone_percent.IsNearValue(1))
             {
-                Vector3 right = Vector3.Cross(forward, up);
-                Quaternion pitch = Quaternion.AngleAxis(JetpackScript.RotToLook_ForwardTrimDegrees_Pitch, right);
-
-                // Apply Pitch Rotation to both forward and up
-                forward = pitch * forward;
-                up = pitch * up;
+                // DISCHARGE REGION: special cases, discharge at max rate
+                retVal -= discharge_speed * (float)elapsed_seconds;
             }
+            else if (dot > upper_dot)
+            {
+                // CHARGE REGION: dot > upper threshold
+                // Normalize to 0-1 range based on available threshold window
+                float chargeFactor = (dot - upper_dot) / (1f - upper_dot);
+                float chargeRate = JetpackScript.YawToLook_Capacitor_ChargeSpeed * Mathf.Pow(chargeFactor, JetpackScript.YawToLook_Capacitor_ChargePower);
+                retVal += chargeRate * confidence.Value * (1 - deadzone_percent) * (float)elapsed_seconds;
+            }
+            else if (dot < bottom_dot)
+            {
+                // DISCHARGE REGION: max amount
+                retVal -= discharge_speed * (float)elapsed_seconds;
+            }
+            else if (dot < lower_dot)
+            {
+                // DISCHARGE REGION: dot < lower threshold
+                // Normalize to 0-1 range based on threshold position
+                float decayFactor = UtilityMath.GetScaledValue_Capped(0, 1, bottom_dot, lower_dot, dot);
+                float decayRate = discharge_speed * Mathf.Pow(decayFactor, JetpackScript.YawToLook_Capacitor_DischargePower);
+
+                float deadzone_discharge = deadzone_percent > 0 ?
+                    discharge_speed * deadzone_percent :
+                    0;
+
+                float final_rate = Mathf.Clamp(decayRate + deadzone_discharge, 0, discharge_speed);
+
+                // NOTE: not sure if this should consider confidence percent.  I can't think of why it would matter when discharging
+                retVal -= final_rate * (float)elapsed_seconds;
+            }
+            else if (deadzone_percent > 0)
+            {
+                // DISCHARGE REGION: they are in neutral zone, but also in a partial deadzone with forward.  discharge by that deadzone percent
+                retVal -= discharge_speed * deadzone_percent * (float)elapsed_seconds;
+            }
+            // else: NEUTRAL WINDOW - capacitor remains unchanged
+
+            // Enforce capacitor bounds
+            retVal = Mathf.Clamp(retVal, 0f, 1f);
+
+            return retVal;
         }
 
-        /// <summary>
-        /// Projects head_up into the plane of body_up and body_right
-        /// </summary>
-        private static (Vector3 up, Vector3 forward) GetProjecteHeadUp(Vector3 head_up, Vector3 head_forward, Vector3 body_forward)
-        {
-            var quat = Quaternion.FromToRotation(head_forward, body_forward);
-            return (quat * head_up, quat * head_forward);
-        }
-
-        private static (Vector3 body_up, Vector3 head_up, Quaternion quat) RotateUps(Vector3 body_forward, Vector3 body_up, Vector3 head_up)
-        {
-            DoubleVector from = new DoubleVector(body_forward, body_up);
-            DoubleVector to = new DoubleVector(new Vector3(0, 0, 1), new Vector3(0, 1, 0));
-
-            Quaternion quat = Math3D.GetRotation(from, to);
-
-            return (quat * body_up, quat * head_up, quat);
-        }
+        #endregion
+        #region Private Methods - turn rate
 
         // Version 1 doesn't bother with angular momentum
 
@@ -1014,6 +1159,9 @@ namespace Jetpack2.FlightProcessing
 
             return (rot_axis, speed);
         }
+
+        #endregion
+        #region Private Methods - turn player
 
         private void TurnPlayer((Vector3 axis, float degrees_per_sec)? turnrate_yaw, (Vector3 axis, float degrees_per_sec)? turnrate_pitch, (Vector3 axis, float degrees_per_sec)? turnrate_roll, Vector3 center_player, float elapsed_seconds)
         {
@@ -1062,6 +1210,33 @@ namespace Jetpack2.FlightProcessing
                 return;
 
             _rotator.RotateAround(center_player, turnrate.Value.axis, turnrate.Value.degrees_per_sec, elapsed_seconds);
+        }
+
+        #endregion
+        #region Private Methods
+
+        private void TrimForwardUp(ref Vector3 forward, ref Vector3 up)
+        {
+            // Yaw Trim
+            if (!JetpackScript.YawToLook2_ForwardTrimDegrees_Yaw.IsNearZero())
+            {
+                Quaternion yaw = Quaternion.AngleAxis(JetpackScript.YawToLook2_ForwardTrimDegrees_Yaw, up);
+
+                // Apply Yaw Rotation to both forward and up
+                forward = yaw * forward;
+                up = yaw * up;
+            }
+
+            // Pitch Trim
+            if (!JetpackScript.RotToLook_ForwardTrimDegrees_Pitch.IsNearZero())
+            {
+                Vector3 right = Vector3.Cross(forward, up);
+                Quaternion pitch = Quaternion.AngleAxis(JetpackScript.RotToLook_ForwardTrimDegrees_Pitch, right);
+
+                // Apply Pitch Rotation to both forward and up
+                forward = pitch * forward;
+                up = pitch * up;
+            }
         }
 
         #endregion
