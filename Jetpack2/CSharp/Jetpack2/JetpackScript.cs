@@ -8,7 +8,6 @@ using System;
 using System.IO;
 using System.Reflection;
 using ThunderRoad;
-using ThunderRoad.AI.Decorator;
 using UnityEngine;
 
 
@@ -790,13 +789,6 @@ namespace Jetpack2
         private VisualizePlayerPoints _visualizePlayerPoints = new VisualizePlayerPoints();
         private ScaleAdjuster _scaleAdjuster = new ScaleAdjuster();
 
-
-
-        private ConfigData _config = null;
-
-
-
-
         private bool _isPlayerSpawned = false;
 
         public override void ScriptLoaded(ModManager.ModData modData)
@@ -813,8 +805,8 @@ namespace Jetpack2
             Player.onSpawn += Player_onSpawn;
             Player.onDespawn += Player_onDespawn;
 
-            TryLoadConfig();
-            TryLoadConfig2();
+            //TryLoadConfig();
+            //TryLoadConfig2();
         }
 
         private void Player_onSpawn(Player player)
@@ -953,6 +945,8 @@ namespace Jetpack2
             _debugStats.AddEntry("stick right", InputUtil.GetRightStick().ToStringSignificantDigits(2));
         }
 
+        #region debug research
+
         private static void TryLoadConfig()
         {
             try
@@ -973,13 +967,30 @@ namespace Jetpack2
                 Debug.Log($"files: {string.Join(Environment.NewLine, files)}");     // this finds the files in that folder
 
 
+
+                // This seems to be the way to get at custom files in the mod folder.  But json configs should be handled
+                // with how TryLoadConfig2 does it
+
+                // D:\SteamLibrary\steamapps\common\Blade & Sorcery\BladeAndSorcery_Data\StreamingAssets\Mods\Jetpack2\catalog_Jetpack2.hash
+                // D:\SteamLibrary\steamapps\common\Blade & Sorcery\BladeAndSorcery_Data\StreamingAssets\Mods\Jetpack2\catalog_Jetpack2.json
+                // D:\SteamLibrary\steamapps\common\Blade & Sorcery\BladeAndSorcery_Data\StreamingAssets\Mods\Jetpack2\config.json
+                // D:\SteamLibrary\steamapps\common\Blade & Sorcery\BladeAndSorcery_Data\StreamingAssets\Mods\Jetpack2\Jetpack2.dll
+                // D:\SteamLibrary\steamapps\common\Blade & Sorcery\BladeAndSorcery_Data\StreamingAssets\Mods\Jetpack2\jetpack2assets_assets_all.bundle
+                // D:\SteamLibrary\steamapps\common\Blade & Sorcery\BladeAndSorcery_Data\StreamingAssets\Mods\Jetpack2\manifest.json
+                // D:\SteamLibrary\steamapps\common\Blade & Sorcery\BladeAndSorcery_Data\StreamingAssets\Mods\Jetpack2\PerfectlyNormalBaS.dll
                 files = Directory.GetFiles(".");
-                Debug.Log($"files (.): {string.Join(Environment.NewLine, files)}");     // this finds the files in that folder
+                Debug.Log($"files (.): {string.Join(Environment.NewLine, files)}");
 
 
+
+
+
+
+                // D:\SteamLibrary\steamapps\common\Blade & Sorcery
                 Debug.Log($"Directory.GetCurrentDirectory(): {Directory.GetCurrentDirectory()}");
 
 
+                // D:\SteamLibrary\steamapps\common\Blade & Sorcery\BladeAndSorcery_Data\Managed
                 string test = Directory.GetParent(typeof(object).Module.FullyQualifiedName).FullName;
                 Debug.Log($"Directory.GetParent(typeof(object).Module.FullyQualifiedName).FullName: {test}");
 
@@ -997,6 +1008,9 @@ namespace Jetpack2
         {
             try
             {
+                ConfigData _config = null;      // pretending this would be a member variable
+
+
                 // from inside ConfigData.Init...
                 // this happens early in game loading, so no need to instantiate, just use static.  intance is probably referenced by asking Catalog for it (or some other b&s static dictionary)
                 // ConfigData init.  testInt: 52
@@ -1018,5 +1032,7 @@ namespace Jetpack2
                 Debug.Log(ex.ToString());
             }
         }
+
+        #endregion
     }
 }
