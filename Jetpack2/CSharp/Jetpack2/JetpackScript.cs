@@ -5,7 +5,10 @@ using Jetpack2.Models;
 using Jetpack2.Scanning;
 using PerfectlyNormalBaS;
 using System;
+using System.IO;
+using System.Reflection;
 using ThunderRoad;
+using ThunderRoad.AI.Decorator;
 using UnityEngine;
 
 
@@ -60,90 +63,69 @@ namespace Jetpack2
     {
         // https://kospy.github.io/BasSDK/Components/Guides/ModOptions/#how-do-i-use-modoptions
 
-        #region Mod Options
 
         private const string CATEGORY_ACTIVATE = "Activation / Deactivation";
-        private const string CATEGORY_CONFINEDAREA = "Confined Area";
-        private const string CATEGORY_OBSTACLEAVOIDANCE = "Obstacle Avoidance";
-        private const string CATEGORY_REPELGROUND = "Repel Ground";
+        private const string CATEGORY_TOGGLEBEHAVIORS = "Toggle Behaviors";
         private const string CATEGORY_FLIGHTPROPS = "Flight Properties";
+
+        private const string CATEGORY_ROTATELOOK_GAZEBUFFER = "Rotate Toward Look - Gaze Buffer";
+        private const string CATEGORY_ROTATELOOK_CAPACITOR = "Rotate Toward Look - Capacitor";
+        private const string CATEGORY_ROTATELOOK_LOOKZONES = "Rotate Toward Look - Look Zones";
+        private const string CATEGORY_ROTATELOOK_IK = "Rotate Toward Look - IK Rig";
+
         private const string CATEGORY_SOUNDS = "Sounds";        // TODO: add this
-        private const string CATEGORY_GAZEBUFFER = "Gaze Buffer";
-        private const string CATEGORY_LOOKYAW = "Yaw Toward Look (old)";
-        private const string CATEGORY_LOOKYAW2 = "Yaw Toward Look";
-        private const string CATEGORY_ROTATELOOK = "Rotate Toward Look";
         private const string CATEGORY_SCALE = "Player Size";
         private const string CATEGORY_VISIBILITY = "Player Visibility";
         private const string CATEGORY_DEBUGDRAWING = "Debug Drawing";
 
+
         private const int ORDER_ACTIVATE = 1;
-        private const int ORDER_CONFINEDAREA = 2;
-        private const int ORDER_OBSTACLEAVOIDANCE = 3;
-        private const int ORDER_REPELGROUND = 4;
-        private const int ORDER_FLIGHTPROPS = 5;
-        private const int ORDER_SOUNDS = 6;
-        private const int ORDER_GAZEBUFFER = 7;
-        private const int ORDER_LOOKYAW = 8;
-        private const int ORDER_LOOKYAW2 = 9;
-        private const int ORDER_ROTATELOOK = 10;
-        private const int ORDER_SCALE = 11;
-        private const int ORDER_VISIBILITY = 12;
-        private const int ORDER_DEBUGDRAWING = 13;
+        private const int ORDER_TOGGLEBEHAVIORS = 2;
+        private const int ORDER_FLIGHTPROPS = 3;
+
+        private const int ORDER_ROTATELOOK_GAZEBUFFER = 4;
+        private const int ORDER_ROTATELOOK_CAPACITOR = 5;
+        private const int ORDER_ROTATELOOK_LOOKZONES = 6;
+        private const int ORDER_ROTATELOOK_IK = 7;
+
+        private const int ORDER_SOUNDS = 50;
+        private const int ORDER_SCALE = 51;
+        private const int ORDER_VISIBILITY = 52;
+        private const int ORDER_DEBUGDRAWING = 53;
+
+
+
+
+        private const string CATEGORY_CONFINEDAREA = "Confined Area";
+        private const string CATEGORY_OBSTACLEAVOIDANCE = "Obstacle Avoidance";
+        private const string CATEGORY_REPELGROUND = "Repel Ground";
+        private const string CATEGORY_GAZEBUFFER = "Gaze Buffer";
+        private const string CATEGORY_LOOKYAW = "Yaw Toward Look (old)";
+        private const string CATEGORY_LOOKYAW2 = "Yaw Toward Look";
+        private const string CATEGORY_ROTATELOOK = "Rotate Toward Look";
+
+        private const int ORDER_CONFINEDAREA = 22;
+        private const int ORDER_OBSTACLEAVOIDANCE = 23;
+        private const int ORDER_REPELGROUND = 24;
+        private const int ORDER_GAZEBUFFER = 27;
+        private const int ORDER_LOOKYAW = 28;
+        private const int ORDER_LOOKYAW2 = 29;
+        private const int ORDER_ROTATELOOK = 30;
+
+
+        #region Mod Options -- ORIG
+
 
         //[ModOptionTextDisplay("description of section", null)]
         //[ModOption("Info")]
         //private static void label1(string value) { }
 
-        [ModOption(name: "Use Jetpack Mod", tooltip: "Turns on/off the Jetpack mod")]
-        public static bool UseJetpackMod = true;
 
-        // ******************** Activation / Deactivation ********************
 
-        public static ModOptionString[] FlightActivation_Options = new[]
-        {
-            new ModOptionString("Hold Up (right stick)", null, FlightActivationType.HoldUp.ToString()),
-            //new ModOptionString("Hold Jump", null, FlightActivationType.HoldJump.ToString()),     // TODO: check the difference between jump on click and jump on up
-            //new ModOptionString("Double Jump", null, FlightActivationType.DoubleJump.ToString()),
-            new ModOptionString("Double Click Thumbpad", null, FlightActivationType.DoubleClick_Thumbpad.ToString()),
-            new ModOptionString("Hold The Bird", null, FlightActivationType.HoldBird.ToString()),     // 🖕
-            new ModOptionString("Hold Peace Sign", null, FlightActivationType.HoldPeace.ToString()),      // ✌️
-            new ModOptionString("Hold Devil Horns", null, FlightActivationType.HoldDevilHorns.ToString()),        // 🤘
-            new ModOptionString("Hold Rock On", null, FlightActivationType.HoldRockOn.ToString()),        // 🤟
-        };
 
-        private static string _flightActivation = FlightActivationType.HoldUp.ToString();
-        private static FlightActivationType _flightActivation_cast = FlightActivationType.HoldUp;
+        #region Confined Area
 
-        [ModOptionCategory(CATEGORY_ACTIVATE, ORDER_ACTIVATE)]
-        [ModOption(name: "Flight Activation/Deactivation", tooltip: "How to activate flight (some options will also be used to deactivate)\n\nThe hold options are for controllers that have finger tracking", valueSourceName: nameof(FlightActivation_Options), order = 0)]
-        public static string FlightActivation
-        {
-            get
-            {
-                return _flightActivation;
-            }
-            set
-            {
-                _flightActivation = value;
-
-                if (!Enum.TryParse<FlightActivationType>(value, out _flightActivation_cast))
-                    Debug.Log($"Couldn't parse FlightActivationType: {value}.  Leaving it as {_flightActivation_cast}");
-            }
-        }
-
-        [ModOptionCategory(CATEGORY_ACTIVATE, ORDER_ACTIVATE)]
-        [ModOption(name: "Stop flying on ground", tooltip: "Whether to stop flight when on the ground", order = 1)]
-        public static bool DeactivateOnGround = true;
-
-        [ModOptionCategory(CATEGORY_ACTIVATE, ORDER_ACTIVATE)]
-        [ModOption(name: "Require Both Hands", tooltip: "Options that are double click or gestures can be required to be done at the same time by both hands or just one\n\nSingle hand is easier but may cause misreads", order = 2)]
-        public static bool RequireBothHands = true;
-
-        // ******************** Confined Area ********************
-
-        [ModOptionCategory(CATEGORY_CONFINEDAREA, ORDER_CONFINEDAREA)]
-        [ModOption(name: "Should Detect Confined Area", tooltip: "Slows down accelerations when in tight spaces", order = 0)]
-        public static bool ShouldDetectConfinedArea = true;
+        // these should be json
 
         [ModOptionCategory(CATEGORY_CONFINEDAREA, ORDER_CONFINEDAREA)]
         [ModOptionSlider]
@@ -153,21 +135,14 @@ namespace Jetpack2
 
         [ModOptionCategory(CATEGORY_CONFINEDAREA, ORDER_CONFINEDAREA)]
         [ModOptionSlider]
-        [ModOption(name: "Gain Factor", tooltip: "Multiplied by delta time.  Larger values adjust final blocked percent faster", order = 2)]
-        [ModOptionFloatValues(0.5f, 4f, 0.05f)]
-        public static float ConfinedArea_GainFactor = 1.75f;
-
-        [ModOptionCategory(CATEGORY_CONFINEDAREA, ORDER_CONFINEDAREA)]
-        [ModOptionSlider]
         [ModOption(name: "Falloff Power", tooltip: "Ray hit disance / Max Distance is run through a bell curve dropoff.  Higher power makes it drop off faster", order = 3)]
         [ModOptionFloatValues(0f, 3f, 0.05f)]
         public static float ConfinedArea_FalloffPower = 1f;
 
-        // ******************** Obstacle Avoidance ********************
+        #endregion
+        #region Obstacle Avoidance
 
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
-        [ModOption(name: "Should Avoid Obstacles", tooltip: "Will push the player away from obstacles when moving toward them (no effect if stopped near obstacles)", order = 0)]
-        public static bool ShouldAvoidObstacles = true;
+        // put in json
 
         [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
         [ModOptionSlider]
@@ -236,11 +211,10 @@ namespace Jetpack2
         [ModOptionFloatValues(0, 1, 0.05f)]
         public static float ObstAvoid_DontFight_DotThreshold_Full = 0.7f;
 
-        // ******************** Repel Ground ********************
+        #endregion
+        #region Repel Ground
 
-        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
-        [ModOption(name: "Should Repel Ground", tooltip: "Will push the player upward from the ground requiring deliberate down pressure on the thumstick to touch the ground", order = 0)]
-        public static bool ShouldRepelGround = true;
+        // put in json
 
 
         // for now, just treat this like a percent against the other accels
@@ -316,7 +290,131 @@ namespace Jetpack2
         [ModOptionFloatValues(0, 1, 0.02f)]
         public static float RepelGround_UpSpeed_ZeroAccel = 0.1f;
 
-        // ******************** Flight Properties ********************
+        #endregion
+        #region dead zone
+
+        // put in json
+
+        // these starts should be a percent or fixed offset from full
+
+        [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
+        [ModOptionSlider]
+        [ModOption(name: "Dead Zone Dot Product (start)", tooltip: "How far from center before it starts turning at max rate", order = 2)]
+        [ModOptionFloatValues(0.9f, 1, 0.001f)]
+        public static float YawToLook2_DeadZone_Start = 0.98f;
+
+        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
+        [ModOptionSlider]
+        [ModOption(name: "Dead Zone Dot Product - roll (start)", tooltip: "How far from center before it starts turning at max rate", order = 3)]
+        [ModOptionFloatValues(0.9f, 1, 0.001f)]
+        public static float RotToLook_DeadZone_Roll_Start = 0.985f;
+
+        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
+        [ModOptionSlider]
+        [ModOption(name: "Dead Zone Dot Product - pitch (start)", tooltip: "How far from center before it starts turning at max rate", order = 5)]
+        [ModOptionFloatValues(0.9f, 1, 0.001f)]
+        public static float RotToLook_DeadZone_Pitch_Start = 0.98f;
+
+        #endregion
+
+
+
+
+
+        #endregion
+        #region Mod Options
+
+        [ModOption(name: "Use Jetpack Mod", tooltip: "Turns on/off the Jetpack mod")]
+        public static bool UseJetpackMod = true;
+
+        #region Activation / Deactivation
+
+        public static ModOptionString[] FlightActivation_Options = new[]
+        {
+            new ModOptionString("Hold Up (right stick)", null, FlightActivationType.HoldUp.ToString()),
+            //new ModOptionString("Hold Jump", null, FlightActivationType.HoldJump.ToString()),     // TODO: check the difference between jump on click and jump on up
+            //new ModOptionString("Double Jump", null, FlightActivationType.DoubleJump.ToString()),
+            new ModOptionString("Double Click Thumbpad", null, FlightActivationType.DoubleClick_Thumbpad.ToString()),
+            new ModOptionString("Hold The Bird", null, FlightActivationType.HoldBird.ToString()),     // 🖕
+            new ModOptionString("Hold Peace Sign", null, FlightActivationType.HoldPeace.ToString()),      // ✌️
+            new ModOptionString("Hold Devil Horns", null, FlightActivationType.HoldDevilHorns.ToString()),        // 🤘
+            new ModOptionString("Hold Rock On", null, FlightActivationType.HoldRockOn.ToString()),        // 🤟
+        };
+
+        private static string _flightActivation = FlightActivationType.HoldUp.ToString();
+        private static FlightActivationType _flightActivation_cast = FlightActivationType.HoldUp;
+
+        [ModOptionCategory(CATEGORY_ACTIVATE, ORDER_ACTIVATE)]
+        [ModOption(name: "Flight Activation/Deactivation", tooltip: "How to activate flight (some options will also be used to deactivate)\n\nThe hold options are for controllers that have finger tracking", valueSourceName: nameof(FlightActivation_Options), order = 0)]
+        public static string FlightActivation
+        {
+            get
+            {
+                return _flightActivation;
+            }
+            set
+            {
+                _flightActivation = value;
+
+                if (!Enum.TryParse<FlightActivationType>(value, out _flightActivation_cast))
+                    Debug.Log($"Couldn't parse FlightActivationType: {value}.  Leaving it as {_flightActivation_cast}");
+            }
+        }
+
+        [ModOptionCategory(CATEGORY_ACTIVATE, ORDER_ACTIVATE)]
+        [ModOption(name: "Stop flying on ground", tooltip: "Whether to stop flight when on the ground", order = 1)]
+        public static bool DeactivateOnGround = true;
+
+        [ModOptionCategory(CATEGORY_ACTIVATE, ORDER_ACTIVATE)]
+        [ModOption(name: "Require Both Hands", tooltip: "Options that are double click or gestures can be required to be done at the same time by both hands or just one\n\nSingle hand is easier but may cause misreads", order = 2)]
+        public static bool RequireBothHands = true;
+
+        #endregion
+
+        #region Toggle Behaviors
+
+        [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
+        [ModOption(name: "Should Detect Confined Area", tooltip: "Slows down accelerations when in tight spaces", order = 0)]
+        public static bool ShouldDetectConfinedArea = true;
+
+        // keep the idea of a slider, but use more sensible min/max range (like 0 to 100)
+
+        [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
+        [ModOptionSlider]
+        [ModOption(name: "Gain Factor", tooltip: "Multiplied by delta time.  Larger values adjust final blocked percent faster", order = 1)]
+        [ModOptionFloatValues(0.5f, 4f, 0.05f)]
+        public static float ConfinedArea_GainFactor = 1.75f;
+
+
+        [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
+        [ModOption(name: "Should Avoid Obstacles", tooltip: "Will push the player away from obstacles when moving toward them (no effect if stopped near obstacles)", order = 2)]
+        public static bool ShouldAvoidObstacles = true;
+
+        [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
+        [ModOption(name: "Should Repel Ground", tooltip: "Will push the player upward from the ground requiring deliberate down pressure on the thumstick to touch the ground", order = 3)]
+        public static bool ShouldRepelGround = true;
+
+        [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
+        [ModOption(name: "Should Rotate Toward Look - yaw", tooltip: "Will rotate the player toward the direction looking", order = 4)]
+        public static bool ShouldRotateToLook_Yaw = false;
+
+        [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
+        [ModOption(name: "Should Rotate Toward Look - pitch", tooltip: "Will rotate the player toward the direction looking", order = 5)]
+        public static bool ShouldRotateToLook_Pitch = false;
+
+        [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
+        [ModOption(name: "Should Rotate Toward Look - roll", tooltip: "Will rotate the player toward the direction looking", order = 6)]
+        public static bool ShouldRotateToLook_Roll = false;
+
+        [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
+        [ModOptionSlider]
+        [ModOption(name: "rot to look: Max Turn Rate Degrees", tooltip: "Degrees per second", order = 7)]
+        [ModOptionFloatValues(1, 360, 1f)]
+        public static float RotateToLook_TurnRate = 60;
+
+        #endregion
+
+        #region Flight Properties
 
         [ModOptionCategory(CATEGORY_FLIGHTPROPS, ORDER_FLIGHTPROPS)]
         [ModOptionSlider]
@@ -342,39 +440,47 @@ namespace Jetpack2
         [ModOptionFloatValues(0, 18, 0.1f)]
         public static float GravitySetting = 0f;
 
-        // ******************** Gaze Buffer ********************
+        #endregion
 
-        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        #region Rotate To Look - gaze buffer
+
+
+        // gaze buffer can be reduced to buffer time, looseness of confidence
+
+        // need a snap look detector (large fast sweep away from body forward)
+
+
+        [ModOptionCategory(CATEGORY_ROTATELOOK_GAZEBUFFER, ORDER_ROTATELOOK_GAZEBUFFER)]
         [ModOptionSlider]
         [ModOption(name: "Buffer Max Time (seconds)", tooltip: "How long to keep previous look directions", order = 1)]
         [ModOptionFloatValues(0, 3, 0.01f)]
         public static float GazeBuffer_MaxSeconds = 1.1f;
 
-        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_GAZEBUFFER, ORDER_ROTATELOOK_GAZEBUFFER)]
         [ModOptionSlider]
         [ModOption(name: "Buffer Max Count", tooltip: "Max size of buffer", order = 2)]
         [ModOptionIntValues(0, 500, 20)]
         public static int GazeBuffer_MaxCount = 60;
 
-        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_GAZEBUFFER, ORDER_ROTATELOOK_GAZEBUFFER)]
         [ModOptionSlider]
         [ModOption(name: "Gaze Confidence (direct)", tooltip: "The average of look directions.  This is the min confidence before the look direction is considered", order = 3)]
         [ModOptionFloatValues(0, 1, 0.01f)]
         public static float GazeBuffer_GazeConfidence_Direct = 0.7f;
 
-        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_GAZEBUFFER, ORDER_ROTATELOOK_GAZEBUFFER)]
         [ModOptionSlider]
         [ModOption(name: "Gaze Confidence (offset)", tooltip: "The average of look directions.  This is the min confidence before the look direction is considered", order = 4)]
         [ModOptionFloatValues(0, 1, 0.01f)]
         public static float GazeBuffer_GazeConfidence_Offset = 0.7f;
 
-        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_GAZEBUFFER, ORDER_ROTATELOOK_GAZEBUFFER)]
         [ModOptionSlider]
         [ModOption(name: "Gaze Confidence (target)", tooltip: "The average of look directions.  This is the min confidence before the look direction is considered", order = 5)]
         [ModOptionFloatValues(0, 1, 0.01f)]
         public static float GazeBuffer_GazeConfidence_Target = 0.9f;
 
-        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_GAZEBUFFER, ORDER_ROTATELOOK_GAZEBUFFER)]
         [ModOptionSlider]
         [ModOption(name: "Gaze Confidence StdDev Decay Mult", tooltip: "Does an exponential decay against standard deviation of dot products with avg.  Large number makes it require tighter groupings", order = 6)]
         [ModOptionFloatValues(1, 300, 1)]
@@ -385,163 +491,134 @@ namespace Jetpack2
         // MinAllowedDistance = -0.5721 * GazeBuffer_GazeTarget_SpacingRatio + 0.8997
         //
         // This will produce between 1 and 2 spheres when calling GetRelevantSphereOrigins.  Radius doesn't have much influence
-        //[ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        //[ModOptionCategory(CATEGORY_ROTATELOOK_GAZEBUFFER, ORDER_ROTATELOOK_GAZEBUFFER)]
         //[ModOptionSlider]
         //[ModOption(name: "Gaze Sphere Min Dist to Surface", tooltip: "The minimum allowed distance between head position and the surface of a sphere", order = 7)]
         //[ModOptionFloatValues(0.25f, 2.5f, 0.05f)]
         //public static float GazeBuffer_GazeTarget_MinAllowedDistance = 1f;
 
 
-        //[ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        //[ModOptionCategory(CATEGORY_ROTATELOOK_GAZEBUFFER, ORDER_ROTATELOOK_GAZEBUFFER)]
         //[ModOptionSlider]
         //[ModOption(name: "Gaze Sphere Spacing Ratio of Radius", tooltip: "How far apart spheres should be spaced", order = 8)]
         //[ModOptionFloatValues(0.65f, 0.85f, 0.01f)]
         //public static float GazeBuffer_GazeTarget_SpacingRatio = 0.75f;
 
 
-        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_GAZEBUFFER, ORDER_ROTATELOOK_GAZEBUFFER)]
         [ModOptionSlider]
         [ModOption(name: "Gaze Sphere Min Radius", tooltip: "The smallest radius (when speed is zero)", order = 9)]
         [ModOptionFloatValues(2, 9, 0.25f)]
         public static float GazeBuffer_GazeTarget_RadiiForSpeed_Min = 5f;
 
-        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_GAZEBUFFER, ORDER_ROTATELOOK_GAZEBUFFER)]
         [ModOptionSlider]
         [ModOption(name: "Gaze Sphere Radius Speed Ratio", tooltip: "Speed to base radius scaling factor", order = 10)]
         [ModOptionFloatValues(0.1f, 2, 0.05f)]
         public static float GazeBuffer_GazeTarget_RadiiForSpeed_SpeedRatio = 0.75f;
 
-        [ModOptionCategory(CATEGORY_GAZEBUFFER, ORDER_GAZEBUFFER)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_GAZEBUFFER, ORDER_ROTATELOOK_GAZEBUFFER)]
         [ModOptionSlider]
         [ModOption(name: "Gaze Sphere Radius Step Mult", tooltip: "The size of the next largest radius (multiplied by base radius)", order = 11)]
         [ModOptionFloatValues(1.5f, 5, 0.1f)]
         public static float GazeBuffer_GazeTarget_RadiiForSpeed_StepMult = 3;
 
-        // ******************** Yaw Toward Look ********************
+        #endregion
+        #region Rotate To Look - capacitor
 
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
-        [ModOption(name: "Should Yaw Toward Look", tooltip: "Will rotate the player toward the direction looking", order = 0)]
-        public static bool ShouldYawToLook = false;
-
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_CAPACITOR, ORDER_ROTATELOOK_CAPACITOR)]
         [ModOptionSlider]
         [ModOption(name: "Capacitor Charging Dot", tooltip: "Capacitor increases above this (forward dot look)", order = 1)]
         [ModOptionFloatValues(0, 1, 0.01f)]
-        public static float YawToLook_Capacitor_UpperDot = 0.95f;
+        public static float RotToLook_Capacitor_UpperDot = 0.95f;
 
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_CAPACITOR, ORDER_ROTATELOOK_CAPACITOR)]
         [ModOptionSlider]
         [ModOption(name: "Capacitor Start Discharge Dot", tooltip: "Capacitor starts discharging below this (forward dot look)", order = 2)]
         [ModOptionFloatValues(0, 1, 0.01f)]
-        public static float YawToLook_Capacitor_LowerDot = 0.9f;
+        public static float RotToLook_Capacitor_LowerDot = 0.9f;
 
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_CAPACITOR, ORDER_ROTATELOOK_CAPACITOR)]
         [ModOptionSlider]
-        [ModOption(name: "Capacitor Full Discharge Dot", tooltip: "Capacitor discharges fastest below this (forward dot look)", order = 2)]
+        [ModOption(name: "Capacitor Full Discharge Dot", tooltip: "Capacitor discharges fastest below this (forward dot look)", order = 3)]
         [ModOptionFloatValues(0, 1, 0.01f)]
-        public static float YawToLook_Capacitor_BottomDot = 0.75f;
+        public static float RotToLook_Capacitor_BottomDot = 0.75f;
 
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_CAPACITOR, ORDER_ROTATELOOK_CAPACITOR)]
         [ModOptionSlider]
-        [ModOption(name: "Capacitor Charge Speed", tooltip: "Charge per second when look diff is above upper dot", order = 3)]
+        [ModOption(name: "Capacitor Charge Speed", tooltip: "Charge per second when look diff is above upper dot", order = 4)]
         [ModOptionFloatValues(0, 8, 0.05f)]
-        public static float YawToLook_Capacitor_ChargeSpeed = 0.5f;
+        public static float RotToLook_Capacitor_ChargeSpeed = 0.5f;
 
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_CAPACITOR, ORDER_ROTATELOOK_CAPACITOR)]
         [ModOptionSlider]
-        [ModOption(name: "Capacitor Charge Power", tooltip: "Look diff beween upper dot and one ramps up by this power", order = 4)]
+        [ModOption(name: "Capacitor Charge Power", tooltip: "Look diff beween upper dot and one ramps up by this power", order = 5)]
         [ModOptionFloatValues(1, 6, 0.1f)]
-        public static float YawToLook_Capacitor_ChargePower = 2;
+        public static float RotToLook_Capacitor_ChargePower = 2;
 
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_CAPACITOR, ORDER_ROTATELOOK_CAPACITOR)]
         [ModOptionSlider]
-        [ModOption(name: "Capacitor Discharge Speed", tooltip: "Charge per second when diff is below lower dot", order = 5)]
+        [ModOption(name: "Capacitor Discharge Speed", tooltip: "Charge per second when diff is below lower dot", order = 6)]
         [ModOptionFloatValues(0, 8, 0.05f)]
-        public static float YawToLook_Capacitor_DischargeSpeed = 2f;
+        public static float RotToLook_Capacitor_DischargeSpeed = 2f;
 
-        [ModOptionCategory(CATEGORY_LOOKYAW, ORDER_LOOKYAW)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_CAPACITOR, ORDER_ROTATELOOK_CAPACITOR)]
         [ModOptionSlider]
-        [ModOption(name: "Capacitor Discharge Power", tooltip: "Look diff between lower dot and zero ramps up by this power", order = 6)]
+        [ModOption(name: "Capacitor Discharge Power", tooltip: "Look diff between lower dot and zero ramps up by this power", order = 7)]
         [ModOptionFloatValues(1, 6, 0.1f)]
-        public static float YawToLook_Capacitor_DischargePower = 2;
+        public static float RotToLook_Capacitor_DischargePower = 2;
 
-        // ******************** Yaw Toward Look 2 ********************
-
-        [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
-        [ModOption(name: "Should Yaw Toward Look", tooltip: "Will rotate the player toward the direction looking", order = 0)]
-        public static bool ShouldYawToLook2 = false;
-
-
-        // reusing capacitor settings from v1
-
-        // TODO: may want momentum.  try without first, but it may make it feel better
-
-
-
-        [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
-        [ModOptionSlider]
-        [ModOption(name: "Dead Zone Dot Product (full)", tooltip: "How far from center where there is no turning", order = 1)]
-        [ModOptionFloatValues(0.9f, 1, 0.001f)]
-        public static float YawToLook2_DeadZone_Full = 0.995f;
-
-        [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
-        [ModOptionSlider]
-        [ModOption(name: "Dead Zone Dot Product (start)", tooltip: "How far from center before it starts turning at max rate", order = 2)]
-        [ModOptionFloatValues(0.9f, 1, 0.001f)]
-        public static float YawToLook2_DeadZone_Start = 0.98f;
-
-        [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
-        [ModOptionSlider]
-        [ModOption(name: "Max Turn Rate Degrees", tooltip: "Degrees per second", order = 3)]
-        [ModOptionFloatValues(1, 360, 1f)]
-        public static float YawToLook2_TurnRate = 45;
-
-        [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
-        [ModOptionSlider]
-        [ModOption(name: "Forward Trim Degrees (yaw)", tooltip: "Forward comes from ragdoll spine, which seems to always point to the right a little.  This angle is added to help get it close to zero.  Negative pulls to the left, positive to the right", order = 4)]
-        [ModOptionFloatValues(-20, 20, 0.5f)]
-        public static float YawToLook2_ForwardTrimDegrees_Yaw = -7;
-
-        // ******************** Rotate Toward Look ********************
-
-        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
-        [ModOption(name: "Should Rotate Toward Look", tooltip: "Will rotate the player toward the direction looking", order = 0)]
-        public static bool ShouldRotateToLook = false;
-
-        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
-        [ModOptionSlider]
-        [ModOption(name: "Forward Trim Degrees (pitch)", tooltip: "Forward comes from ragdoll spine, so may point up/down a little.  This angle is added to help get it close to zero.  Negative  pulls down, positive pulls up", order = 1)]
-        [ModOptionFloatValues(-20, 20, 0.5f)]
-        public static float RotToLook_ForwardTrimDegrees_Pitch = 0;
+        #endregion
+        #region Rotate To Look - look zones
 
         // TODO: these dot products need to be presented differently in the sliders.  the game rounds to 2 decimals when displaying value
 
-        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
+        // deadzone initial
+        [ModOptionCategory(CATEGORY_ROTATELOOK_LOOKZONES, ORDER_ROTATELOOK_LOOKZONES)]
         [ModOptionSlider]
-        [ModOption(name: "Dead Zone Dot Product - roll (full)", tooltip: "How far from center where there is no turning", order = 2)]
+        [ModOption(name: "Dead Zone Dot Product - yaw", tooltip: "How far from center where there is no turning", order = 1)]
         [ModOptionFloatValues(0.9f, 1, 0.001f)]
-        public static float RotToLook_DeadZone_Roll_Full = 0.995f;
+        public static float RotToLook_DeadZone_Yaw_Full = 0.995f;
 
-        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_LOOKZONES, ORDER_ROTATELOOK_LOOKZONES)]
         [ModOptionSlider]
-        [ModOption(name: "Dead Zone Dot Product - roll (start)", tooltip: "How far from center before it starts turning at max rate", order = 3)]
-        [ModOptionFloatValues(0.9f, 1, 0.001f)]
-        public static float RotToLook_DeadZone_Roll_Start = 0.985f;
-
-
-        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
-        [ModOptionSlider]
-        [ModOption(name: "Dead Zone Dot Product - pitch (full)", tooltip: "How far from center where there is no turning", order = 4)]
+        [ModOption(name: "Dead Zone Dot Product - pitch", tooltip: "How far from center where there is no turning", order = 2)]
         [ModOptionFloatValues(0.9f, 1, 0.001f)]
         public static float RotToLook_DeadZone_Pitch_Full = 0.995f;
 
-        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
+        [ModOptionCategory(CATEGORY_ROTATELOOK_LOOKZONES, ORDER_ROTATELOOK_LOOKZONES)]
         [ModOptionSlider]
-        [ModOption(name: "Dead Zone Dot Product - pitch (start)", tooltip: "How far from center before it starts turning at max rate", order = 5)]
+        [ModOption(name: "Dead Zone Dot Product - roll", tooltip: "How far from center where there is no turning", order = 3)]
         [ModOptionFloatValues(0.9f, 1, 0.001f)]
-        public static float RotToLook_DeadZone_Pitch_Start = 0.98f;
+        public static float RotToLook_DeadZone_Roll_Full = 0.995f;
 
-        // ******************** Player Size ********************
+
+
+        // deadzone affected by speed
+
+        // zero delay zone / zero wait zone / immediate response zone
+
+
+        #endregion
+        #region Rotate To Look - ik
+
+        // for now, use in game, but in the future, replace with a custom rig
+
+        [ModOptionCategory(CATEGORY_ROTATELOOK_IK, ORDER_ROTATELOOK_IK)]
+        [ModOptionSlider]
+        [ModOption(name: "Forward Trim Degrees (yaw)", tooltip: "Forward comes from ragdoll spine, which seems to always point to the right a little.  This angle is added to help get it close to zero.  Negative pulls to the left, positive to the right", order = 1)]
+        [ModOptionFloatValues(-20, 20, 0.5f)]
+        public static float RotToLook_ForwardTrimDegrees_Yaw = -7;
+
+        [ModOptionCategory(CATEGORY_ROTATELOOK_IK, ORDER_ROTATELOOK_IK)]
+        [ModOptionSlider]
+        [ModOption(name: "Forward Trim Degrees (pitch)", tooltip: "Forward comes from ragdoll spine, so may point up/down a little.  This angle is added to help get it close to zero.  Negative  pulls down, positive pulls up", order = 2)]
+        [ModOptionFloatValues(-20, 20, 0.5f)]
+        public static float RotToLook_ForwardTrimDegrees_Pitch = 0;
+
+        #endregion
+
+        #region Player Size
 
         [ModOptionCategory(CATEGORY_SCALE, ORDER_SCALE)]
         [ModOptionSlider]
@@ -600,7 +677,9 @@ namespace Jetpack2
             ScaleAdjuster.RevertScale();
         }
 
-        // ******************** Player Visibility ********************
+        #endregion
+
+        #region Player Visibility
 
         public static ModOptionString[] visibilityInvisibleButtonLabel = new[]
         {
@@ -645,7 +724,9 @@ namespace Jetpack2
             PlayerVisibility.MakeVisible();
         }
 
-        // ******************** Debug Drawing ********************
+        #endregion
+
+        #region Debug Drawing
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
         [ModOption(name: "Show Confined Area", tooltip: "Shows what confined area scanner sees", order = 1)]
@@ -666,14 +747,6 @@ namespace Jetpack2
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
         [ModOption(name: "Show Gaze Buffer - Offset", tooltip: "Shows lines that gaze buffer uses to detect when staring at a consistent offset from forward", order = 5)]
         public static bool ShowGazeBuffer_Offset = false;
-
-        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Pull Yaw To Look (old)", tooltip: "Shows visuals of 'pull yaw to look' using gaze buffer results", order = 6)]
-        public static bool ShowPullYawToLook = false;
-
-        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Pull Yaw To Look", tooltip: "Shows visuals of 'pull yaw to look' using gaze buffer results", order = 7)]
-        public static bool ShowPullYawToLook2 = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
         [ModOption(name: "Show Rotate To Look", tooltip: "Shows visuals of 'rotate to look' using gaze buffer results", order = 8)]
@@ -697,6 +770,8 @@ namespace Jetpack2
 
         #endregion
 
+        #endregion
+
         // PRE-FLIGHT DATA
         private FlightData _old = null;
 
@@ -715,6 +790,13 @@ namespace Jetpack2
         private VisualizePlayerPoints _visualizePlayerPoints = new VisualizePlayerPoints();
         private ScaleAdjuster _scaleAdjuster = new ScaleAdjuster();
 
+
+
+        private ConfigData _config = null;
+
+
+
+
         private bool _isPlayerSpawned = false;
 
         public override void ScriptLoaded(ModManager.ModData modData)
@@ -730,6 +812,9 @@ namespace Jetpack2
 
             Player.onSpawn += Player_onSpawn;
             Player.onDespawn += Player_onDespawn;
+
+            TryLoadConfig();
+            TryLoadConfig2();
         }
 
         private void Player_onSpawn(Player player)
@@ -759,6 +844,8 @@ namespace Jetpack2
 
         public override void ScriptUpdate()
         {
+            // TODO: use Time.deltaTime to get time since last update
+
             base.ScriptUpdate();
 
             if (!_isPlayerSpawned || Player.local == null)
@@ -803,6 +890,8 @@ namespace Jetpack2
         }
         public override void ScriptFixedUpdate()
         {
+            // TODO: use Time.fixedDeltaTime to get time since last fixed update
+
             base.ScriptFixedUpdate();
 
             if (Player.currentCreature)
@@ -862,6 +951,72 @@ namespace Jetpack2
 
             _debugStats.AddEntry("stick left", InputUtil.GetLeftStick().ToStringSignificantDigits(2));
             _debugStats.AddEntry("stick right", InputUtil.GetRightStick().ToStringSignificantDigits(2));
+        }
+
+        private static void TryLoadConfig()
+        {
+            try
+            {
+                //2025-10-18T04:32:09.078 ERROR ThunderRoad.ModManager.LoadThunderScripts       : [ModManager][ThunderScript][Jetpack2] Exception during ThunderScript ScriptLoaded for: Jetpack2.JetpackScript on mod: Jetpack2 in assembly: Jetpack2, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null, System.ArgumentException: Invalid path
+                //  at System.IO.Path.GetDirectoryName (System.String path) [0x0000d] in <80e08c2cc04049bf931fc9038d04f397>:0 
+                //  at Jetpack2.JetpackScript.TryLoadConfig () [0x0000b] in <b850afc2f47b4688ba4d419a27caa709>:0 
+                //  at Jetpack2.JetpackScript.ScriptLoaded (ThunderRoad.ModManager+ModData modData) [0x0006b] in <b850afc2f47b4688ba4d419a27caa709>:0 
+                //  at ThunderRoad.ModManager.LoadThunderScripts (System.Type type, ThunderRoad.ModManager+ModData mod, System.Reflection.Assembly assembly) [0x000b4] in D:\VSTS-Agent\_work\TR_2021.3.38f1\Assets\SDK\Scripts\ModManager.cs:1167 
+
+                string current_folder = Assembly.GetExecutingAssembly().Location;       // this returns empty string
+                Debug.Log($"current_folder: {current_folder}");
+
+                current_folder = @"D:\SteamLibrary\steamapps\common\Blade & Sorcery\BladeAndSorcery_Data\StreamingAssets\Mods\Jetpack2";
+                Debug.Log($"current_folder (hardcoded): {current_folder}");
+
+                var files = Directory.GetFiles(current_folder);
+                Debug.Log($"files: {string.Join(Environment.NewLine, files)}");     // this finds the files in that folder
+
+
+                files = Directory.GetFiles(".");
+                Debug.Log($"files (.): {string.Join(Environment.NewLine, files)}");     // this finds the files in that folder
+
+
+                Debug.Log($"Directory.GetCurrentDirectory(): {Directory.GetCurrentDirectory()}");
+
+
+                string test = Directory.GetParent(typeof(object).Module.FullyQualifiedName).FullName;
+                Debug.Log($"Directory.GetParent(typeof(object).Module.FullyQualifiedName).FullName: {test}");
+
+
+
+                //File.ReadAllText();
+
+            }
+            catch (Exception ex)
+            {
+                Debug.Log(ex.ToString());
+            }
+        }
+        private void TryLoadConfig2()
+        {
+            try
+            {
+                // from inside ConfigData.Init...
+                // this happens early in game loading, so no need to instantiate, just use static.  intance is probably referenced by asking Catalog for it (or some other b&s static dictionary)
+                // ConfigData init.  testInt: 52
+
+
+                // about to instantiate ConfigData.  ConfigData.testInt: 52
+                Debug.Log($"about to instantiate ConfigData.  ConfigData.testInt: {ConfigData.testInt}");
+                _config = new ConfigData();
+
+                // manually calling _config.Init()
+                // System.NullReferenceException: Object reference not set to an instance of an object
+                Debug.Log("manually calling _config.Init()");
+                _config.Init();
+
+                Debug.Log("after calling _config.Init()");
+            }
+            catch (Exception ex)
+            {
+                Debug.Log(ex.ToString());
+            }
         }
     }
 }

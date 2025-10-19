@@ -176,7 +176,7 @@ namespace Jetpack2.FlightProcessing
 
         public void Update(float elapsed_seconds)
         {
-            if (!JetpackScript.ShouldRotateToLook)
+            if (!(JetpackScript.ShouldRotateToLook_Yaw || JetpackScript.ShouldRotateToLook_Pitch || JetpackScript.ShouldRotateToLook_Roll))
                 return;
 
             // Get body and head directions (also pos, velocity)
@@ -470,7 +470,7 @@ namespace Jetpack2.FlightProcessing
             }
 
             // Draw dead zones as ellipses
-            DrawYawPitch_DeadzoneEllipse(ref _deadzone_inner, ref _deadzone_inner_dot_yaw, ref _deadzone_inner_dot_pitch, JetpackScript.YawToLook2_DeadZone_Full, JetpackScript.RotToLook_DeadZone_Pitch_Full, plane_point, body_forward, body_up, PLANE_DIST, _renderer);
+            DrawYawPitch_DeadzoneEllipse(ref _deadzone_inner, ref _deadzone_inner_dot_yaw, ref _deadzone_inner_dot_pitch, JetpackScript.RotToLook_DeadZone_Yaw_Full, JetpackScript.RotToLook_DeadZone_Pitch_Full, plane_point, body_forward, body_up, PLANE_DIST, _renderer);
             DrawYawPitch_DeadzoneEllipse(ref _deadzone_outer, ref _deadzone_outer_dot_yaw, ref _deadzone_outer_dot_pitch, JetpackScript.YawToLook2_DeadZone_Start, JetpackScript.RotToLook_DeadZone_Pitch_Start, plane_point, body_forward, body_up, PLANE_DIST, _renderer);
 
             // Gaze buffer results
@@ -1035,7 +1035,7 @@ namespace Jetpack2.FlightProcessing
             return new DeadzonePercents
             {
                 yaw = gaze.yawpitch_confidence != null ?
-                    GetDeadZonePercent(dirs.body_forward, gaze.yaw_direction, JetpackScript.YawToLook2_DeadZone_Full, JetpackScript.YawToLook2_DeadZone_Start) :
+                    GetDeadZonePercent(dirs.body_forward, gaze.yaw_direction, JetpackScript.RotToLook_DeadZone_Yaw_Full, JetpackScript.YawToLook2_DeadZone_Start) :
                     1,
 
                 pitch = gaze.yawpitch_confidence != null ?
@@ -1071,11 +1071,11 @@ namespace Jetpack2.FlightProcessing
 
         private static float UpdateCapacitor(float capacitor, Vector3 target, Vector3 look, float? confidence, float deadzone_percent, float elapsed_seconds)
         {
-            float upper_dot = JetpackScript.YawToLook_Capacitor_UpperDot;
-            float lower_dot = JetpackScript.YawToLook_Capacitor_LowerDot;
-            float bottom_dot = JetpackScript.YawToLook_Capacitor_BottomDot;
+            float upper_dot = JetpackScript.RotToLook_Capacitor_UpperDot;
+            float lower_dot = JetpackScript.RotToLook_Capacitor_LowerDot;
+            float bottom_dot = JetpackScript.RotToLook_Capacitor_BottomDot;
 
-            float discharge_speed = JetpackScript.YawToLook_Capacitor_DischargeSpeed;
+            float discharge_speed = JetpackScript.RotToLook_Capacitor_DischargeSpeed;
 
             // Calculate alignment between target and look directions
             float dot = Vector3.Dot(target, look);
@@ -1093,7 +1093,7 @@ namespace Jetpack2.FlightProcessing
                 // CHARGE REGION: dot > upper threshold
                 // Normalize to 0-1 range based on available threshold window
                 float chargeFactor = (dot - upper_dot) / (1f - upper_dot);
-                float chargeRate = JetpackScript.YawToLook_Capacitor_ChargeSpeed * Mathf.Pow(chargeFactor, JetpackScript.YawToLook_Capacitor_ChargePower);
+                float chargeRate = JetpackScript.RotToLook_Capacitor_ChargeSpeed * Mathf.Pow(chargeFactor, JetpackScript.RotToLook_Capacitor_ChargePower);
                 retVal += chargeRate * confidence.Value * (1 - deadzone_percent) * (float)elapsed_seconds;
             }
             else if (dot < bottom_dot)
@@ -1106,7 +1106,7 @@ namespace Jetpack2.FlightProcessing
                 // DISCHARGE REGION: dot < lower threshold
                 // Normalize to 0-1 range based on threshold position
                 float decayFactor = UtilityMath.GetScaledValue_Capped(0, 1, bottom_dot, lower_dot, dot);
-                float decayRate = discharge_speed * Mathf.Pow(decayFactor, JetpackScript.YawToLook_Capacitor_DischargePower);
+                float decayRate = discharge_speed * Mathf.Pow(decayFactor, JetpackScript.RotToLook_Capacitor_DischargePower);
 
                 float deadzone_discharge = deadzone_percent > 0 ?
                     discharge_speed * deadzone_percent :
@@ -1153,7 +1153,7 @@ namespace Jetpack2.FlightProcessing
 
             // figure out angular speed
             // NOTE: not reducing by confidence percent.  that has already influenced capacitor charge rate
-            float speed = JetpackScript.YawToLook2_TurnRate * capacitor * (1 - deadzone_percent);
+            float speed = JetpackScript.RotateToLook_TurnRate * capacitor * (1 - deadzone_percent);
             if (rot_angle < 0)
                 speed = -speed;     // shouldn't happen
 
@@ -1218,9 +1218,9 @@ namespace Jetpack2.FlightProcessing
         private void TrimForwardUp(ref Vector3 forward, ref Vector3 up)
         {
             // Yaw Trim
-            if (!JetpackScript.YawToLook2_ForwardTrimDegrees_Yaw.IsNearZero())
+            if (!JetpackScript.RotToLook_ForwardTrimDegrees_Yaw.IsNearZero())
             {
-                Quaternion yaw = Quaternion.AngleAxis(JetpackScript.YawToLook2_ForwardTrimDegrees_Yaw, up);
+                Quaternion yaw = Quaternion.AngleAxis(JetpackScript.RotToLook_ForwardTrimDegrees_Yaw, up);
 
                 // Apply Yaw Rotation to both forward and up
                 forward = yaw * forward;

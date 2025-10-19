@@ -259,9 +259,9 @@ namespace Jetpack2.DebugCode
         private void TrimForwardUp(ref Vector3 forward, ref Vector3 up)
         {
             // Yaw Trim
-            if (!JetpackScript.YawToLook2_ForwardTrimDegrees_Yaw.IsNearZero())
+            if (!JetpackScript.RotToLook_ForwardTrimDegrees_Yaw.IsNearZero())
             {
-                Quaternion yaw = Quaternion.AngleAxis(JetpackScript.YawToLook2_ForwardTrimDegrees_Yaw, up);
+                Quaternion yaw = Quaternion.AngleAxis(JetpackScript.RotToLook_ForwardTrimDegrees_Yaw, up);
 
                 // Apply Yaw Rotation to both forward and up
                 forward = yaw * forward;

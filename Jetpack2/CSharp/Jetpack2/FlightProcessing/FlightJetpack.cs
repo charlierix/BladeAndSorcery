@@ -116,6 +116,8 @@ namespace Jetpack2.FlightProcessing
 
         public void Update(float drag, float horz_accel, float vert_accel, float gravity)
         {
+            // TODO: see if Time.fixedDeltaTime is better
+
             // TODO: may need a second elapsed that considers time slowdown
             DateTime now = DateTime.UtcNow;
             float elapsed_seconds = (float)Math1D.Clamp((now - _prevTick).TotalSeconds, 0, 0.25);       
