@@ -3,10 +3,10 @@ using UnityEngine;
 
 namespace Jetpack2.Models
 {
-    public class ConfigData : CustomData        // this CustomData inherits CatalogData
+    public class TestConfigData : CustomData        // this CustomData inherits CatalogData
     {
         public static int testInt;     // looks like it's fields, not props
-        public int TestInt { get => testInt; set => testInt = value; }
+        public int TestInt { get => testInt; set => testInt = value; }      // this instance property appears to be necessary, otherwise the config file is ignored
 
         public override void Init()
         {

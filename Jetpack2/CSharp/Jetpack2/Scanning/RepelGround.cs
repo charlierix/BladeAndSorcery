@@ -1,4 +1,5 @@
-﻿using PerfectlyNormalBaS;
+﻿using Jetpack2.Models;
+using PerfectlyNormalBaS;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -480,13 +481,13 @@ namespace Jetpack2.Scanning
             float dist_increase = 0;
 
             if (speed_horz > 0)
-                dist_increase += JetpackScript.RepelGround_HorzSpeedDistMult * speed_horz;
+                dist_increase += RepelGroundData.horzSpeedDistMult * speed_horz;
 
             if (speed_vert < 0)
-                dist_increase += JetpackScript.RepelGround_VertSpeedDistMult * Math.Abs(speed_vert);
+                dist_increase += RepelGroundData.vertSpeedDistMult * Math.Abs(speed_vert);
 
             // Figure out ray length (some combination of down velocity and player's height * scale)
-            float ray_len = dist_increase + (height * scale * JetpackScript.RepelGround_MaxDistance);
+            float ray_len = dist_increase + (height * scale * RepelGroundData.maxDistance);
 
             // When the distance is small, one ray is enough
             if (vel_horz.sqrMagnitude < 1f * 1f)
@@ -597,7 +598,7 @@ namespace Jetpack2.Scanning
         {
             bool is_up = speed_vert > 0;
 
-            if (is_up && speed_vert > JetpackScript.RepelGround_UpSpeed_ZeroAccel)
+            if (is_up && speed_vert > RepelGroundData.upSpeed_ZeroAccel)
                 return null;
 
             Vector3 direction = Vector3.up;
@@ -609,9 +610,9 @@ namespace Jetpack2.Scanning
 
             // TODO: may want to increase max accel if speed downward is large
 
-            Vector3 linear = GetAccel_Linear(direction, distance, max_dist, JetpackScript.RepelGround_Linear_MaxAccel);
-            Vector3 inverse = GetAccel_Inverse(direction, distance, max_dist, JetpackScript.RepelGround_Inverse_MaxAccel, JetpackScript.RepelGround_Inverse_C);
-            Vector3 invsqr = GetAccel_InvSqr(direction, distance, max_dist, JetpackScript.RepelGround_InverseSqr_MaxAccel, JetpackScript.RepelGround_InverseSqr_C);
+            Vector3 linear = GetAccel_Linear(direction, distance, max_dist, RepelGroundData.linear_MaxAccel);
+            Vector3 inverse = GetAccel_Inverse(direction, distance, max_dist, RepelGroundData.inverse_MaxAccel, RepelGroundData.inverse_C);
+            Vector3 invsqr = GetAccel_InvSqr(direction, distance, max_dist, RepelGroundData.inverseSqr_MaxAccel, RepelGroundData.inverseSqr_C);
 
             if (JetpackScript.ShowRepelGround)
                 DrawAccel(linear, inverse, invsqr, percent);

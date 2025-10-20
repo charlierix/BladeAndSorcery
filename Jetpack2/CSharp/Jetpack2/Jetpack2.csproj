@@ -53,7 +53,10 @@
     <Compile Include="FlightProcessing\ThumbstickToAccel.cs" />
     <Compile Include="InputWatchers\GazeBuffer.cs" />
     <Compile Include="InputWatchers\PlayerRagdollUtil.cs" />
-    <Compile Include="Models\ConfigData.cs" />
+    <Compile Include="Models\TestConfigData.cs" />
+    <Compile Include="Models\ConfinedAreaData.cs" />
+    <Compile Include="Models\ObstacleAvoidanceData.cs" />
+    <Compile Include="Models\RepelGroundData.cs" />
     <Compile Include="Scanning\RayCastStorage.cs" />
     <Compile Include="Scanning\RepelGround.cs" />
     <Compile Include="JetpackScript.cs" />
@@ -660,9 +663,17 @@
       <Name>PerfectlyNormalBaS</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <None Include="Configs\ConfinedArea.json" />
+    <None Include="Configs\ObstacleAvoidance.json" />
+    <None Include="Configs\RepelGround.json" />
+    <None Include="Configs\test_config.json" />
+    <None Include="test_config.json" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /Y "$(TargetPath)" "$(SolutionDir)..\..\!mod_final\Jetpack\$(ProjectName).dll"
-copy /Y "$(TargetDir)PerfectlyNormalBaS.dll" "$(SolutionDir)..\..\!mod_final\Jetpack\PerfectlyNormalBaS.dll"</PostBuildEvent>
+    <PostBuildEvent>copy /Y "$(TargetPath)" "$(SolutionDir)..\Deployed\$(ProjectName).dll"
+copy /Y "$(TargetDir)PerfectlyNormalBaS.dll" "$(SolutionDir)..\Deployed\PerfectlyNormalBaS.dll"</PostBuildEvent>
   </PropertyGroup>
 </Project>

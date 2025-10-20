@@ -1,0 +1,53 @@
+﻿{
+  "$type": "Jetpack2.Models.RepelGroundData, Jetpack2",
+  "id": "Jetpack2_Config_RepelGround",
+  "sensitiveContent": "None",
+  "sensitiveFilterBehaviour": "Discard",
+  "version": 0,
+  "groupPath": null,
+
+
+  // --- Distance ---
+
+  /// relative to height * scale, taken from foot pos
+  /// slider: 0 to 0.3, step 0.01
+  "MaxDistance": 0.05,
+
+  /// increases ground distance based on horizontal speed (this * speed)
+  /// slider: 0 to 1, step 0.01
+  "HorzSpeedDistMult": 0.15,
+
+  /// increases ground distance based on vertical speed down (this * speed)
+  /// slider: 0 to 3, step 0.1
+  "VertSpeedDistMult": 1,
+
+  // --- Linear ---
+
+  /// a linear gradient where there is zero force at max distance and max force at zero distance
+  /// slider: 0 to 6, step 0.25
+  "Linear_MaxAccel": 2.75,
+
+  // --- 1/(cx) ---
+
+  /// the distance is normalized, where x is 0 to 1
+  /// slider: 0 to 18, step 0.25
+  "Inverse_MaxAccel": 8.5,
+
+  /// any value less than 4 is meaningless (plot it in desmos for easy visualization/manipulation)
+  /// slider: 4 to 24, step 0.25
+  "Inverse_C": 8,
+
+  // --- 1/(cx)^2 ---
+
+  /// the distance is normalized, where x is 0 to 1
+  /// slider: 0 to 40, step 0.25
+  "InverseSqr_MaxAccel": 19.25,
+
+  /// any value less than 4 is meaningless (plot it in desmos for easy visualization/manipulation)
+  /// slider: 4 to 80, step 0.5
+  "InverseSqr_C": 4,
+
+  /// stop accelerating upward beyond this speed (to avoid excessive pop up speeds)
+  /// slider: 0 to 1, step 0.01
+  "UpSpeed_ZeroAccel": 0.04
+}

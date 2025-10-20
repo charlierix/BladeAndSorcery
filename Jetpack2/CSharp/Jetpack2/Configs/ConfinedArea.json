@@ -1,0 +1,20 @@
+{
+  "$type": "Jetpack2.Models.ConfinedAreaData, Jetpack2",
+  "id": "Jetpack2_Config_ConfinedArea",
+  "sensitiveContent": "None",
+  "sensitiveFilterBehaviour": "Discard",
+  "version": 0,
+  "groupPath": null,
+
+  // Multiplied by delta time.  Larger values adjust final blocked percent faster
+  // slider values: 0.5f to 4f, step 0.05f
+  "gainFactor": 1.75,
+
+  // How far the rays should go
+  // slider values: 6 to 36, step 1
+  "rayLength": 24,
+
+  // Ray hit disance / Max Distance is run through a bell curve dropoff.  Higher power makes it drop off faster
+  // slider values: 0f to 3f, step 0.05f
+  "falloffPower": 1
+}

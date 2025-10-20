@@ -1,3 +1,4 @@
+using Jetpack2.Models;
 using PerfectlyNormalBaS;
 using System;
 using System.Collections.Generic;
@@ -82,7 +83,7 @@ namespace Jetpack2.Scanning
             _pos = foot_pos + ((head_pos - foot_pos) * 0.5f);
 
             // Adjust the ray length based on the player's scale
-            var raylengths = GetRayMinMax(JetpackScript.ConfinedArea_RayLength, player_scale);
+            var raylengths = GetRayMinMax(ConfinedAreaData.rayLength, player_scale);
 
             _ray_min_len = raylengths.min;
             _ray_max_len = raylengths.max;
@@ -102,7 +103,7 @@ namespace Jetpack2.Scanning
             float how_blocked = GetHowBlocked(_pos, _ray_min_len, _ray_max_len);
 
             // Pull the new value toward the current how_blocked value
-            ConfinedPercent = GetNewConfinedSpace(ConfinedPercent, how_blocked, JetpackScript.ConfinedArea_GainFactor, elapsed_seconds);
+            ConfinedPercent = GetNewConfinedSpace(ConfinedPercent, how_blocked, ConfinedAreaData.gainFactor, elapsed_seconds);
 
             if (JetpackScript.ShowConfinedArea)
                 DrawConfinedPercent();
@@ -185,7 +186,7 @@ namespace Jetpack2.Scanning
 
                 float dist = math.sqrt(dist_sqr) / max_len;     // need to make it between 0 and 1
 
-                float mx = JetpackScript.ConfinedArea_FalloffPower * dist;
+                float mx = ConfinedAreaData.falloffPower * dist;
                 float gauss = math.exp(-(mx * mx));
 
                 float clamp = 1 - math.pow(dist, GAUSS_PINCH);      // this part sets curve=0 at dist=1 (otherwise, it's a guass curve that approaches but never hits 0)

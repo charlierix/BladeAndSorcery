@@ -1,0 +1,15 @@
+{
+	"$type": "ThunderRoad.EffectData, ThunderRoad",
+	"id": "PerfNormBeastJetpackActivateFlight",
+	"sensitiveContent": "None",
+	"sensitiveFilterBehaviour": "Discard",
+	"version": 0,
+	"groupId": "Misc",
+	"volumeDb": 12.0,
+	"modules": [
+		{
+			"$type": "ThunderRoad.EffectModuleAudio, ThunderRoad",
+			"audioContainerAddress": "PerfNormBeast.Jetpack.Audio.ActivateFlight"
+		}
+	]
+}

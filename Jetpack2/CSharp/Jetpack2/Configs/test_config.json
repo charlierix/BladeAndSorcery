@@ -1,0 +1,11 @@
+﻿{
+  "$type": "Jetpack2.Models.TestConfigData, Jetpack2",
+  "id": "Jetpack2_TestConfig",
+  "sensitiveContent": "None",
+  "sensitiveFilterBehaviour": "Discard",
+  "version": 0,
+
+  "testInt": 52,
+
+  "groupPath": null
+}

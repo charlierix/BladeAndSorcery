@@ -62,266 +62,37 @@ namespace Jetpack2
     {
         // https://kospy.github.io/BasSDK/Components/Guides/ModOptions/#how-do-i-use-modoptions
 
+        #region Mod Options
 
         private const string CATEGORY_ACTIVATE = "Activation / Deactivation";
         private const string CATEGORY_TOGGLEBEHAVIORS = "Toggle Behaviors";
         private const string CATEGORY_FLIGHTPROPS = "Flight Properties";
-
-        private const string CATEGORY_ROTATELOOK_GAZEBUFFER = "Rotate Toward Look - Gaze Buffer";
-        private const string CATEGORY_ROTATELOOK_CAPACITOR = "Rotate Toward Look - Capacitor";
-        private const string CATEGORY_ROTATELOOK_LOOKZONES = "Rotate Toward Look - Look Zones";
-        private const string CATEGORY_ROTATELOOK_IK = "Rotate Toward Look - IK Rig";
-
+        private const string CATEGORY_ROTATELOOK_GAZEBUFFER = "Rotate To Look - Gaze Buffer";
+        private const string CATEGORY_ROTATELOOK_CAPACITOR = "Rotate To Look - Capacitor";
+        private const string CATEGORY_ROTATELOOK_LOOKZONES = "Rotate To Look - Look Zones";
+        private const string CATEGORY_ROTATELOOK_TURNRATES = "Rotate To Look - Turn Rates";
+        private const string CATEGORY_ROTATELOOK_IK = "Rotate To Look - IK Rig";
         private const string CATEGORY_SOUNDS = "Sounds";        // TODO: add this
         private const string CATEGORY_SCALE = "Player Size";
         private const string CATEGORY_VISIBILITY = "Player Visibility";
         private const string CATEGORY_DEBUGDRAWING = "Debug Drawing";
 
-
         private const int ORDER_ACTIVATE = 1;
         private const int ORDER_TOGGLEBEHAVIORS = 2;
         private const int ORDER_FLIGHTPROPS = 3;
-
         private const int ORDER_ROTATELOOK_GAZEBUFFER = 4;
         private const int ORDER_ROTATELOOK_CAPACITOR = 5;
         private const int ORDER_ROTATELOOK_LOOKZONES = 6;
-        private const int ORDER_ROTATELOOK_IK = 7;
-
+        private const int ORDER_ROTATELOOK_TURNRATES = 7;
+        private const int ORDER_ROTATELOOK_IK = 8;
         private const int ORDER_SOUNDS = 50;
         private const int ORDER_SCALE = 51;
         private const int ORDER_VISIBILITY = 52;
         private const int ORDER_DEBUGDRAWING = 53;
 
-
-
-
-        private const string CATEGORY_CONFINEDAREA = "Confined Area";
-        private const string CATEGORY_OBSTACLEAVOIDANCE = "Obstacle Avoidance";
-        private const string CATEGORY_REPELGROUND = "Repel Ground";
-        private const string CATEGORY_GAZEBUFFER = "Gaze Buffer";
-        private const string CATEGORY_LOOKYAW = "Yaw Toward Look (old)";
-        private const string CATEGORY_LOOKYAW2 = "Yaw Toward Look";
-        private const string CATEGORY_ROTATELOOK = "Rotate Toward Look";
-
-        private const int ORDER_CONFINEDAREA = 22;
-        private const int ORDER_OBSTACLEAVOIDANCE = 23;
-        private const int ORDER_REPELGROUND = 24;
-        private const int ORDER_GAZEBUFFER = 27;
-        private const int ORDER_LOOKYAW = 28;
-        private const int ORDER_LOOKYAW2 = 29;
-        private const int ORDER_ROTATELOOK = 30;
-
-
-        #region Mod Options -- ORIG
-
-
         //[ModOptionTextDisplay("description of section", null)]
         //[ModOption("Info")]
         //private static void label1(string value) { }
-
-
-
-
-        #region Confined Area
-
-        // these should be json
-
-        [ModOptionCategory(CATEGORY_CONFINEDAREA, ORDER_CONFINEDAREA)]
-        [ModOptionSlider]
-        [ModOption(name: "Ray Length", tooltip: "How far the rays should go", order = 1)]
-        [ModOptionFloatValues(6, 36, 1)]
-        public static float ConfinedArea_RayLength = 18;
-
-        [ModOptionCategory(CATEGORY_CONFINEDAREA, ORDER_CONFINEDAREA)]
-        [ModOptionSlider]
-        [ModOption(name: "Falloff Power", tooltip: "Ray hit disance / Max Distance is run through a bell curve dropoff.  Higher power makes it drop off faster", order = 3)]
-        [ModOptionFloatValues(0f, 3f, 0.05f)]
-        public static float ConfinedArea_FalloffPower = 1f;
-
-        #endregion
-        #region Obstacle Avoidance
-
-        // put in json
-
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
-        [ModOptionSlider]
-        [ModOption(name: "Ellipse Point Angle", tooltip: "Angle for the point between major and minor axis", order = 1)]
-        [ModOptionFloatValues(0, 90, 1)]
-        public static float ObstAvoid_EllipsePointAngle = 55;
-
-        // Don't bother with inward angle
-        //[ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
-        //[ModOptionSlider]
-        //[ModOption(name: "Ellipse Ray Angle (inward)", tooltip: "At each point along the perimiter of the ellipse, there will be two diverging rays at an angle (one toward interior, one away from ellipse)", order = 2)]
-        //[ModOptionFloatValues(0, 3, 0.1f)]
-        //public static float ObstAvoid_EllipseRayAngleIn = 0;
-
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
-        [ModOptionSlider]
-        [ModOption(name: "Ellipse Ray Angle (outward)", tooltip: "At each point along the perimiter of the ellipse, there will be two diverging rays at an angle (one toward interior, one away from ellipse)", order = 2)]
-        [ModOptionFloatValues(0, 24, 1)]
-        public static float ObstAvoid_EllipseRayAngleOut = 12;
-
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
-        [ModOptionSlider]
-        [ModOption(name: "Ellipse Ray Angle (yaw)", tooltip: "Max random yaw of each ray source each frame", order = 3)]
-        [ModOptionFloatValues(0, 45, 1)]
-        public static float ObstAvoid_EllipseRayAngleYaw = 8;
-
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
-        [ModOptionSlider]
-        [ModOption(name: "Ellipse Ray Angle (pitch)", tooltip: "Max random pitch of each ray source each frame", order = 4)]
-        [ModOptionFloatValues(0, 45, 1)]
-        public static float ObstAvoid_EllipseRayAnglePitch = 12;
-
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
-        [ModOptionSlider]
-        [ModOption(name: "Ray Distance Multiplier", tooltip: "Length of the ray cast (velocity * mult)", order = 5)]
-        [ModOptionFloatValues(0, 6, 0.05f)]
-        public static float ObstAvoid_RayDistMult = 3f;
-
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
-        [ModOptionSlider]
-        [ModOption(name: "Analyze Max Distance", tooltip: "Accel is zero beyond this distance", order = 6)]
-        [ModOptionFloatValues(0, 24, 0.5f)]
-        public static float ObstAvoid_Analyze_MaxDist = 9f;
-
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
-        [ModOptionSlider]
-        [ModOption(name: "Analyze Dropoff Power", tooltip: "Percent Dropoff is 1-x^n", order = 7)]
-        [ModOptionFloatValues(1, 6, 0.25f)]
-        public static float ObstAvoid_Analyze_DropoffPow = 3f;
-
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
-        [ModOptionSlider]
-        [ModOption(name: "Analyze Speed Percent Mult", tooltip: "Accel is reduced based on speed * this", order = 8)]
-        [ModOptionFloatValues(0, 2, 0.05f)]
-        public static float ObstAvoid_Analyze_SpeedMult = 0.75f;
-
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
-        [ModOptionSlider]
-        [ModOption(name: "Don't Fight Dot Threshold (start)", tooltip: "When dot product of input and accel is negative, this is how negative the dot is before accel starts getting cancelled out", order = 9)]
-        [ModOptionFloatValues(0, 1, 0.05f)]
-        public static float ObstAvoid_DontFight_DotThreshold_Start = 0.1f;
-
-        [ModOptionCategory(CATEGORY_OBSTACLEAVOIDANCE, ORDER_OBSTACLEAVOIDANCE)]
-        [ModOptionSlider]
-        [ModOption(name: "Don't Fight Dot Threshold (full block)", tooltip: "When dot product of input and accel is negative, this is how negative the dot is when accel is fully cancelled out", order = 9)]
-        [ModOptionFloatValues(0, 1, 0.05f)]
-        public static float ObstAvoid_DontFight_DotThreshold_Full = 0.7f;
-
-        #endregion
-        #region Repel Ground
-
-        // put in json
-
-
-        // for now, just treat this like a percent against the other accels
-        // NOTE: this is currently ignored until the other fine tune props are figured out
-        /// <summary>
-        /// This isn't a simple accel.  It will only apply upward accel when velocity is downward.  There's also a dropoff
-        /// distance based on player's size
-        /// </summary>
-        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
-        [ModOptionSlider]
-        [ModOption(name: "Repel Ground Strength", tooltip: "CURRENTLY IGNORED - How strong the ground repel should be", order = 1)]
-        [ModOptionFloatValues(0, 100, 1)]
-        public static float RepelGroundStrength = 0;
-
-
-        // figure out which of these to expose, or maybe a single slider that affects several at the same time (one for dist, and make strength directly affect the other values directly)
-
-        // Distance
-        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
-        [ModOptionSlider]
-        [ModOption(name: "Repel Ground Max Distance", tooltip: "relative to height * scale, taken from foot pos", order = 2)]
-        [ModOptionFloatValues(0, 1, 0.05f)]
-        public static float RepelGround_MaxDistance = 0.25f;
-
-        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
-        [ModOptionSlider]
-        [ModOption(name: "Horizontal Speed Distance Mult", tooltip: "increases ground distance based on horizontal speed (this * speed)", order = 3)]
-        [ModOptionFloatValues(0, 2, 0.05f)]
-        public static float RepelGround_HorzSpeedDistMult = 0.25f;
-
-        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
-        [ModOptionSlider]
-        [ModOption(name: "Vertical Speed Distance Mult", tooltip: "increases ground distance based on vertical speed down (this * speed)", order = 4)]
-        [ModOptionFloatValues(0, 3, 0.1f)]
-        public static float RepelGround_VertSpeedDistMult = 1;
-
-        // Linear
-        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
-        [ModOptionSlider]
-        [ModOption(name: "Repel Ground Max Accel [linear]", tooltip: "a linear gradient where there is zero force at max distance and max force at zero distance", order = 5)]
-        [ModOptionFloatValues(0, 6, 0.25f)]
-        public static float RepelGround_Linear_MaxAccel = 2.5f;
-
-        // 1/x
-        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
-        [ModOptionSlider]
-        [ModOption(name: "Repel Ground Max Accel [1/(cx)]", tooltip: "the distance is normalized, where x is 0 to 1", order = 6)]
-        [ModOptionFloatValues(0, 18, 0.25f)]
-        public static float RepelGround_Inverse_MaxAccel = 9;
-
-        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
-        [ModOptionSlider]
-        [ModOption(name: "Repel Ground Inverse C [1/(cx)]", tooltip: "any value less than 4 is meaningless (plot it in desmos for easy visualization/manipulation)", order = 7)]
-        [ModOptionFloatValues(4, 24, 0.25f)]
-        public static float RepelGround_Inverse_C = 8;
-
-        // 1/x^2
-        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
-        [ModOptionSlider]
-        [ModOption(name: "Repel Ground Max Accel [1/(cx)^2]", tooltip: "the distance is normalized, where x is 0 to 1", order = 8)]
-        [ModOptionFloatValues(0, 40, 0.25f)]
-        public static float RepelGround_InverseSqr_MaxAccel = 20;
-
-        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
-        [ModOptionSlider]
-        [ModOption(name: "Repel Ground Inverse^2 C [1/(cx)^2]", tooltip: "any value less than 4 is meaningless (plot it in desmos for easy visualization/manipulation)", order = 9)]
-        [ModOptionFloatValues(4, 80, 0.5f)]
-        public static float RepelGround_InverseSqr_C = 40;
-
-        [ModOptionCategory(CATEGORY_REPELGROUND, ORDER_REPELGROUND)]
-        [ModOptionSlider]
-        [ModOption(name: "Max Upward Speed", tooltip: "stop accelerating upward beyond this speed (to avoid excessive pop up speeds)", order = 10)]
-        [ModOptionFloatValues(0, 1, 0.02f)]
-        public static float RepelGround_UpSpeed_ZeroAccel = 0.1f;
-
-        #endregion
-        #region dead zone
-
-        // put in json
-
-        // these starts should be a percent or fixed offset from full
-
-        [ModOptionCategory(CATEGORY_LOOKYAW2, ORDER_LOOKYAW2)]
-        [ModOptionSlider]
-        [ModOption(name: "Dead Zone Dot Product (start)", tooltip: "How far from center before it starts turning at max rate", order = 2)]
-        [ModOptionFloatValues(0.9f, 1, 0.001f)]
-        public static float YawToLook2_DeadZone_Start = 0.98f;
-
-        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
-        [ModOptionSlider]
-        [ModOption(name: "Dead Zone Dot Product - roll (start)", tooltip: "How far from center before it starts turning at max rate", order = 3)]
-        [ModOptionFloatValues(0.9f, 1, 0.001f)]
-        public static float RotToLook_DeadZone_Roll_Start = 0.985f;
-
-        [ModOptionCategory(CATEGORY_ROTATELOOK, ORDER_ROTATELOOK)]
-        [ModOptionSlider]
-        [ModOption(name: "Dead Zone Dot Product - pitch (start)", tooltip: "How far from center before it starts turning at max rate", order = 5)]
-        [ModOptionFloatValues(0.9f, 1, 0.001f)]
-        public static float RotToLook_DeadZone_Pitch_Start = 0.98f;
-
-        #endregion
-
-
-
-
-
-        #endregion
-        #region Mod Options
 
         [ModOption(name: "Use Jetpack Mod", tooltip: "Turns on/off the Jetpack mod")]
         public static bool UseJetpackMod = true;
@@ -376,15 +147,6 @@ namespace Jetpack2
         [ModOption(name: "Should Detect Confined Area", tooltip: "Slows down accelerations when in tight spaces", order = 0)]
         public static bool ShouldDetectConfinedArea = true;
 
-        // keep the idea of a slider, but use more sensible min/max range (like 0 to 100)
-
-        [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
-        [ModOptionSlider]
-        [ModOption(name: "Gain Factor", tooltip: "Multiplied by delta time.  Larger values adjust final blocked percent faster", order = 1)]
-        [ModOptionFloatValues(0.5f, 4f, 0.05f)]
-        public static float ConfinedArea_GainFactor = 1.75f;
-
-
         [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
         [ModOption(name: "Should Avoid Obstacles", tooltip: "Will push the player away from obstacles when moving toward them (no effect if stopped near obstacles)", order = 2)]
         public static bool ShouldAvoidObstacles = true;
@@ -405,12 +167,6 @@ namespace Jetpack2
         [ModOption(name: "Should Rotate Toward Look - roll", tooltip: "Will rotate the player toward the direction looking", order = 6)]
         public static bool ShouldRotateToLook_Roll = false;
 
-        [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
-        [ModOptionSlider]
-        [ModOption(name: "rot to look: Max Turn Rate Degrees", tooltip: "Degrees per second", order = 7)]
-        [ModOptionFloatValues(1, 360, 1f)]
-        public static float RotateToLook_TurnRate = 60;
-
         #endregion
 
         #region Flight Properties
@@ -419,7 +175,7 @@ namespace Jetpack2
         [ModOptionSlider]
         [ModOption(name: "Horizontal Accel", tooltip: "How hard to accelerate horizontally", order = 0)]
         [ModOptionFloatValues(0, 24, 0.25f)]
-        public static float HorizontalAccel = 9;
+        public static float HorizontalAccel = 8;
 
         [ModOptionCategory(CATEGORY_FLIGHTPROPS, ORDER_FLIGHTPROPS)]
         [ModOptionSlider]
@@ -431,7 +187,7 @@ namespace Jetpack2
         [ModOptionSlider]
         [ModOption(name: "Drag", tooltip: "Wind resistance", order = 2)]
         [ModOptionFloatValues(0, 2, 0.05f)]
-        public static float Drag = 0.9f;
+        public static float Drag = 0.2f;
 
         [ModOptionCategory(CATEGORY_FLIGHTPROPS, ORDER_FLIGHTPROPS)]
         [ModOptionSlider]
@@ -483,7 +239,7 @@ namespace Jetpack2
         [ModOptionSlider]
         [ModOption(name: "Gaze Confidence StdDev Decay Mult", tooltip: "Does an exponential decay against standard deviation of dot products with avg.  Large number makes it require tighter groupings", order = 6)]
         [ModOptionFloatValues(1, 300, 1)]
-        public static float GazeBuffer_Confidence_StdDev_DecayMult = 100;
+        public static float GazeBuffer_Confidence_StdDev_DecayMult = 130;
 
 
         // NOTE: after running the numbers, this shouldn't be an independent slider, it should be based on spacing:
@@ -547,19 +303,19 @@ namespace Jetpack2
         [ModOptionSlider]
         [ModOption(name: "Capacitor Charge Speed", tooltip: "Charge per second when look diff is above upper dot", order = 4)]
         [ModOptionFloatValues(0, 8, 0.05f)]
-        public static float RotToLook_Capacitor_ChargeSpeed = 0.5f;
+        public static float RotToLook_Capacitor_ChargeSpeed = 0.9f;
 
         [ModOptionCategory(CATEGORY_ROTATELOOK_CAPACITOR, ORDER_ROTATELOOK_CAPACITOR)]
         [ModOptionSlider]
         [ModOption(name: "Capacitor Charge Power", tooltip: "Look diff beween upper dot and one ramps up by this power", order = 5)]
         [ModOptionFloatValues(1, 6, 0.1f)]
-        public static float RotToLook_Capacitor_ChargePower = 2;
+        public static float RotToLook_Capacitor_ChargePower = 3;
 
         [ModOptionCategory(CATEGORY_ROTATELOOK_CAPACITOR, ORDER_ROTATELOOK_CAPACITOR)]
         [ModOptionSlider]
         [ModOption(name: "Capacitor Discharge Speed", tooltip: "Charge per second when diff is below lower dot", order = 6)]
         [ModOptionFloatValues(0, 8, 0.05f)]
-        public static float RotToLook_Capacitor_DischargeSpeed = 2f;
+        public static float RotToLook_Capacitor_DischargeSpeed = 2.5f;
 
         [ModOptionCategory(CATEGORY_ROTATELOOK_CAPACITOR, ORDER_ROTATELOOK_CAPACITOR)]
         [ModOptionSlider]
@@ -576,20 +332,44 @@ namespace Jetpack2
         [ModOptionCategory(CATEGORY_ROTATELOOK_LOOKZONES, ORDER_ROTATELOOK_LOOKZONES)]
         [ModOptionSlider]
         [ModOption(name: "Dead Zone Dot Product - yaw", tooltip: "How far from center where there is no turning", order = 1)]
-        [ModOptionFloatValues(0.9f, 1, 0.001f)]
-        public static float RotToLook_DeadZone_Yaw_Full = 0.995f;
+        [ModOptionFloatValues(0.8f, 1, 0.001f)]
+        public static float RotToLook_DeadZone_Yaw_Full = 0.98f;
 
         [ModOptionCategory(CATEGORY_ROTATELOOK_LOOKZONES, ORDER_ROTATELOOK_LOOKZONES)]
         [ModOptionSlider]
         [ModOption(name: "Dead Zone Dot Product - pitch", tooltip: "How far from center where there is no turning", order = 2)]
-        [ModOptionFloatValues(0.9f, 1, 0.001f)]
-        public static float RotToLook_DeadZone_Pitch_Full = 0.995f;
+        [ModOptionFloatValues(0.8f, 1, 0.001f)]
+        public static float RotToLook_DeadZone_Pitch_Full = 0.96f;
 
         [ModOptionCategory(CATEGORY_ROTATELOOK_LOOKZONES, ORDER_ROTATELOOK_LOOKZONES)]
         [ModOptionSlider]
         [ModOption(name: "Dead Zone Dot Product - roll", tooltip: "How far from center where there is no turning", order = 3)]
-        [ModOptionFloatValues(0.9f, 1, 0.001f)]
+        [ModOptionFloatValues(0.8f, 1, 0.001f)]
         public static float RotToLook_DeadZone_Roll_Full = 0.995f;
+
+
+
+        // these starts should be a percent or fixed offset from full
+
+        [ModOptionCategory(CATEGORY_ROTATELOOK_LOOKZONES, ORDER_ROTATELOOK_LOOKZONES)]
+        [ModOptionSlider]
+        [ModOption(name: "Dead Zone Dot Product - yaw (start)", tooltip: "How far from center before it starts turning at max rate", order = 4)]
+        [ModOptionFloatValues(0.8f, 1, 0.001f)]
+        public static float RotToLook_DeadZone_Yaw_Start = 0.93f;
+
+        [ModOptionCategory(CATEGORY_ROTATELOOK_LOOKZONES, ORDER_ROTATELOOK_LOOKZONES)]
+        [ModOptionSlider]
+        [ModOption(name: "Dead Zone Dot Product - pitch (start)", tooltip: "How far from center before it starts turning at max rate", order = 5)]
+        [ModOptionFloatValues(0.8f, 1, 0.001f)]
+        public static float RotToLook_DeadZone_Pitch_Start = 0.88f;
+
+        [ModOptionCategory(CATEGORY_ROTATELOOK_LOOKZONES, ORDER_ROTATELOOK_LOOKZONES)]
+        [ModOptionSlider]
+        [ModOption(name: "Dead Zone Dot Product - roll (start)", tooltip: "How far from center before it starts turning at max rate", order = 6)]
+        [ModOptionFloatValues(0.8f, 1, 0.001f)]
+        public static float RotToLook_DeadZone_Roll_Start = 0.93f;
+
+
 
 
 
@@ -597,6 +377,27 @@ namespace Jetpack2
 
         // zero delay zone / zero wait zone / immediate response zone
 
+
+        #endregion
+        #region Rotate To Look - Turn Rates
+
+        [ModOptionCategory(CATEGORY_ROTATELOOK_TURNRATES, ORDER_ROTATELOOK_TURNRATES)]
+        [ModOptionSlider]
+        [ModOption(name: "rot to look: Max Turn Rate Degrees - yaw", tooltip: "Degrees per second", order = 0)]
+        [ModOptionFloatValues(1, 360, 1f)]
+        public static float RotateToLook_TurnRate_Yaw = 80;
+
+        [ModOptionCategory(CATEGORY_ROTATELOOK_TURNRATES, ORDER_ROTATELOOK_TURNRATES)]
+        [ModOptionSlider]
+        [ModOption(name: "rot to look: Max Turn Rate Degrees - pitch", tooltip: "Degrees per second", order = 1)]
+        [ModOptionFloatValues(1, 360, 1f)]
+        public static float RotateToLook_TurnRate_Pitch = 80;
+
+        [ModOptionCategory(CATEGORY_ROTATELOOK_TURNRATES, ORDER_ROTATELOOK_TURNRATES)]
+        [ModOptionSlider]
+        [ModOption(name: "rot to look: Max Turn Rate Degrees - roll", tooltip: "Degrees per second", order = 2)]
+        [ModOptionFloatValues(1, 360, 1f)]
+        public static float RotateToLook_TurnRate_Roll = 80;
 
         #endregion
         #region Rotate To Look - ik
@@ -613,7 +414,7 @@ namespace Jetpack2
         [ModOptionSlider]
         [ModOption(name: "Forward Trim Degrees (pitch)", tooltip: "Forward comes from ragdoll spine, so may point up/down a little.  This angle is added to help get it close to zero.  Negative  pulls down, positive pulls up", order = 2)]
         [ModOptionFloatValues(-20, 20, 0.5f)]
-        public static float RotToLook_ForwardTrimDegrees_Pitch = 0;
+        public static float RotToLook_ForwardTrimDegrees_Pitch = 11.5f;
 
         #endregion
 
@@ -771,10 +572,6 @@ namespace Jetpack2
 
         #endregion
 
-        // PRE-FLIGHT DATA
-        private FlightData _old = null;
-
-        // FLIGHT DATA
         private bool _isFlying = false;
         private bool _markedToFly = false;      // will fly once not grounded
         private float _last_applied_drag = -1;
@@ -807,6 +604,7 @@ namespace Jetpack2
 
             //TryLoadConfig();
             //TryLoadConfig2();
+            TryLoadConfig3();
         }
 
         private void Player_onSpawn(Player player)
@@ -1008,7 +806,7 @@ namespace Jetpack2
         {
             try
             {
-                ConfigData _config = null;      // pretending this would be a member variable
+                TestConfigData _config = null;      // pretending this would be a member variable
 
 
                 // from inside ConfigData.Init...
@@ -1017,8 +815,8 @@ namespace Jetpack2
 
 
                 // about to instantiate ConfigData.  ConfigData.testInt: 52
-                Debug.Log($"about to instantiate ConfigData.  ConfigData.testInt: {ConfigData.testInt}");
-                _config = new ConfigData();
+                Debug.Log($"about to instantiate ConfigData.  ConfigData.testInt: {TestConfigData.testInt}");
+                _config = new TestConfigData();
 
                 // manually calling _config.Init()
                 // System.NullReferenceException: Object reference not set to an instance of an object
@@ -1026,6 +824,18 @@ namespace Jetpack2
                 _config.Init();
 
                 Debug.Log("after calling _config.Init()");
+            }
+            catch (Exception ex)
+            {
+                Debug.Log(ex.ToString());
+            }
+        }
+        private void TryLoadConfig3()
+        {
+            try
+            {
+                Debug.Log($"ConfinedAreaData.FalloffPower: {ConfinedAreaData.falloffPower}");
+                Debug.Log($"RepelGroundData.InverseSqr_MaxAccel: {RepelGroundData.inverseSqr_MaxAccel}");
             }
             catch (Exception ex)
             {

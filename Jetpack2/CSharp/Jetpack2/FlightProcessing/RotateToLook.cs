@@ -197,9 +197,17 @@ namespace Jetpack2.FlightProcessing
             _capacitor_roll = UpdateCapacitor(_capacitor_roll, gaze.roll_direction, dirs.head_up, gaze.roll_confidence, deadzones.roll, elapsed_seconds);
 
             // Get turn rates
-            var turnrate_yaw = GetTurnRate(dirs.body_forward, gaze.yaw_direction, gaze.yawpitch_confidence, deadzones.yaw, _capacitor_yaw);
-            var turnrate_pitch = GetTurnRate(dirs.body_forward, gaze.pitch_direction, gaze.yawpitch_confidence, deadzones.pitch, _capacitor_pitch);
-            var turnrate_roll = GetTurnRate(dirs.body_up, gaze.roll_direction, gaze.roll_confidence, deadzones.roll, _capacitor_roll);
+            var turnrate_yaw = JetpackScript.ShouldRotateToLook_Yaw ?
+                GetTurnRate(dirs.body_forward, gaze.yaw_direction, gaze.yawpitch_confidence, deadzones.yaw, _capacitor_yaw, JetpackScript.RotateToLook_TurnRate_Yaw) :
+                null;
+
+            var turnrate_pitch = JetpackScript.ShouldRotateToLook_Pitch ?
+                GetTurnRate(dirs.body_forward, gaze.pitch_direction, gaze.yawpitch_confidence, deadzones.pitch, _capacitor_pitch, JetpackScript.RotateToLook_TurnRate_Pitch) :
+                null;
+
+            var turnrate_roll = JetpackScript.ShouldRotateToLook_Roll ?
+                GetTurnRate(dirs.body_up, gaze.roll_direction, gaze.roll_confidence, deadzones.roll, _capacitor_roll, JetpackScript.RotateToLook_TurnRate_Roll) :
+                null;
 
             // Turn Player
             TurnPlayer(turnrate_yaw, turnrate_pitch, turnrate_roll, dirs.center_player, elapsed_seconds);
@@ -471,7 +479,7 @@ namespace Jetpack2.FlightProcessing
 
             // Draw dead zones as ellipses
             DrawYawPitch_DeadzoneEllipse(ref _deadzone_inner, ref _deadzone_inner_dot_yaw, ref _deadzone_inner_dot_pitch, JetpackScript.RotToLook_DeadZone_Yaw_Full, JetpackScript.RotToLook_DeadZone_Pitch_Full, plane_point, body_forward, body_up, PLANE_DIST, _renderer);
-            DrawYawPitch_DeadzoneEllipse(ref _deadzone_outer, ref _deadzone_outer_dot_yaw, ref _deadzone_outer_dot_pitch, JetpackScript.YawToLook2_DeadZone_Start, JetpackScript.RotToLook_DeadZone_Pitch_Start, plane_point, body_forward, body_up, PLANE_DIST, _renderer);
+            DrawYawPitch_DeadzoneEllipse(ref _deadzone_outer, ref _deadzone_outer_dot_yaw, ref _deadzone_outer_dot_pitch, JetpackScript.RotToLook_DeadZone_Yaw_Start, JetpackScript.RotToLook_DeadZone_Pitch_Start, plane_point, body_forward, body_up, PLANE_DIST, _renderer);
 
             // Gaze buffer results
             DrawGazeOffsets(PLANE_DIST, INNER_DIST, head_pos, body_forward, direction_offset, confidence_offset);
@@ -1035,7 +1043,7 @@ namespace Jetpack2.FlightProcessing
             return new DeadzonePercents
             {
                 yaw = gaze.yawpitch_confidence != null ?
-                    GetDeadZonePercent(dirs.body_forward, gaze.yaw_direction, JetpackScript.RotToLook_DeadZone_Yaw_Full, JetpackScript.YawToLook2_DeadZone_Start) :
+                    GetDeadZonePercent(dirs.body_forward, gaze.yaw_direction, JetpackScript.RotToLook_DeadZone_Yaw_Full, JetpackScript.RotToLook_DeadZone_Yaw_Start) :
                     1,
 
                 pitch = gaze.yawpitch_confidence != null ?
@@ -1136,7 +1144,7 @@ namespace Jetpack2.FlightProcessing
         // Version 1 doesn't bother with angular momentum
 
         // This calculates degrees per second.  It's up to the caller to multiply be elapsed time
-        private static (Vector3 axis, float degrees_per_sec)? GetTurnRate(Vector3 forward, Vector3 direction, float? confidence, float deadzone_percent, float capacitor)
+        private static (Vector3 axis, float degrees_per_sec)? GetTurnRate(Vector3 forward, Vector3 direction, float? confidence, float deadzone_percent, float capacitor, float max_speed)
         {
             if (confidence == null)
                 return null;       // not holding a gaze at anything
@@ -1153,7 +1161,7 @@ namespace Jetpack2.FlightProcessing
 
             // figure out angular speed
             // NOTE: not reducing by confidence percent.  that has already influenced capacitor charge rate
-            float speed = JetpackScript.RotateToLook_TurnRate * capacitor * (1 - deadzone_percent);
+            float speed = max_speed * capacitor * (1 - deadzone_percent);
             if (rot_angle < 0)
                 speed = -speed;     // shouldn't happen
 

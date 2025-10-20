@@ -1,0 +1,48 @@
+﻿{
+  "$type": "Jetpack2.Models.ObstacleAvoidanceData, Jetpack2",
+  "id": "Jetpack2_Config_ObstacleAvoidance",
+  "sensitiveContent": "None",
+  "sensitiveFilterBehaviour": "Discard",
+  "version": 0,
+  "groupPath": null,
+
+  // Angle for the point between major and minor axis
+  // slider: 0 to 90, step 1
+  "EllipsePointAngle": 55,
+
+  // At each point along the perimiter of the ellipse, there will be two diverging rays at an angle (one toward interior, one away from ellipse)
+  // slider: 0 to 24, step 1
+  "EllipseRayAngle": 9,
+
+  // Max random yaw of each ray source each frame
+  // slider: 0 to 45, step 1
+  "EllipseRayAngleYaw": 8,
+
+  // Max random pitch of each ray source each frame
+  // slider: 0 to 45, step 1
+  "EllipseRayAnglePitch": 12,
+
+  // Length of the ray cast (velocity * mult)
+  // slider: 0 to 6, step 0.05
+  "RayDistMult": 2,
+
+  // Accel is zero beyond this distance
+  // slider: 0 to 24, step 0.5
+  "Analyze_MaxDist": 6,
+
+  // Percent Dropoff is 1-x^n
+  // slider: 1 to 6, step 0.25
+  "Analyze_DropoffPow": 3,
+
+  // Accel is reduced based on speed * this
+  // slider: 0 to 2, step 0.05
+  "Analyze_SpeedMult": 0.75,
+
+  // When dot product of input and accel is negative, this is how negative the dot is before accel starts getting cancelled out
+  // slider: 0 to 1, step 0.05
+  "DontFight_DotThreshold_Start": 0.1,
+
+  // When dot product of input and accel is negative, this is how negative the dot is when accel is fully cancelled out
+  // slider: 0 to 1, step 0.05
+  "DontFight_DotThreshold_Full": 0.7
+}

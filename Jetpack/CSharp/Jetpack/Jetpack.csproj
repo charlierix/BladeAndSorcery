@@ -663,7 +663,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /Y "$(TargetPath)" "$(SolutionDir)..\..\!mod_final\Jetpack\$(ProjectName).dll"
-copy /Y "$(TargetDir)PerfectlyNormalBaS.dll" "$(SolutionDir)..\..\!mod_final\Jetpack\PerfectlyNormalBaS.dll"</PostBuildEvent>
+    <PostBuildEvent>copy /Y "$(TargetPath)" "$(SolutionDir)..\Deployed\$(ProjectName).dll"
+copy /Y "$(TargetDir)PerfectlyNormalBaS.dll" "$(SolutionDir)..\Deployed\PerfectlyNormalBaS.dll"</PostBuildEvent>
   </PropertyGroup>
 </Project>

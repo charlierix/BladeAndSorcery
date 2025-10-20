@@ -1,4 +1,5 @@
-﻿using PerfectlyNormalBaS;
+﻿using Jetpack2.Models;
+using PerfectlyNormalBaS;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -121,7 +122,7 @@ namespace Jetpack2.Scanning
             // NOTE: this also has a ray coming out of origin
             var rays = GetEllipseRays2(ellipse_points.origin, ellipse_points.perimeter, _velocity, ellipse_points.up, ellipse_points.right);
 
-            _ray_len = _speed * JetpackScript.ObstAvoid_RayDistMult;
+            _ray_len = _speed * ObstacleAvoidanceData.rayDistMult;
 
             CastAndStoreRays(rays, _velocity, _ray_len);
         }
@@ -443,8 +444,8 @@ namespace Jetpack2.Scanning
             Vector3 left_pos = mid_pos - (minor_axis_dir * minor_axis_half_width);
 
             // Four points between major/minor axiis
-            if (_ellipsePoints == null || !_ellipsePoints.Angle.IsNearValue(JetpackScript.ObstAvoid_EllipsePointAngle))
-                _ellipsePoints = GetEllipsePoints(JetpackScript.ObstAvoid_EllipsePointAngle);
+            if (_ellipsePoints == null || !_ellipsePoints.Angle.IsNearValue(ObstacleAvoidanceData.ellipsePointAngle))
+                _ellipsePoints = GetEllipsePoints(ObstacleAvoidanceData.ellipsePointAngle);
 
             Vector3 along_major = major_axis_dir * (height / 2 * _ellipsePoints.Cosθ);
             Vector3 along_minor = minor_axis_dir * (minor_axis_half_width * _ellipsePoints.Sinθ);
@@ -564,7 +565,7 @@ namespace Jetpack2.Scanning
 
             retVal.Add(new Ray(origin, ray_dir));
 
-            float max_angle = JetpackScript.ObstAvoid_EllipseRayAngleOut;
+            float max_angle = ObstacleAvoidanceData.ellipseRayAngle;
             float min_angle = max_angle / 3f;
 
             var rand = StaticRandom.GetRandomForThread();
@@ -587,8 +588,8 @@ namespace Jetpack2.Scanning
 
             retVal.Add(new Ray(origin, ray_dir));
 
-            float max_yaw = JetpackScript.ObstAvoid_EllipseRayAngleYaw;
-            float max_pitch = JetpackScript.ObstAvoid_EllipseRayAnglePitch;
+            float max_yaw = ObstacleAvoidanceData.ellipseRayAngleYaw;
+            float max_pitch = ObstacleAvoidanceData.ellipseRayAnglePitch;
 
             var rand = StaticRandom.GetRandomForThread();
 
@@ -651,7 +652,7 @@ namespace Jetpack2.Scanning
                 Vector3 to_hit = ray.Hit.Value.point - pos;
 
                 float to_hit_dist = to_hit.magnitude;
-                if (to_hit_dist > JetpackScript.ObstAvoid_Analyze_MaxDist)
+                if (to_hit_dist > ObstacleAvoidanceData.analyze_MaxDist)
                     continue;
 
                 //if (!ray.Hit.Value.normal.magnitude.IsNearValue(1))       // it's always len 1
@@ -664,10 +665,10 @@ namespace Jetpack2.Scanning
                 if (dot < 0)
                     normal = -normal;
 
-                float normalized_dist = to_hit_dist / JetpackScript.ObstAvoid_Analyze_MaxDist;
+                float normalized_dist = to_hit_dist / ObstacleAvoidanceData.analyze_MaxDist;
 
-                float dist_reduce_percent = 1 - (float)Math.Pow(normalized_dist, JetpackScript.ObstAvoid_Analyze_DropoffPow);
-                float speed_reduce_percent = speed * JetpackScript.ObstAvoid_Analyze_SpeedMult;
+                float dist_reduce_percent = 1 - (float)Math.Pow(normalized_dist, ObstacleAvoidanceData.analyze_DropoffPow);
+                float speed_reduce_percent = speed * ObstacleAvoidanceData.analyze_SpeedMult;
 
                 Vector3 line_point = Math3D.GetClosestPoint_Line_Point(new Ray(pos, velocity_dir), ray.Hit.Value.point);
                 Vector3 axis_line = line_point - ray.Hit.Value.point;
@@ -729,8 +730,8 @@ namespace Jetpack2.Scanning
             // It is negative, so normalize the accel to get an accurate measurment
             Vector3 a = accel.Value.normalized;
 
-            float dot_threshold_start = -JetpackScript.ObstAvoid_DontFight_DotThreshold_Start;
-            float dot_threshold_full = -JetpackScript.ObstAvoid_DontFight_DotThreshold_Full;
+            float dot_threshold_start = -ObstacleAvoidanceData.dontFight_DotThreshold_Start;
+            float dot_threshold_full = -ObstacleAvoidanceData.dontFight_DotThreshold_Full;
 
             float dot = Vector3.Dot(a, input_dir.Value);
 
