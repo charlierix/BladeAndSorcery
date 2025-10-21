@@ -51,8 +51,10 @@
     <Compile Include="FlightProcessing\PlayerRotator.cs" />
     <Compile Include="FlightProcessing\RotateToLook.cs" />
     <Compile Include="FlightProcessing\ThumbstickToAccel.cs" />
+    <Compile Include="FlightProcessing\Wings.cs" />
     <Compile Include="InputWatchers\GazeBuffer.cs" />
     <Compile Include="InputWatchers\PlayerRagdollUtil.cs" />
+    <Compile Include="Models\ModConfigDefaultsData.cs" />
     <Compile Include="Models\TestConfigData.cs" />
     <Compile Include="Models\ConfinedAreaData.cs" />
     <Compile Include="Models\ObstacleAvoidanceData.cs" />
@@ -666,10 +668,10 @@
   <ItemGroup />
   <ItemGroup>
     <None Include="Configs\ConfinedArea.json" />
+    <None Include="Configs\ModConfigDefaults.json" />
     <None Include="Configs\ObstacleAvoidance.json" />
     <None Include="Configs\RepelGround.json" />
     <None Include="Configs\test_config.json" />
-    <None Include="test_config.json" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

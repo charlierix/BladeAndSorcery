@@ -94,7 +94,48 @@ namespace Jetpack2
         //[ModOption("Info")]
         //private static void label1(string value) { }
 
-        [ModOption(name: "Use Jetpack Mod", tooltip: "Turns on/off the Jetpack mod")]
+
+
+
+
+
+
+        public static ModOptionString[] loadDefaultsButtonLabel = new[]
+        {
+            new ModOptionString("Load Defaults", "LoadDefaults")
+        };
+
+        // NOTE: these OnClick functions always get called when the mod first loads
+        private static bool _onLoadDefaults_called = false;
+
+        [ModOptionButton]
+        [ModOption("Put all settings back to defaults", "those default values are stored in configs\\ModConfigDefaults.json", nameof(loadDefaultsButtonLabel), order = 0)]
+        public static void OnLoadDefaults(string value)
+        {
+            if (!_onLoadDefaults_called)
+            {
+                _onLoadDefaults_called = true;
+                return;
+            }
+
+
+
+            // use reflection
+
+
+
+        }
+
+
+
+
+
+
+
+
+
+
+        [ModOption(name: "Use Jetpack Mod", tooltip: "Turns on/off the Jetpack mod", order = 1)]
         public static bool UseJetpackMod = true;
 
         #region Activation / Deactivation

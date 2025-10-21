@@ -1,0 +1,212 @@
+﻿{
+  "$type": "Jetpack2.Models.ModConfigDefaultsData, Jetpack2",
+  "id": "Jetpack2_Config_ModConfigDefaults",
+  "sensitiveContent": "None",
+  "sensitiveFilterBehaviour": "Discard",
+  "version": 0,
+  "groupPath": null,
+
+  "FlightActivation": "HoldUp",
+
+  // ************** Activation / Deactivation **************
+
+  // Whether to stop flight when on the ground
+  "DeactivateOnGround": true,
+
+  // Options that are double click or gestures can be required to be done at the same time by both hands or just one\n\nSingle hand is easier but may cause misreads
+  "RequireBothHands": true,
+
+  // ************** Toggle Behaviors **************
+
+  // Slows down accelerations when in tight spaces
+  "ShouldDetectConfinedArea": true,
+
+  // Will push the player away from obstacles when moving toward them (no effect if stopped near obstacles)
+  "ShouldAvoidObstacles": true,
+
+  // Will push the player upward from the ground requiring deliberate down pressure on the thumstick to touch the ground
+  "ShouldRepelGround": true,
+
+  // Will rotate the player toward the direction looking
+  "ShouldRotateToLook_Yaw": false,
+
+  // Will rotate the player toward the direction looking
+  "ShouldRotateToLook_Pitch": false,
+
+  // Will rotate the player toward the direction looking
+  "ShouldRotateToLook_Roll": false,
+
+  // ************** Flight Properties **************
+
+  // How hard to accelerate horizontally
+  // slider values: 0 to 24, step 0.25
+  "HorizontalAccel": 8,
+
+  // How hard to accelerate vertically
+  // slider values: 0 to 12, step 0.25
+  "VerticalAccel": 6,
+
+  // Wind resistance
+  // slider values: 0 to 2, step 0.05
+  "Drag": 0.2,
+
+  // 0 is no gravity.  9.8 is standard
+  // slider values: 0 to 18, step 0.1
+  "GravitySetting": 0,
+
+  // ************** Rotate To Look - gaze buffer **************
+
+  // How long to keep previous look directions
+  // slider values: 0 to 3, step 0.01
+  "GazeBuffer_MaxSeconds": 1.1,
+
+  // Max size of buffer
+  // slider values: 0 to 500, step 20
+  "GazeBuffer_MaxCount": 60,
+
+  // The average of look directions.  This is the min confidence before the look direction is considered
+  // slider values: 0 to 1, step 0.01
+  "GazeBuffer_GazeConfidence_Direct": 0.7,
+
+  // The average of look directions.  This is the min confidence before the look direction is considered
+  // slider values: 0 to 1, step 0.01
+  "GazeBuffer_GazeConfidence_Offset": 0.7,
+
+  // The average of look directions.  This is the min confidence before the look direction is considered
+  // slider values: 0 to 1, step 0.01
+  "GazeBuffer_GazeConfidence_Target": 0.9,
+
+  // Does an exponential decay against standard deviation of dot products with avg.  Large number makes it require tighter groupings
+  // slider values: 1 to 300, step 1
+  "GazeBuffer_Confidence_StdDev_DecayMult": 130,
+
+  // The smallest radius (when speed is zero)
+  // slider values: 2 to 9, step 0.25
+  "GazeBuffer_GazeTarget_RadiiForSpeed_Min": 5,
+
+  // Speed to base radius scaling factor
+  // slider values: 0.1 to 2, step 0.05
+  "GazeBuffer_GazeTarget_RadiiForSpeed_SpeedRatio": 0.75,
+
+  // The size of the next largest radius (multiplied by base radius)
+  // slider values: 1.5 to 5, step 0.1
+  "GazeBuffer_GazeTarget_RadiiForSpeed_StepMult": 3,
+
+  // ************** Rotate To Look - capacitor **************
+
+  // Capacitor increases above this (forward dot look)
+  // slider values: 0 to 1, step 0.01
+  "RotToLook_Capacitor_UpperDot": 0.95,
+
+  // Capacitor starts discharging below this (forward dot look)
+  // slider values: 0 to 1, step 0.01
+  "RotToLook_Capacitor_LowerDot": 0.9,
+
+  // Capacitor discharges fastest below this (forward dot look)
+  // slider values: 0 to 1, step 0.01
+  "RotToLook_Capacitor_BottomDot": 0.75,
+
+  // Charge per second when look diff is above upper dot
+  // slider values: 0 to 8, step 0.05
+  "RotToLook_Capacitor_ChargeSpeed": 0.9,
+
+  // Look diff beween upper dot and one ramps up by this power
+  // slider values: 1 to 6, step 0.1
+  "RotToLook_Capacitor_ChargePower": 3,
+
+  // Charge per second when diff is below lower dot
+  // slider values: 0 to 8, step 0.05
+  "RotToLook_Capacitor_DischargeSpeed": 2.5,
+
+  // Look diff between lower dot and zero ramps up by this power
+  // slider values: 1 to 6, step 0.1
+  "RotToLook_Capacitor_DischargePower": 2,
+
+  // ************** Rotate To Look - look zones **************
+
+  // --- deadzone initial ---
+
+  // How far from center where there is no turning
+  // slider values: 0.8 to 1, step 0.001
+  "RotToLook_DeadZone_Yaw_Full": 0.98,
+
+  // How far from center where there is no turning
+  // slider values: 0.8 to 1, step 0.001
+  "RotToLook_DeadZone_Pitch_Full": 0.96,
+
+  // How far from center where there is no turning
+  // slider values: 0.8 to 1, step 0.001
+  "RotToLook_DeadZone_Roll_Full": 0.995,
+
+
+
+  // --- these starts should be a percent or fixed offset from full ----
+
+  // How far from center before it starts turning at max rate
+  // slider values: 0.8 to 1, step 0.001
+  "RotToLook_DeadZone_Yaw_Start": 0.93,
+
+  // How far from center before it starts turning at max rate
+  // slider values: 0.8 to 1, step 0.001
+  "RotToLook_DeadZone_Pitch_Start": 0.88,
+
+  // How far from center before it starts turning at max rate
+  // slider values: 0.8 to 1, step 0.001
+  "RotToLook_DeadZone_Roll_Start": 0.93,
+
+  // ************** Rotate To Look - Turn Rates **************
+
+  // Degrees per second
+  // slider values: 1 to 360, step 1
+  "RotateToLook_TurnRate_Yaw": 80,
+
+  // Degrees per second
+  // slider values: 1 to 360, step 1
+  "RotateToLook_TurnRate_Pitch": 80,
+
+  // Degrees per second
+  // slider values: 1 to 360, step 1
+  "RotateToLook_TurnRate_Roll": 80,
+
+  // ************** Rotate To Look - ik **************
+
+  // Forward comes from ragdoll spine, which seems to always point to the right a little.  This angle is added to help get it close to zero.  Negative pulls to the left, positive to the right
+  // slider values: -20 to 20, step 0.5
+  "RotToLook_ForwardTrimDegrees_Yaw": -7,
+
+  // Forward comes from ragdoll spine, so may point up/down a little.  This angle is added to help get it close to zero.  Negative  pulls down, positive pulls up
+  // slider values: -20 to 20, step 0.5
+  "RotToLook_ForwardTrimDegrees_Pitch": 11.5,
+
+  // ************** Debug Drawing **************
+
+  // Shows what confined area scanner sees
+  "ShowConfinedArea": false,
+
+  // Shows the rays and hits that obstacle avoidance uses
+  "ShowObstacleAvoidance": false,
+
+  // Shows the rays and hits that repel ground uses
+  "ShowRepelGround": false,
+
+  // Shows spheres that the gaze buffer hit scans and returns look when the user holds gaze long and steady enough
+  "ShowGazeBuffer_Target": false,
+
+  // Shows lines that gaze buffer uses to detect when staring at a consistent offset from forward
+  "ShowGazeBuffer_Offset": false,
+
+  // Shows visuals of 'rotate to look' using gaze buffer results
+  "ShowRotateToLook": false,
+
+  // Focused tester showing world to model rotations and back of head up vector
+  "ShowHeadUpRotateVisualizer": false,
+
+  // Shows points/lines on various transforms of the player avatar
+  "VisualizePlayerPoints": false,
+
+  // This one looks like an early tester of figuring out how to render debug visuals - pretty useless beyond that
+  "ShowDebugVisuals": false,
+
+  // Shows various properties in a textbox
+  "ShowDebugStats": false
+}
