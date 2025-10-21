@@ -55,13 +55,13 @@ namespace Jetpack2.DebugCode
         {
             _gazebuffer_roll.Clear();
 
-            if (JetpackScript.ShowHeadUpRotateVisualizer)
+            if (UIModOptions.ShowHeadUpRotateVisualizer)
                 ClearDebugVisuals();
         }
 
         public void Update(float elapsed_seconds)
         {
-            if (!JetpackScript.ShowHeadUpRotateVisualizer)
+            if (!UIModOptions.ShowHeadUpRotateVisualizer)
                 return;
 
 
@@ -259,9 +259,9 @@ namespace Jetpack2.DebugCode
         private void TrimForwardUp(ref Vector3 forward, ref Vector3 up)
         {
             // Yaw Trim
-            if (!JetpackScript.RotToLook_ForwardTrimDegrees_Yaw.IsNearZero())
+            if (!UIModOptions.RotToLook_ForwardTrimDegrees_Yaw.IsNearZero())
             {
-                Quaternion yaw = Quaternion.AngleAxis(JetpackScript.RotToLook_ForwardTrimDegrees_Yaw, up);
+                Quaternion yaw = Quaternion.AngleAxis(UIModOptions.RotToLook_ForwardTrimDegrees_Yaw, up);
 
                 // Apply Yaw Rotation to both forward and up
                 forward = yaw * forward;
@@ -269,10 +269,10 @@ namespace Jetpack2.DebugCode
             }
 
             // Pitch Trim
-            if (!JetpackScript.RotToLook_ForwardTrimDegrees_Pitch.IsNearZero())
+            if (!UIModOptions.RotToLook_ForwardTrimDegrees_Pitch.IsNearZero())
             {
                 Vector3 right = Vector3.Cross(forward, up);
-                Quaternion pitch = Quaternion.AngleAxis(JetpackScript.RotToLook_ForwardTrimDegrees_Pitch, right);
+                Quaternion pitch = Quaternion.AngleAxis(UIModOptions.RotToLook_ForwardTrimDegrees_Pitch, right);
 
                 // Apply Pitch Rotation to both forward and up
                 forward = pitch * forward;

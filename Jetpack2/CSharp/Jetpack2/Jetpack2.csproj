@@ -77,6 +77,7 @@
     <Compile Include="Scanning\ConfinedArea.cs" />
     <Compile Include="Scanning\ObstacleAvoidance.cs" />
     <Compile Include="Scanning\ScanningUtil.cs" />
+    <Compile Include="UIModOptions.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="SteamVR, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">

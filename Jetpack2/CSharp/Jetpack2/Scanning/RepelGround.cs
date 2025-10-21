@@ -74,7 +74,7 @@ namespace Jetpack2.Scanning
 
         public void Update_CastRays(ThunderRoad.Locomotion loco)
         {
-            if (!JetpackScript.ShouldRepelGround)
+            if (!UIModOptions.ShouldRepelGround)
                 return;
 
             _velocity = loco.physicBody.velocity;
@@ -133,9 +133,9 @@ namespace Jetpack2.Scanning
         }
         public Vector3? Update_Finish(ThunderRoad.Locomotion loco, Vector3? input_dir)
         {
-            if (!JetpackScript.ShouldRepelGround)
+            if (!UIModOptions.ShouldRepelGround)
             {
-                if (JetpackScript.ShowRepelGround)
+                if (UIModOptions.ShowRepelGround)
                     ClearDebugVisuals();
                 return null;
             }
@@ -155,7 +155,7 @@ namespace Jetpack2.Scanning
             // (they all contribute to up)
             var avg_hit = GetAverageHit(rays[0].Rays, hits);
 
-            if (JetpackScript.ShowRepelGround)
+            if (UIModOptions.ShowRepelGround)
             {
                 DrawFootPos(_foot_pos);
                 DrawVelocity(_foot_pos, _velocity, _vel_horz, _vel_vert);
@@ -166,7 +166,7 @@ namespace Jetpack2.Scanning
 
             if (!avg_hit.has_hit)
             {
-                if (JetpackScript.ShowRepelGround)
+                if (UIModOptions.ShowRepelGround)
                     RemoveAccel();
                 return null;
             }
@@ -614,7 +614,7 @@ namespace Jetpack2.Scanning
             Vector3 inverse = GetAccel_Inverse(direction, distance, max_dist, RepelGroundData.inverse_MaxAccel, RepelGroundData.inverse_C);
             Vector3 invsqr = GetAccel_InvSqr(direction, distance, max_dist, RepelGroundData.inverseSqr_MaxAccel, RepelGroundData.inverseSqr_C);
 
-            if (JetpackScript.ShowRepelGround)
+            if (UIModOptions.ShowRepelGround)
                 DrawAccel(linear, inverse, invsqr, percent);
 
             Vector3 retVal = (linear + inverse + invsqr) * percent;

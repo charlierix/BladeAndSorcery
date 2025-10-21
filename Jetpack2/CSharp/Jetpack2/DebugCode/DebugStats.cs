@@ -27,7 +27,7 @@ namespace Jetpack2.DebugCode
         }
         public void Update_Final()
         {
-            if (!JetpackScript.ShowDebugStats)
+            if (!UIModOptions.ShowDebugStats)
                 return;
 
             EnsureDebugActive();

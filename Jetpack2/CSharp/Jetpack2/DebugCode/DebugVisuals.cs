@@ -11,7 +11,7 @@ namespace Jetpack2.DebugCode
 
         public void AddVisuals()
         {
-            if (!JetpackScript.ShowDebugVisuals)
+            if (!UIModOptions.ShowDebugVisuals)
                 return;
 
             if (_renderer == null)

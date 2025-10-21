@@ -170,13 +170,13 @@ namespace Jetpack2.FlightProcessing
             _gazebuffer.Clear();
             _gazebuffer_roll.Clear();
 
-            if (JetpackScript.ShowRotateToLook)
+            if (UIModOptions.ShowRotateToLook)
                 ClearDebugVisuals();
         }
 
         public void Update(float elapsed_seconds)
         {
-            if (!(JetpackScript.ShouldRotateToLook_Yaw || JetpackScript.ShouldRotateToLook_Pitch || JetpackScript.ShouldRotateToLook_Roll))
+            if (!(UIModOptions.ShouldRotateToLook_Yaw || UIModOptions.ShouldRotateToLook_Pitch || UIModOptions.ShouldRotateToLook_Roll))
                 return;
 
             // Get body and head directions (also pos, velocity)
@@ -197,22 +197,22 @@ namespace Jetpack2.FlightProcessing
             _capacitor_roll = UpdateCapacitor(_capacitor_roll, gaze.roll_direction, dirs.head_up, gaze.roll_confidence, deadzones.roll, elapsed_seconds);
 
             // Get turn rates
-            var turnrate_yaw = JetpackScript.ShouldRotateToLook_Yaw ?
-                GetTurnRate(dirs.body_forward, gaze.yaw_direction, gaze.yawpitch_confidence, deadzones.yaw, _capacitor_yaw, JetpackScript.RotateToLook_TurnRate_Yaw) :
+            var turnrate_yaw = UIModOptions.ShouldRotateToLook_Yaw ?
+                GetTurnRate(dirs.body_forward, gaze.yaw_direction, gaze.yawpitch_confidence, deadzones.yaw, _capacitor_yaw, UIModOptions.RotateToLook_TurnRate_Yaw) :
                 null;
 
-            var turnrate_pitch = JetpackScript.ShouldRotateToLook_Pitch ?
-                GetTurnRate(dirs.body_forward, gaze.pitch_direction, gaze.yawpitch_confidence, deadzones.pitch, _capacitor_pitch, JetpackScript.RotateToLook_TurnRate_Pitch) :
+            var turnrate_pitch = UIModOptions.ShouldRotateToLook_Pitch ?
+                GetTurnRate(dirs.body_forward, gaze.pitch_direction, gaze.yawpitch_confidence, deadzones.pitch, _capacitor_pitch, UIModOptions.RotateToLook_TurnRate_Pitch) :
                 null;
 
-            var turnrate_roll = JetpackScript.ShouldRotateToLook_Roll ?
-                GetTurnRate(dirs.body_up, gaze.roll_direction, gaze.roll_confidence, deadzones.roll, _capacitor_roll, JetpackScript.RotateToLook_TurnRate_Roll) :
+            var turnrate_roll = UIModOptions.ShouldRotateToLook_Roll ?
+                GetTurnRate(dirs.body_up, gaze.roll_direction, gaze.roll_confidence, deadzones.roll, _capacitor_roll, UIModOptions.RotateToLook_TurnRate_Roll) :
                 null;
 
             // Turn Player
             TurnPlayer(turnrate_yaw, turnrate_pitch, turnrate_roll, dirs.center_player, elapsed_seconds);
 
-            if (JetpackScript.ShowRotateToLook)
+            if (UIModOptions.ShowRotateToLook)
             {
                 PrepareForDraw();
 
@@ -478,8 +478,8 @@ namespace Jetpack2.FlightProcessing
             }
 
             // Draw dead zones as ellipses
-            DrawYawPitch_DeadzoneEllipse(ref _deadzone_inner, ref _deadzone_inner_dot_yaw, ref _deadzone_inner_dot_pitch, JetpackScript.RotToLook_DeadZone_Yaw_Full, JetpackScript.RotToLook_DeadZone_Pitch_Full, plane_point, body_forward, body_up, PLANE_DIST, _renderer);
-            DrawYawPitch_DeadzoneEllipse(ref _deadzone_outer, ref _deadzone_outer_dot_yaw, ref _deadzone_outer_dot_pitch, JetpackScript.RotToLook_DeadZone_Yaw_Start, JetpackScript.RotToLook_DeadZone_Pitch_Start, plane_point, body_forward, body_up, PLANE_DIST, _renderer);
+            DrawYawPitch_DeadzoneEllipse(ref _deadzone_inner, ref _deadzone_inner_dot_yaw, ref _deadzone_inner_dot_pitch, UIModOptions.RotToLook_DeadZone_Yaw_Full, UIModOptions.RotToLook_DeadZone_Pitch_Full, plane_point, body_forward, body_up, PLANE_DIST, _renderer);
+            DrawYawPitch_DeadzoneEllipse(ref _deadzone_outer, ref _deadzone_outer_dot_yaw, ref _deadzone_outer_dot_pitch, UIModOptions.RotToLook_DeadZone_Yaw_Start, UIModOptions.RotToLook_DeadZone_Pitch_Start, plane_point, body_forward, body_up, PLANE_DIST, _renderer);
 
             // Gaze buffer results
             DrawGazeOffsets(PLANE_DIST, INNER_DIST, head_pos, body_forward, direction_offset, confidence_offset);
@@ -529,7 +529,7 @@ namespace Jetpack2.FlightProcessing
 
         private void DrawGazeOffsets(float plane_dist, float inner_dist, Vector3 head_pos, Vector3 body_forward, Vector3 direction, float? confidence)
         {
-            if (_gazebuffer._offset.Count < JetpackScript.GazeBuffer_MaxCount * 0.8 && confidence == null)
+            if (_gazebuffer._offset.Count < UIModOptions.GazeBuffer_MaxCount * 0.8 && confidence == null)
                 return;
 
             Color color_sample = UtilityColor.FromHex("3F4F68");     // blue
@@ -575,7 +575,7 @@ namespace Jetpack2.FlightProcessing
             {
                 foreach (var bucket in by_radius.Values)
                 {
-                    if (bucket.Count < JetpackScript.GazeBuffer_MaxCount * 0.8 && confidence == null)
+                    if (bucket.Count < UIModOptions.GazeBuffer_MaxCount * 0.8 && confidence == null)
                         continue;
 
                     // NOTE: only drawing the first and last to avoid clutter and better performance
@@ -628,8 +628,8 @@ namespace Jetpack2.FlightProcessing
                 DebugRenderer3D.AdjustLinePositions(_head_up, origin, origin + from_local * head_up * LINE_LEN);
 
             // dead zones
-            DrawRoll_DeadzoneLines(ref _deadzone_inner_left, ref _deadzone_inner_right, JetpackScript.RotToLook_DeadZone_Roll_Full, origin, from_local * body_up, from_local * body_forward, LINE_LEN, _renderer);
-            DrawRoll_DeadzoneLines(ref _deadzone_outer_left, ref _deadzone_outer_right, JetpackScript.RotToLook_DeadZone_Roll_Start, origin, from_local * body_up, from_local * body_forward, LINE_LEN, _renderer);
+            DrawRoll_DeadzoneLines(ref _deadzone_inner_left, ref _deadzone_inner_right, UIModOptions.RotToLook_DeadZone_Roll_Full, origin, from_local * body_up, from_local * body_forward, LINE_LEN, _renderer);
+            DrawRoll_DeadzoneLines(ref _deadzone_outer_left, ref _deadzone_outer_right, UIModOptions.RotToLook_DeadZone_Roll_Start, origin, from_local * body_up, from_local * body_forward, LINE_LEN, _renderer);
 
             // buffer samples
             // sample[0] has quat that needs to be multiplied by body_up.  then multiply by this function's quat to rotate onto the radar display's plane
@@ -681,7 +681,7 @@ namespace Jetpack2.FlightProcessing
         }
         private void DrawGazeRoll(Vector3 origin, Vector3 direction, float? confidence, Vector3 body_up, float line_len, Quaternion from_local)
         {
-            if (_gazebuffer_roll._offset.Count < JetpackScript.GazeBuffer_MaxCount * 0.8 && confidence == null)
+            if (_gazebuffer_roll._offset.Count < UIModOptions.GazeBuffer_MaxCount * 0.8 && confidence == null)
                 return;
 
             Color color_sample = UtilityColor.FromHex("426B5E");        // green, almost cyan
@@ -962,8 +962,8 @@ namespace Jetpack2.FlightProcessing
         private static (Vector3 direction, float? confidence) GetFinalConfidence(Vector3 direction_offset, float? confidence_offset, Vector3 direction_target, float? confidence_target)
         {
             const float RETURN_CONFIDENCE_THRESHOLD = 0.7f;
-            float THRESHOLD_OFFSET = JetpackScript.GazeBuffer_GazeConfidence_Offset;
-            float THRESHOLD_TARGET = JetpackScript.GazeBuffer_GazeConfidence_Target;
+            float THRESHOLD_OFFSET = UIModOptions.GazeBuffer_GazeConfidence_Offset;
+            float THRESHOLD_TARGET = UIModOptions.GazeBuffer_GazeConfidence_Target;
 
             if (confidence_offset == null && confidence_target == null)
                 return (Vector3.zero, null);
@@ -1043,15 +1043,15 @@ namespace Jetpack2.FlightProcessing
             return new DeadzonePercents
             {
                 yaw = gaze.yawpitch_confidence != null ?
-                    GetDeadZonePercent(dirs.body_forward, gaze.yaw_direction, JetpackScript.RotToLook_DeadZone_Yaw_Full, JetpackScript.RotToLook_DeadZone_Yaw_Start) :
+                    GetDeadZonePercent(dirs.body_forward, gaze.yaw_direction, UIModOptions.RotToLook_DeadZone_Yaw_Full, UIModOptions.RotToLook_DeadZone_Yaw_Start) :
                     1,
 
                 pitch = gaze.yawpitch_confidence != null ?
-                    GetDeadZonePercent(dirs.body_forward, gaze.pitch_direction, JetpackScript.RotToLook_DeadZone_Pitch_Full, JetpackScript.RotToLook_DeadZone_Pitch_Start) :
+                    GetDeadZonePercent(dirs.body_forward, gaze.pitch_direction, UIModOptions.RotToLook_DeadZone_Pitch_Full, UIModOptions.RotToLook_DeadZone_Pitch_Start) :
                     1,
 
                 roll = gaze.roll_confidence != null ?
-                    GetDeadZonePercent(dirs.body_up, gaze.roll_direction, JetpackScript.RotToLook_DeadZone_Roll_Full, JetpackScript.RotToLook_DeadZone_Roll_Start) :
+                    GetDeadZonePercent(dirs.body_up, gaze.roll_direction, UIModOptions.RotToLook_DeadZone_Roll_Full, UIModOptions.RotToLook_DeadZone_Roll_Start) :
                     1,
             };
         }
@@ -1079,11 +1079,11 @@ namespace Jetpack2.FlightProcessing
 
         private static float UpdateCapacitor(float capacitor, Vector3 target, Vector3 look, float? confidence, float deadzone_percent, float elapsed_seconds)
         {
-            float upper_dot = JetpackScript.RotToLook_Capacitor_UpperDot;
-            float lower_dot = JetpackScript.RotToLook_Capacitor_LowerDot;
-            float bottom_dot = JetpackScript.RotToLook_Capacitor_BottomDot;
+            float upper_dot = UIModOptions.RotToLook_Capacitor_UpperDot;
+            float lower_dot = UIModOptions.RotToLook_Capacitor_LowerDot;
+            float bottom_dot = UIModOptions.RotToLook_Capacitor_BottomDot;
 
-            float discharge_speed = JetpackScript.RotToLook_Capacitor_DischargeSpeed;
+            float discharge_speed = UIModOptions.RotToLook_Capacitor_DischargeSpeed;
 
             // Calculate alignment between target and look directions
             float dot = Vector3.Dot(target, look);
@@ -1101,7 +1101,7 @@ namespace Jetpack2.FlightProcessing
                 // CHARGE REGION: dot > upper threshold
                 // Normalize to 0-1 range based on available threshold window
                 float chargeFactor = (dot - upper_dot) / (1f - upper_dot);
-                float chargeRate = JetpackScript.RotToLook_Capacitor_ChargeSpeed * Mathf.Pow(chargeFactor, JetpackScript.RotToLook_Capacitor_ChargePower);
+                float chargeRate = UIModOptions.RotToLook_Capacitor_ChargeSpeed * Mathf.Pow(chargeFactor, UIModOptions.RotToLook_Capacitor_ChargePower);
                 retVal += chargeRate * confidence.Value * (1 - deadzone_percent) * (float)elapsed_seconds;
             }
             else if (dot < bottom_dot)
@@ -1114,7 +1114,7 @@ namespace Jetpack2.FlightProcessing
                 // DISCHARGE REGION: dot < lower threshold
                 // Normalize to 0-1 range based on threshold position
                 float decayFactor = UtilityMath.GetScaledValue_Capped(0, 1, bottom_dot, lower_dot, dot);
-                float decayRate = discharge_speed * Mathf.Pow(decayFactor, JetpackScript.RotToLook_Capacitor_DischargePower);
+                float decayRate = discharge_speed * Mathf.Pow(decayFactor, UIModOptions.RotToLook_Capacitor_DischargePower);
 
                 float deadzone_discharge = deadzone_percent > 0 ?
                     discharge_speed * deadzone_percent :
@@ -1226,9 +1226,9 @@ namespace Jetpack2.FlightProcessing
         private void TrimForwardUp(ref Vector3 forward, ref Vector3 up)
         {
             // Yaw Trim
-            if (!JetpackScript.RotToLook_ForwardTrimDegrees_Yaw.IsNearZero())
+            if (!UIModOptions.RotToLook_ForwardTrimDegrees_Yaw.IsNearZero())
             {
-                Quaternion yaw = Quaternion.AngleAxis(JetpackScript.RotToLook_ForwardTrimDegrees_Yaw, up);
+                Quaternion yaw = Quaternion.AngleAxis(UIModOptions.RotToLook_ForwardTrimDegrees_Yaw, up);
 
                 // Apply Yaw Rotation to both forward and up
                 forward = yaw * forward;
@@ -1236,10 +1236,10 @@ namespace Jetpack2.FlightProcessing
             }
 
             // Pitch Trim
-            if (!JetpackScript.RotToLook_ForwardTrimDegrees_Pitch.IsNearZero())
+            if (!UIModOptions.RotToLook_ForwardTrimDegrees_Pitch.IsNearZero())
             {
                 Vector3 right = Vector3.Cross(forward, up);
-                Quaternion pitch = Quaternion.AngleAxis(JetpackScript.RotToLook_ForwardTrimDegrees_Pitch, right);
+                Quaternion pitch = Quaternion.AngleAxis(UIModOptions.RotToLook_ForwardTrimDegrees_Pitch, right);
 
                 // Apply Pitch Rotation to both forward and up
                 forward = pitch * forward;

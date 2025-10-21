@@ -97,9 +97,9 @@ namespace Jetpack2.Scanning
 
         public void Update_CastRays()
         {
-            if (!JetpackScript.ShouldAvoidObstacles)
+            if (!UIModOptions.ShouldAvoidObstacles)
             {
-                if (JetpackScript.ShowObstacleAvoidance)
+                if (UIModOptions.ShowObstacleAvoidance)
                     ClearDebugVisuals();
                 return;
             }
@@ -115,7 +115,7 @@ namespace Jetpack2.Scanning
             var ellipse_points = GetEllipsePoints2(_velocity);
             _pos = ellipse_points.origin;
 
-            if (JetpackScript.ShowObstacleAvoidance)
+            if (UIModOptions.ShowObstacleAvoidance)
                 DrawEllipsePointsLines(ellipse_points.origin, ellipse_points.perimeter, _velocity);
 
             // Define the rays
@@ -128,9 +128,9 @@ namespace Jetpack2.Scanning
         }
         public Vector3? Update_Finish(Vector3? input_dir)
         {
-            if (!JetpackScript.ShouldAvoidObstacles)
+            if (!UIModOptions.ShouldAvoidObstacles)
             {
-                if (JetpackScript.ShowObstacleAvoidance)
+                if (UIModOptions.ShowObstacleAvoidance)
                     ClearDebugVisuals();
                 return null;
             }
@@ -142,7 +142,7 @@ namespace Jetpack2.Scanning
 
             if (rays == null || rays.Length == 0)
             {
-                if (JetpackScript.ShowObstacleAvoidance)
+                if (UIModOptions.ShowObstacleAvoidance)
                 {
                     //Debug.Log("empty rays");
                     DrawRayCasts(new RayCastStorage.RayInfo[0], _ray_len);
@@ -158,7 +158,7 @@ namespace Jetpack2.Scanning
             // Suppress accel that is counter to the input (if they want to go down or into a wall, don't fight them)
             accel = DontFightInput(accel, input_dir);
 
-            if (JetpackScript.ShowObstacleAvoidance)
+            if (UIModOptions.ShowObstacleAvoidance)
             {
                 DrawRayCasts(rays[0].Rays, _ray_len);
                 DrawHitAnalysis(hits, _pos, _velocity_dir);

@@ -40,7 +40,7 @@ namespace Jetpack2.DebugCode
 
         public void Update()
         {
-            if (!JetpackScript.ShowGazeBuffer_Offset)
+            if (!UIModOptions.ShowGazeBuffer_Offset)
                 return;
 
             Vector3 pos = Player.local.head.anchor.position;

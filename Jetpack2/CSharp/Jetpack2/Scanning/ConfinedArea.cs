@@ -73,7 +73,7 @@ namespace Jetpack2.Scanning
 
         public void Update_CastRays()
         {
-            if (!JetpackScript.ShouldDetectConfinedArea)
+            if (!UIModOptions.ShouldDetectConfinedArea)
                 return;
 
             float player_scale = 1;     // not sure if this should matter - maybe if the player is really small
@@ -93,7 +93,7 @@ namespace Jetpack2.Scanning
         }
         public void Update_Finish(float elapsed_seconds)
         {
-            if (!JetpackScript.ShouldDetectConfinedArea)
+            if (!UIModOptions.ShouldDetectConfinedArea)
             {
                 ConfinedPercent = 0f;
                 return;
@@ -105,7 +105,7 @@ namespace Jetpack2.Scanning
             // Pull the new value toward the current how_blocked value
             ConfinedPercent = GetNewConfinedSpace(ConfinedPercent, how_blocked, ConfinedAreaData.gainFactor, elapsed_seconds);
 
-            if (JetpackScript.ShowConfinedArea)
+            if (UIModOptions.ShowConfinedArea)
                 DrawConfinedPercent();
         }
 
@@ -158,13 +158,13 @@ namespace Jetpack2.Scanning
 
             float sum_score = 0;
 
-            if (JetpackScript.ShowConfinedArea)
+            if (UIModOptions.ShowConfinedArea)
                 StartDrawingRays();
 
             for (int i = 0; i < rays[0].Rays.Length; i++)
                 sum_score += ExamineRay(pos, rays[0].Rays[i], min_len, max_len);
 
-            if (JetpackScript.ShowConfinedArea)
+            if (UIModOptions.ShowConfinedArea)
                 FinishedDrawingRays();
 
             return sum_score / rays[0].Rays.Length;
@@ -191,7 +191,7 @@ namespace Jetpack2.Scanning
 
                 float clamp = 1 - math.pow(dist, GAUSS_PINCH);      // this part sets curve=0 at dist=1 (otherwise, it's a guass curve that approaches but never hits 0)
 
-                if (JetpackScript.ShowConfinedArea)
+                if (UIModOptions.ShowConfinedArea)
                     //DrawRay(pos, ray.direction, max_len, ray.Hit.Value, gauss * clamp);
                     DrawRay2(pos, ray.Direction, max_len, ray.Hit.Value, gauss * clamp);
 
@@ -201,7 +201,7 @@ namespace Jetpack2.Scanning
             }
             else
             {
-                if (JetpackScript.ShowConfinedArea)
+                if (UIModOptions.ShowConfinedArea)
                     DrawRay(pos, ray.Direction, max_len, null, 0);
 
                 return 0;

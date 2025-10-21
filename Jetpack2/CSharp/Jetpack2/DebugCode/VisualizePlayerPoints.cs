@@ -34,7 +34,7 @@ namespace Jetpack2.DebugCode
         public void Update(float scale)
         {
             // TODO: remove currently drawn objects?  if so, store in a wrapper object so there is only a single null check when they aren't there
-            if (!JetpackScript.VisualizePlayerPoints)
+            if (!UIModOptions.VisualizePlayerPoints)
                 return;
 
             if (_renderer == null)
