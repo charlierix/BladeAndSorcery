@@ -677,6 +677,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>copy /Y "$(TargetPath)" "$(SolutionDir)..\Deployed\$(ProjectName).dll"
-copy /Y "$(TargetDir)PerfectlyNormalBaS.dll" "$(SolutionDir)..\Deployed\PerfectlyNormalBaS.dll"</PostBuildEvent>
+copy /Y "$(TargetDir)PerfectlyNormalBaS.dll" "$(SolutionDir)..\Deployed\PerfectlyNormalBaS.dll"
+copy /Y "$(ProjectDir)Configs\*.json" "$(SolutionDir)..\Deployed\configs"</PostBuildEvent>
   </PropertyGroup>
 </Project>

@@ -1,10 +1,14 @@
 ﻿using Jetpack2.DebugCode;
 using Jetpack2.InputWatchers;
+using Jetpack2.Models;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using ThunderRoad;
 using UnityEngine;
 
@@ -12,6 +16,8 @@ namespace Jetpack2
 {
     public static class UIModOptions
     {
+        #region constants
+
         private const string CATEGORY_ACTIVATE = "Activation / Deactivation";
         private const string CATEGORY_TOGGLEBEHAVIORS = "Toggle Behaviors";
         private const string CATEGORY_FLIGHTPROPS = "Flight Properties";
@@ -38,15 +44,13 @@ namespace Jetpack2
         private const int ORDER_VISIBILITY = 52;
         private const int ORDER_DEBUGDRAWING = 53;
 
+        #endregion
+
+        #region base configs
+
         //[ModOptionTextDisplay("description of section", null)]
         //[ModOption("Info")]
         //private static void label1(string value) { }
-
-
-
-
-
-
 
         public static ModOptionString[] loadDefaultsButtonLabel = new[]
         {
@@ -57,7 +61,7 @@ namespace Jetpack2
         private static bool _onLoadDefaults_called = false;
 
         [ModOptionButton]
-        [ModOption("Put all settings back to defaults", "those default values are stored in configs\\ModConfigDefaults.json", nameof(loadDefaultsButtonLabel), order = 0)]
+        [ModOption("Put all settings back to defaults - DOESN'T WORK", "those default values are stored in configs\\ModConfigDefaults.json", nameof(loadDefaultsButtonLabel), order = 0)]
         public static void OnLoadDefaults(string value)
         {
             if (!_onLoadDefaults_called)
@@ -66,24 +70,102 @@ namespace Jetpack2
                 return;
             }
 
-
-
-            // use reflection
-
-
-
+            //SetDefaults_ATTEMPT1();
+            //SetDefaults_ATTEMPT2();
         }
+        private static void SetDefaults_ATTEMPT1()
+        {
+            // Get all public static fields from the model class
+            var modelFields = typeof(ModConfigDefaultsData).GetFields(BindingFlags.Public | BindingFlags.Static);
+
+            // Get all public static fields and properties from UIModOptions
+            var uiFields = typeof(UIModOptions).GetFields(BindingFlags.Public | BindingFlags.Static).ToList();
+            var uiProperties = typeof(UIModOptions).GetProperties(BindingFlags.Public | BindingFlags.Static).ToList();
+
+            // Iterate the public static fields from the model class and set the corresponding field in this class
+            foreach (var modelField in modelFields)
+            {
+                // Generate the corresponding field name in UIModOptions (capitalize first letter)
+                string uiName = char.ToUpper(modelField.Name[0]) + modelField.Name.Substring(1);
+
+                // NOTE: these compares are case sensitive (it should be an exact match)
+
+                // Try to find the matching field in UIModOptions
+                var uiField = uiFields.FirstOrDefault(f => f.Name == uiName && f.FieldType == modelField.FieldType);
+                if (uiField != null)
+                {
+                    // Set the field value directly
+                    uiField.SetValue(null, modelField.GetValue(null));
+                    Debug.Log($"set field: {uiName}");
+                    continue;
+                }
+
+                // If field not found, try to find a matching public static property
+                var uiProperty = uiProperties.FirstOrDefault(p =>
+                    p.Name == uiName &&
+                    p.PropertyType == modelField.FieldType &&
+                    p.CanWrite);
+
+                if (uiProperty != null)
+                {
+                    // Set the property value via the setter
+                    uiProperty.SetValue(null, modelField.GetValue(null));
+                    Debug.Log($"set prop: {uiName}");
+                    continue;
+                }
+
+                Debug.Log($"didn't find: {uiName}");
+            }
+        }
+        private static void SetDefaults_ATTEMPT2()
+        {
+            // TODO: this isn't working.  see if there's a function that needs to be called to tell the mod option system that the value has changed
+            //
+            // instead of directly setting the float value:
+            //  get the corresponding ModOption from attribute
+            //  get params for that
+            //  find nearest param for new value
+            //  call modoption.apply(index)
 
 
+            // I think I'm correct:
+            // GameManager.options.ApplyModOptions();
+            //public IEnumerator ApplyModOptions()
+            //{
+            //    Debug.Log("[Options] Applying mod options");
+            //    CleanModOptions();
+            //    int modsCount = ModManager.loadedMods.Count;
+            //    int i = 0;
+            //    LoadingCamera.SetLoadingStage(LoadingCamera.Stage.ApplyOptions, setAutomaticPercentage: false);
+            //    foreach (ModManager.ModData loadedMod in ModManager.loadedMods)
+            //    {
+            //        ModOption.Save modOptionSave;
+            //        bool flag = TryGetModOption(loadedMod.folderName, out modOptionSave);
+            //        foreach (ModOption modOption in loadedMod.modOptions)
+            //        {
+            //            modOption.LoadModOptionParameters();
+            //            if (flag && modOption.saveValue && modOptionSave.TryGetParameter(modOption.name, out var parameterValue))
+            //            {
+            //                modOption.Apply(parameterValue.index);                    // ************************ this ************************
+            //            }
+            //            else
+            //            {
+            //                modOption.Apply(modOption.defaultValueIndex);
+            //            }
+            //        }
 
+            //        i++;
+            //        yield return LoadingCamera.SetPercentageYield(i * 100 / modsCount);
+            //    }
 
-
-
-
-
+            //    Debug.Log("[Options] Applied mod options");
+            //}
+        }
 
         [ModOption(name: "Use Jetpack Mod", tooltip: "Turns on/off the Jetpack mod", order = 1)]
         public static bool UseJetpackMod = true;
+
+        #endregion
 
         #region Activation / Deactivation
 
