@@ -21,10 +21,15 @@ namespace Jetpack2.DebugCode
         //private DebugItem _headOffset_pos = null;
         //private DebugItem _handOffset_pos = null;
 
+        private DebugItem _gameobject_pos = null;
+        private DebugItem _rigidbody_pos = null;
+        private DebugItem _collider_pos = null;
+
         private DebugItem _lefthand_pos = null;
         private DebugItem _righthand_pos = null;
         private DebugItem _leftfoot_pos = null;
         private DebugItem _rightfoot_pos = null;
+        private DebugItem _leftfoot_direction = null;
         private DebugItem _waist_pos = null;
         private DebugItem _head_pos = null;
 
@@ -58,6 +63,41 @@ namespace Jetpack2.DebugCode
             //Debug.Log($"handOffsetTransform: {Player.local.handOffsetTransform?.position.ToString() ?? "null"}");
 
 
+
+
+            // --------------- untested ---------------
+
+
+            UpdateDot(ref _gameobject_pos, Player.local.gameObject.transform.position, Color.blue, scale);
+            Debug.Log($"Player.local.transform.position: {Player.local.transform.position.ToStringSignificantDigits(3)}");
+            Debug.Log($"Player.local.gameObject.transform.position: {Player.local.gameObject.transform.position.ToStringSignificantDigits(3)}");
+
+
+            if (Player.local.gameObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
+            {
+                UpdateDot(ref _rigidbody_pos, Player.local.gameObject.transform.position, Color.cyan, scale);
+                Debug.Log($"rb.transform.position: {rb.transform.position.ToStringSignificantDigits(3)}");
+            }
+            else
+            {
+                UpdateDot(ref _rigidbody_pos, Vector3.zero, Color.cyan, scale);
+                Debug.Log("no rigid body");
+            }
+
+
+            if (Player.local.gameObject.TryGetComponent<Collider>(out Collider col))
+            {
+                UpdateDot(ref _collider_pos, col.transform.position, Color.yellow, scale);
+                Debug.Log($"col.transform.position: {col.transform.position.ToStringSignificantDigits(3)}");
+            }
+            else
+            {
+                UpdateDot(ref _collider_pos, Vector3.zero, Color.cyan, scale);
+                Debug.Log("no collider");
+            }
+
+
+
             // --------------- player ---------------
 
             // These stay with the player when in 3rd person mode
@@ -73,6 +113,9 @@ namespace Jetpack2.DebugCode
             UpdateDot(ref _leftfoot_pos, Player.local.footLeft.ragdollFoot.root.position, UtilityColor.FromHex("B14A47"), scale);
             UpdateDot(ref _rightfoot_pos, Player.local.footRight.ragdollFoot.root.position, UtilityColor.FromHex("59FF7D"), scale);
 
+            // this isn't any better than using spine for forward
+            UpdateLine(ref _leftfoot_direction, Player.local.footLeft.ragdollFoot.root.position, Player.local.footLeft.ragdollFoot.root.position + Player.local.footLeft.ragdollFoot.root.forward, UtilityColor.FromHex("B14A47"), scale);
+
             //UpdateDot(ref _head_pos, Player.local.head.anchor.position, UtilityColor.FromHex("C0CCD9"));      // this would block the view, using lines instead
             UpdateLine(ref _head_line1, Player.local.handLeft.root.position, Player.local.head.anchor.position, UtilityColor.FromHex("C0CCD9"), scale);
             UpdateLine(ref _head_line2, Player.local.handRight.root.position, Player.local.head.anchor.position, UtilityColor.FromHex("C0CCD9"), scale);
@@ -84,49 +127,64 @@ namespace Jetpack2.DebugCode
                 return;
 
             if (_player_pos != null)
+            {
                 _renderer.Remove(_player_pos);
-
-            _player_pos = null;
+                _player_pos = null;
+            }
 
             if (_lefthand_pos != null)
+            {
                 _renderer.Remove(_lefthand_pos);
-
-            _lefthand_pos = null;
+                _lefthand_pos = null;
+            }
 
             if (_righthand_pos != null)
+            {
                 _renderer.Remove(_righthand_pos);
-
-            _righthand_pos = null;
+                _righthand_pos = null;
+            }
 
             if (_leftfoot_pos != null)
+            {
                 _renderer.Remove(_leftfoot_pos);
-
-            _leftfoot_pos = null;
+                _leftfoot_pos = null;
+            }
 
             if (_rightfoot_pos != null)
+            {
                 _renderer.Remove(_rightfoot_pos);
+                _rightfoot_pos = null;
+            }
 
-            _rightfoot_pos = null;
+            if (_leftfoot_direction != null)
+            {
+                _renderer.Remove(_leftfoot_direction);
+                _leftfoot_direction = null;
+            }
 
             if (_waist_pos != null)
+            {
                 _renderer.Remove(_waist_pos);
-
-            _waist_pos = null;
+                _waist_pos = null;
+            }
 
             if (_head_pos != null)
+            {
                 _renderer.Remove(_head_pos);
-
-            _head_pos = null;
+                _head_pos = null;
+            }
 
             if (_head_line1 != null)
+            {
                 _renderer.Remove(_head_line1);
-
-            _head_line1 = null;
+                _head_line1 = null;
+            }
 
             if (_head_line2 != null)
+            {
                 _renderer.Remove(_head_line2);
-
-            _head_line2 = null;
+                _head_line2 = null;
+            }
         }
 
         private void UpdateDot(ref DebugItem item, Vector3 pos, Color color, float scale)

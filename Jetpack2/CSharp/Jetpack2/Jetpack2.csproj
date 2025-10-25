@@ -666,7 +666,9 @@
       <Name>PerfectlyNormalBaS</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="IK\" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="Configs\ConfinedArea.json" />
     <None Include="Configs\ModConfigDefaults.json" />
