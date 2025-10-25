@@ -438,7 +438,7 @@ namespace Jetpack2
         [ModOptionSlider]
         [ModOption(name: "Dead Zone Dot Product - roll (start)", tooltip: "How far from center before it starts turning at max rate", order = 6)]
         [ModOptionFloatValues(0.8f, 1, 0.001f)]
-        public static float RotToLook_DeadZone_Roll_Start = 0.93f;
+        public static float RotToLook_DeadZone_Roll_Start = 0.97f;
 
 
 
@@ -455,20 +455,20 @@ namespace Jetpack2
         [ModOptionCategory(CATEGORY_ROTATELOOK_TURNRATES, ORDER_ROTATELOOK_TURNRATES)]
         [ModOptionSlider]
         [ModOption(name: "rot to look: Max Turn Rate Degrees - yaw", tooltip: "Degrees per second", order = 0)]
-        [ModOptionFloatValues(1, 360, 1f)]
+        [ModOptionFloatValues(1, 270, 1f)]
         public static float RotateToLook_TurnRate_Yaw = 80;
 
         [ModOptionCategory(CATEGORY_ROTATELOOK_TURNRATES, ORDER_ROTATELOOK_TURNRATES)]
         [ModOptionSlider]
         [ModOption(name: "rot to look: Max Turn Rate Degrees - pitch", tooltip: "Degrees per second", order = 1)]
-        [ModOptionFloatValues(1, 360, 1f)]
+        [ModOptionFloatValues(1, 270, 1f)]
         public static float RotateToLook_TurnRate_Pitch = 80;
 
         [ModOptionCategory(CATEGORY_ROTATELOOK_TURNRATES, ORDER_ROTATELOOK_TURNRATES)]
         [ModOptionSlider]
         [ModOption(name: "rot to look: Max Turn Rate Degrees - roll", tooltip: "Degrees per second", order = 2)]
-        [ModOptionFloatValues(1, 360, 1f)]
-        public static float RotateToLook_TurnRate_Roll = 80;
+        [ModOptionFloatValues(1, 270, 1f)]
+        public static float RotateToLook_TurnRate_Roll = 120;
 
         #endregion
         #region Rotate To Look - ik
