@@ -48,7 +48,43 @@ namespace Jetpack2.InputWatchers
             Vector3 forward = Math3D.GetAverage(_ragdoll_forwards).normalized;
             Vector3 up = Math3D.GetAverage(_ragdoll_ups).normalized;
 
+
+
+
+            // TODO: ray cast down.  if too close to ground, the ik rig changes to a standing pose and the trim isn't needed (or maybe different trim values are needed)
+
+            TrimForwardUp(ref forward, ref up);
+
+
+
+
+
+
             return (forward, up);
+        }
+
+        private void TrimForwardUp(ref Vector3 forward, ref Vector3 up)
+        {
+            // Yaw Trim
+            if (!UIModOptions.RotToLook_ForwardTrimDegrees_Yaw.IsNearZero())
+            {
+                Quaternion yaw = Quaternion.AngleAxis(UIModOptions.RotToLook_ForwardTrimDegrees_Yaw, up);
+
+                // Apply Yaw Rotation to both forward and up
+                forward = yaw * forward;
+                up = yaw * up;
+            }
+
+            // Pitch Trim
+            if (!UIModOptions.RotToLook_ForwardTrimDegrees_Pitch.IsNearZero())
+            {
+                Vector3 right = Vector3.Cross(forward, up);
+                Quaternion pitch = Quaternion.AngleAxis(UIModOptions.RotToLook_ForwardTrimDegrees_Pitch, right);
+
+                // Apply Pitch Rotation to both forward and up
+                forward = pitch * forward;
+                up = pitch * up;
+            }
         }
     }
 }

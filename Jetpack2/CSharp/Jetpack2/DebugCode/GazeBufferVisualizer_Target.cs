@@ -45,6 +45,8 @@ namespace Jetpack2.DebugCode
 
             PrepForHitsUpdate();
 
+            _gazeBuffer.PrepareForNewFrame();
+
             _gazeBuffer.AddSample_Target(pos, look, velocity.magnitude);
 
             float? confidence = null;

@@ -3,10 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Profiling;
-using UnityEngine.SocialPlatforms.Impl;
-using static UnityEngine.Rendering.DebugUI.Table;
-using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 namespace Jetpack2.InputWatchers
 {
@@ -74,11 +70,26 @@ namespace Jetpack2.InputWatchers
         }
 
         #endregion
+        #region class: DominantDirectionResponse
+
+        public class DominantDirectionResponse
+        {
+            public Vector3 DominantDirection { get; set; }
+            public float Confidence { get; set; }
+
+            // ------- for debug logging/visualization -------
+            public string Reason { get; set; }
+            public float MinConfidence { get; set; }
+            public float MaxConfidence { get; set; }
+        }
+
+        #endregion
 
         #region Declaration Section
 
         private const float CLEANUP_RADIUS_ORIGIN_SECONDS = 0.5f;
         private const int MAX_PER_RADIUS = 1;       // how many spheres at each radius.  tried with 2, but that seemed like overkill (multi radius, a few extra while flying since cleanup isn't immediate)
+        private const float MIN_COUNT_PERCENT = 0.5f;
 
         private readonly List<GazeSample_Direct> _direct = new List<GazeSample_Direct>();
         internal readonly List<GazeSample_Offset> _offset = new List<GazeSample_Offset>();
@@ -88,9 +99,17 @@ namespace Jetpack2.InputWatchers
         private FrameSkip _frameskip_offset = null;
         private FrameSkip _frameskip_target = null;
 
+        internal float _frameskip_adjust_percent = 1f;
+        int _frameskip_adjust_curdelta = 0;     // -1: it's been adjusted down, 0: no adjustment, 1: is up
+
         private DateTime _prev_cleanup = DateTime.MinValue;
 
         #endregion
+
+        public void PrepareForNewFrame()
+        {
+            _frameskip_adjust_curdelta = 0;
+        }
 
         // Update the buffer with new frame data
         // NOTE: directions must be unit vectors
@@ -98,7 +117,7 @@ namespace Jetpack2.InputWatchers
         {
             DateTime now = DateTime.UtcNow;
 
-            if (!EstimateFrameSkip(ref _frameskip_direct, now))
+            if (!EstimateFrameSkip(ref _frameskip_direct, now, _frameskip_adjust_percent))
                 return;
 
             // Remove old samples exceeding the window
@@ -115,7 +134,7 @@ namespace Jetpack2.InputWatchers
         {
             DateTime now = DateTime.UtcNow;
 
-            if (!EstimateFrameSkip(ref _frameskip_offset, now))
+            if (!EstimateFrameSkip(ref _frameskip_offset, now, _frameskip_adjust_percent))
                 return;
 
             // Remove old samples exceeding the window
@@ -137,7 +156,7 @@ namespace Jetpack2.InputWatchers
         {
             DateTime now = DateTime.UtcNow;
 
-            if (!EstimateFrameSkip(ref _frameskip_target, now))
+            if (!EstimateFrameSkip(ref _frameskip_target, now, _frameskip_adjust_percent))
                 return;
 
             // No need to do origin cleanup every frame
@@ -207,41 +226,87 @@ namespace Jetpack2.InputWatchers
             dominant_direction = Vector3.zero;
             confidence = 0f;
 
-            if (_direct.Count < UIModOptions.GazeBuffer_MaxCount * 0.8)
+            if (_direct.Count < UIModOptions.GazeBuffer_MaxCount * MIN_COUNT_PERCENT)
                 return false;
 
             // Calculate confidence
-            float confidence2 = CalculateDirectionConfidence(_direct);
+            confidence = CalculateDirectionConfidence(_direct);
 
-            if (confidence2 > UIModOptions.GazeBuffer_GazeConfidence_Direct)
+            if (confidence > UIModOptions.GazeBuffer_GazeConfidence_Direct)
             {
                 dominant_direction = GetWeightedAverage(_direct);
-                confidence = confidence2;
                 return true;
             }
 
             return false;
         }
+
         public bool TryGetDominantDirection_Offset(out Vector3 dominant_direction, out float confidence, Vector3 relativeTo)
         {
-            dominant_direction = Vector3.zero;
-            confidence = 0f;
+            bool retVal = TryGetDominantDirection_Offset(out var result, relativeTo);
 
-            if (_offset.Count < UIModOptions.GazeBuffer_MaxCount * 0.8)
+            dominant_direction = result?.DominantDirection ?? Vector3.zero;
+            confidence = result?.Confidence ?? 0f;
+
+            return retVal;
+        }
+        public bool TryGetDominantDirection_Offset(out DominantDirectionResponse result, Vector3 relativeTo)
+        {
+            if (_offset.Count < UIModOptions.GazeBuffer_MaxCount * MIN_COUNT_PERCENT)
+            {
+                result = new DominantDirectionResponse
+                {
+                    DominantDirection = Vector3.zero,
+                    Confidence = 0f,
+                    Reason = $"low sample size: {_offset.Count} of {UIModOptions.GazeBuffer_MaxCount}",
+                };
                 return false;
+            }
+
+            float time_percent = GetTimePercent(_offset[0].Timestamp);
+
+            if (time_percent < UIModOptions.GazeBuffer_GazeConfidence_Offset)
+            {
+                result = new DominantDirectionResponse
+                {
+                    DominantDirection = Vector3.zero,
+                    Confidence = 0f,
+                    Reason = $"low time percent: {time_percent} of {UIModOptions.GazeBuffer_GazeConfidence_Offset}",
+                };
+                return false;
+            }
 
             // Calculate confidence
-            float confidence2 = CalculateDirectionConfidence(_offset);
+            float confidence = CalculateDirectionConfidence(_offset, out float min_confidence, out float max_confidence);
 
-            if (confidence2 > UIModOptions.GazeBuffer_GazeConfidence_Offset)
+            if (confidence > UIModOptions.GazeBuffer_GazeConfidence_Offset)
             {
-                dominant_direction = GetWeightedAverage(_offset, relativeTo);
-                confidence = confidence2;
+                Vector3 dominant_direction = GetWeightedAverage(_offset, relativeTo);
+
+                result = new DominantDirectionResponse
+                {
+                    DominantDirection = dominant_direction,
+                    Confidence = confidence,
+                    Reason = "success",
+                    MinConfidence = min_confidence,
+                    MaxConfidence = max_confidence
+                };
+
                 return true;
             }
 
+            result = new DominantDirectionResponse
+            {
+                DominantDirection = Vector3.zero,
+                Confidence = 0f,
+                Reason = $"low confidence: {confidence.ToStringSignificantDigits(2)} of {UIModOptions.GazeBuffer_GazeConfidence_Offset.ToStringSignificantDigits(2)}",
+                MinConfidence = min_confidence,
+                MaxConfidence = max_confidence
+            };
+
             return false;
         }
+
         public bool TryGetDominantDirection_Target(out Vector3 dominant_direction, out float confidence, Vector3 pos)
         {
             dominant_direction = Vector3.zero;
@@ -249,9 +314,13 @@ namespace Jetpack2.InputWatchers
             bool found_one = false;
 
             // Iterate over all buckets, finding the strongest result and return that
+            float max_confidence = 0f;
             foreach (var bucket in IterateTargetBuckets())
             {
                 float confidence2 = CalculateDirectionConfidence(bucket, pos);      // may not need to pass in pos
+
+                if (confidence2 > max_confidence)
+                    max_confidence = confidence2;
 
                 if (confidence2 < UIModOptions.GazeBuffer_GazeConfidence_Direct)
                     continue;
@@ -264,6 +333,9 @@ namespace Jetpack2.InputWatchers
                 dominant_direction = GetWeightedAverage(bucket, pos);
             }
 
+            if (max_confidence > confidence)     // this would happen if thresholds aren't met, still want to return the best confidence found for debug drawing
+                confidence = max_confidence;
+
             return found_one;
         }
         internal bool TryGetDominantDirection_Target_Debug(out Vector3 dominant_direction, out float confidence, out float sphere_radius, out Vector3 sphere_origin, Vector3 pos)
@@ -275,9 +347,13 @@ namespace Jetpack2.InputWatchers
             bool found_one = false;
 
             // Iterate over all buckets, finding the strongest result and return that
+            float max_confidence = 0f;
             foreach (var bucket in IterateTargetBuckets())
             {
                 float confidence2 = CalculateDirectionConfidence(bucket, pos);      // may not need to pass in pos
+
+                if (confidence2 > max_confidence)
+                    max_confidence = confidence2;
 
                 if (confidence2 < UIModOptions.GazeBuffer_GazeConfidence_Target)
                     continue;
@@ -292,6 +368,9 @@ namespace Jetpack2.InputWatchers
                 dominant_direction = GetWeightedAverage(bucket, pos);
             }
 
+            if (max_confidence > confidence)     // this would happen if thresholds aren't met, still want to return the best confidence found for debug drawing
+                confidence = max_confidence;
+
             return found_one;
         }
 
@@ -299,11 +378,12 @@ namespace Jetpack2.InputWatchers
         {
             _direct.Clear();
             _offset.Clear();
+            _target.Clear();
         }
 
         #region Private Methods - AddSample
 
-        private static bool EstimateFrameSkip(ref FrameSkip frameskip, DateTime now)
+        private static bool EstimateFrameSkip(ref FrameSkip frameskip, DateTime now, float adjust_time_percent)
         {
             int count = UIModOptions.GazeBuffer_MaxCount;
             float seconds = UIModOptions.GazeBuffer_MaxSeconds;
@@ -319,7 +399,7 @@ namespace Jetpack2.InputWatchers
 
                 //Debug.Log($"frameskip.Milliseconds_Between_Frames: {frameskip.Milliseconds_Between_Frames} (count: {count}, seconds: {seconds})");
 
-                frameskip.NextFrameTime = now.AddMilliseconds(frameskip.Milliseconds_Between_Frames);
+                frameskip.NextFrameTime = now.AddMilliseconds(frameskip.Milliseconds_Between_Frames * adjust_time_percent);
 
                 return true;
             }
@@ -327,7 +407,7 @@ namespace Jetpack2.InputWatchers
             if (now < frameskip.NextFrameTime)
                 return false;
 
-            frameskip.NextFrameTime = now.AddMilliseconds(frameskip.Milliseconds_Between_Frames);
+            frameskip.NextFrameTime = now.AddMilliseconds(frameskip.Milliseconds_Between_Frames * adjust_time_percent);
 
             return true;
         }
@@ -341,16 +421,54 @@ namespace Jetpack2.InputWatchers
             return retVal;
         }
 
-        private static void RemoveOldEntries<T>(IList<T> items, DateTime now) where T : IGazeSample
+        private void RemoveOldEntries<T>(IList<T> items, DateTime now) where T : IGazeSample
         {
             DateTime min_time = now - TimeSpan.FromSeconds(UIModOptions.GazeBuffer_MaxSeconds);
+
+            bool adjusted_timing = false;
+            int items_count = items.Count;
 
             while (items.Count > 0)
             {
                 if (items[0].Timestamp > min_time)      // they are stored in ascending time order, so once one is too new, everything after will be as well
                     return;
 
+                // About to remove entries.  Adjust the multiplier if count is too far off target
+                if (!adjusted_timing)
+                {
+                    adjusted_timing = true;
+                    AdjustFrameskipPercent(items.Count);
+                }
+
                 items.RemoveAt(0);
+            }
+        }
+
+        private void AdjustFrameskipPercent(int current_count)
+        {
+            const float DIV = 1000;
+
+            int max_count = UIModOptions.GazeBuffer_MaxCount;
+
+            if (current_count < max_count && _frameskip_adjust_curdelta >= 0)
+            {
+                // too few, don't wait as long before adding
+                float delta = 1f - (float)current_count / (float)max_count;
+                delta /= DIV;
+
+                _frameskip_adjust_percent *= 1f - delta;
+
+                _frameskip_adjust_curdelta--;
+            }
+            else if (current_count > max_count && _frameskip_adjust_curdelta <= 0)
+            {
+                // too many, wait longer before adding
+                float delta = (float)current_count / (float)max_count;
+                delta /= DIV;
+
+                _frameskip_adjust_percent *= 1f + delta;
+
+                _frameskip_adjust_curdelta++;
             }
         }
 
@@ -569,21 +687,30 @@ namespace Jetpack2.InputWatchers
             return confidence * time_percent;
         }
         // Calculates confidence based on axis and angle similarity between samples
-        private static float CalculateDirectionConfidence(List<GazeSample_Offset> samples)
+        private static float CalculateDirectionConfidence(List<GazeSample_Offset> samples, out float min_confidence, out float max_confidence)
         {
             if (samples.Count == 0)
+            {
+                min_confidence = 0f;
+                max_confidence = 0f;
                 return 0f;
+            }
 
             float time_percent = GetTimePercent(samples[0].Timestamp);
 
             if (time_percent < UIModOptions.GazeBuffer_GazeConfidence_Offset)
+            {
+                min_confidence = 0f;
+                max_confidence = 0f;
                 return 0f;
+            }
 
             GazeSample_Offset referenceSample = samples[0];
             Vector3 referenceAxis = referenceSample.Axis;
             float referenceAngle = referenceSample.Angle;
 
-            float minConfidence = 1f;
+            min_confidence = float.MaxValue;
+            max_confidence = float.MinValue;
 
             for (int i = 0; i < samples.Count; i++)
             {
@@ -601,16 +728,19 @@ namespace Jetpack2.InputWatchers
                 float sampleConfidence = Mathf.Min(axisDot, angleConfidence);
 
                 // Track the lowest confidence across all samples
-                if (sampleConfidence < minConfidence)
-                    minConfidence = sampleConfidence;
+                if (sampleConfidence < min_confidence)
+                    min_confidence = sampleConfidence;
+
+                if (sampleConfidence > max_confidence)
+                    max_confidence = sampleConfidence;
             }
 
-            return minConfidence * time_percent;
+            return min_confidence * time_percent;
         }
         // Calculates confience by subracting hit from pos, then very similar to direct overload
         private static float CalculateDirectionConfidence(List<GazeSample_SphereTarget> samples, Vector3 pos)
         {
-            if (samples.Count < UIModOptions.GazeBuffer_MaxCount * 0.8)
+            if (samples.Count < UIModOptions.GazeBuffer_MaxCount * MIN_COUNT_PERCENT)
                 return 0f;
 
             float time_percent = GetTimePercent(samples[0].Timestamp);

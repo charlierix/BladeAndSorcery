@@ -285,7 +285,7 @@ namespace Jetpack2
         [ModOptionCategory(CATEGORY_ROTATELOOK_GAZEBUFFER, ORDER_ROTATELOOK_GAZEBUFFER)]
         [ModOptionSlider]
         [ModOption(name: "Buffer Max Count", tooltip: "Max size of buffer", order = 2)]
-        [ModOptionIntValues(0, 500, 20)]
+        [ModOptionIntValues(0, 180, 10)]
         public static int GazeBuffer_MaxCount = 60;
 
         [ModOptionCategory(CATEGORY_ROTATELOOK_GAZEBUFFER, ORDER_ROTATELOOK_GAZEBUFFER)]

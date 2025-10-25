@@ -48,6 +48,7 @@ namespace Jetpack2.DebugCode
             Vector3 forward = _ragdollUtil.GetRagdollForwardUp().forward;
 
             PrepForBufferUpdate();
+            _gazeBuffer.PrepareForNewFrame();
 
             DrawForwardLook(pos, look, forward);
 

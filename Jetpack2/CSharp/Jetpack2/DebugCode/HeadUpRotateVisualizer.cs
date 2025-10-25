@@ -100,6 +100,8 @@ namespace Jetpack2.DebugCode
             Vector3 body_forward3 = quat3 * body_forward2;
             Vector3 head_forward3 = quat3 * head_forward2;
 
+            _gazebuffer_roll.PrepareForNewFrame();
+
             _gazebuffer_roll.AddSample_Offset(head_up3, body_up3);
 
             float? confidence_roll = null;

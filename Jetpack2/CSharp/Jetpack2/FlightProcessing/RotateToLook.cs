@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Jetpack2.FlightProcessing
 {
-    // TODO: this class good huge, and will get much larger.  a lot of those private regions will need to be their own classes
+    // TODO: this class got huge, and will get much larger.  a lot of those private regions will need to be their own classes
 
     // TODO: need settings for free rotate vs align to any N degrees (15, 30, 45)
     // TODO: need optional settings for min/max pitch, min/max roll
@@ -68,10 +68,18 @@ namespace Jetpack2.FlightProcessing
             public Vector3 roll_direction { get; set; }
 
             // --- these are only used for drawing ---
+            public float confidence_roll_debug { get; set; }
+
             public float? confidence_yawpitch_offset { get; set; }
+            public float confidence_yawpitch_offset_debug { get; set; }
             public Vector3 direction_yawpitch_offset { get; set; }
+
             public float? confidence_yawpitch_target { get; set; }
+            public float confidence_yawpitch_target_debug { get; set; }
             public Vector3 direction_yawpitch_target { get; set; }
+
+            public GazeBuffer.DominantDirectionResponse yawpitch_offset_result { get; set; }
+            public GazeBuffer.DominantDirectionResponse roll_offset_result { get; set; }
         }
 
         #endregion
@@ -145,6 +153,8 @@ namespace Jetpack2.FlightProcessing
         private DebugItem _capa_roll_vert = null;
         private DebugItem _capa_roll_tick = null;
         private DebugItem _capa_text = null;
+
+        private DebugItem _gaze_extra_text = null;
 
         private DebugItem _axis_yaw = null;
         private DebugItem _axis_pitch = null;
@@ -225,7 +235,9 @@ namespace Jetpack2.FlightProcessing
 
                 DrawRoll(dirs.localroll_forward, dirs.localroll_body_up, dirs.localroll_head_up, deadzones.roll, gaze.roll_direction, gaze.roll_confidence, dirs.quat_fromlocalroll);
 
-                DrawCapacitors(deadzones.yaw, deadzones.pitch, deadzones.roll, gaze.yawpitch_confidence, gaze.roll_confidence);
+                DrawCapacitors(deadzones.yaw, deadzones.pitch, deadzones.roll, gaze.yawpitch_confidence, gaze.roll_confidence, gaze.confidence_yawpitch_offset_debug, gaze.confidence_yawpitch_target_debug, gaze.confidence_roll_debug);
+
+                DrawDebugGaze_ExtraText(gaze);
 
                 DrawTurnRates(turnrate_yaw, turnrate_pitch, turnrate_roll);
 
@@ -358,6 +370,12 @@ namespace Jetpack2.FlightProcessing
             {
                 _renderer.Remove(_capa_text);
                 _capa_text = null;
+            }
+
+            if (_gaze_extra_text != null)
+            {
+                _renderer.Remove(_gaze_extra_text);
+                _gaze_extra_text = null;
             }
 
             if (_axis_yaw != null)
@@ -603,6 +621,41 @@ namespace Jetpack2.FlightProcessing
             }
         }
 
+        private void DrawDebugGaze_ExtraText(GazeResults gaze)
+        {
+            Vector3 text_pos = Player.local.head.anchor.position +
+                Player.local.head.transform.forward * 1.7f +
+                Player.local.head.transform.right * 0.4f +
+                Player.local.head.transform.up * 0.4f;
+
+            var lines = new[]
+            {
+                "** yaw/pitch **",
+                gaze.yawpitch_offset_result.Reason,
+                $"min: {gaze.yawpitch_offset_result.MinConfidence.ToStringSignificantDigits(2)}",
+                $"max: {gaze.yawpitch_offset_result.MaxConfidence.ToStringSignificantDigits(2)}",
+                $"count: {_gazebuffer._offset.Count}",
+                $"skip %: {_gazebuffer._frameskip_adjust_percent.ToStringSignificantDigits(4)}",
+                "",
+                "** roll **",
+                gaze.roll_offset_result.Reason,
+                $"min: {gaze.roll_offset_result.MinConfidence.ToStringSignificantDigits(2)}",
+                $"max: {gaze.roll_offset_result.MaxConfidence.ToStringSignificantDigits(2)}",
+                $"count: {_gazebuffer_roll._offset.Count}",
+                $"skip %: {_gazebuffer_roll._frameskip_adjust_percent.ToStringSignificantDigits(4)}",
+            };
+
+            string text = string.Join(Environment.NewLine, lines);
+
+            if (_gaze_extra_text == null)
+                _gaze_extra_text = _renderer.AddText(text, text_pos, Player.local.head.transform.forward, Color.green, Color.black, TEXT_HEIGHT * lines.Length);
+
+            _gaze_extra_text.Object.transform.position = text_pos;
+            _gaze_extra_text.Object.transform.rotation = Quaternion.LookRotation((text_pos - Player.local.head.anchor.position).normalized, Player.local.head.transform.up);
+
+            DebugRenderer3D.AdjustText(_gaze_extra_text, new_text: text);
+        }
+
         private void DrawRoll(Vector3 body_forward, Vector3 body_up, Vector3 head_up, float deadzone_percent, Vector3 direction_roll, float? confidence_roll, Quaternion from_local)
         {
             const float LINE_LEN = 0.35f;
@@ -707,7 +760,7 @@ namespace Jetpack2.FlightProcessing
             }
         }
 
-        private void DrawCapacitors(float deadzone_yaw_percent, float deadzone_pitch_percent, float deadzone_roll_percent, float? confidence_yawpitch, float? confidence_roll)
+        private void DrawCapacitors(float deadzone_yaw_percent, float deadzone_pitch_percent, float deadzone_roll_percent, float? confidence_yawpitch, float? confidence_roll, float confidence_yawpitch_offset_debug, float confidence_yawpitch_target_debug, float confidence_roll_debug)
         {
             const float HEIGHT = 0.32f;
             const float TICK_HALF_WIDTH = 0.04f;
@@ -720,12 +773,12 @@ namespace Jetpack2.FlightProcessing
             Vector3 bottom = Player.local.head.anchor.position +
                 Player.local.head.transform.forward * 1.5f +
                 right * -0.4f +
-                up * -0.43f;
+                up * -0.47f;
 
             Vector3 text_pos = Player.local.head.anchor.position +
                 Player.local.head.transform.forward * 1.7f +
                 right * -0.4f +
-                up * (-0.43f + HEIGHT / 2f);
+                up * (-0.47f + HEIGHT / 2f);
 
             Vector3 leftright_offset = right * (TICK_HALF_WIDTH * 2);
 
@@ -742,9 +795,14 @@ namespace Jetpack2.FlightProcessing
                 $"pitch: {_capacitor_pitch.ToStringSignificantDigits(2)}",
                 $"roll: {_capacitor_roll.ToStringSignificantDigits(2)}",
                 "",
-                "** confidence **",
+                "** confidence final **",
                 $"yaw/pitch: {confidence_yawpitch?.ToStringSignificantDigits(2) ?? "--"}",
                 $"roll: {confidence_roll?.ToStringSignificantDigits(2) ?? "--"}",
+                "",
+                "** confidence debug **",
+                $"yaw/pitch offset: {confidence_yawpitch_offset_debug.ToStringSignificantDigits(2)}",
+                $"yaw/pitch target: {confidence_yawpitch_target_debug.ToStringSignificantDigits(2)}",
+                $"roll: {confidence_roll_debug.ToStringSignificantDigits(2)}",
                 "",
                 "** deadzone % **",
                 $"yaw: {deadzone_yaw_percent.ToStringSignificantDigits(2)}",
@@ -850,9 +908,6 @@ namespace Jetpack2.FlightProcessing
             Vector3 head_forward = Player.local.head.transform.forward;
             Vector3 head_up = Player.local.head.transform.up;
 
-            // trimmed (world coords)
-            TrimForwardUp(ref body_forward, ref body_up);
-
             // ---- FOR ROLL ----
             var (head_up2, head_forward2) = GetProjecteHeadUp(head_up, head_forward, body_forward);      // pull head into the plane of body up and right
 
@@ -912,6 +967,9 @@ namespace Jetpack2.FlightProcessing
 
         private GazeResults UpdateGazeBuffers(Directions dirs)
         {
+            _gazebuffer.PrepareForNewFrame();
+            _gazebuffer_roll.PrepareForNewFrame();
+
             // Populate gaze buffers
             _gazebuffer.AddSample_Offset(dirs.head_forward, dirs.body_forward);
             _gazebuffer.AddSample_Target(dirs.pos, dirs.head_forward, dirs.velocity.magnitude);
@@ -919,14 +977,15 @@ namespace Jetpack2.FlightProcessing
 
             // Get gazed vectors
             float? confidence_yawpitch_offset = null;
-            if (_gazebuffer.TryGetDominantDirection_Offset(out Vector3 direction_yawpitch_offset, out float confidence, dirs.body_forward))
-                confidence_yawpitch_offset = confidence;
+            //if (_gazebuffer.TryGetDominantDirection_Offset(out var direction_yawpitch_offset, out float confidence_yawpitch_offset_debug, dirs.body_forward))
+            if (_gazebuffer.TryGetDominantDirection_Offset(out var result_yawpitch_offset, dirs.body_forward))
+                confidence_yawpitch_offset = result_yawpitch_offset.Confidence;
 
             float? confidence_yawpitch_target = null;
-            if (_gazebuffer.TryGetDominantDirection_Target_Debug(out Vector3 direction_yawpitch_target, out confidence, out float sphere_radius, out Vector3 sphere_origin, dirs.pos))
-                confidence_yawpitch_target = confidence;
+            if (_gazebuffer.TryGetDominantDirection_Target_Debug(out Vector3 direction_yawpitch_target, out float confidence_yawpitch_target_debug, out float sphere_radius, out Vector3 sphere_origin, dirs.pos))
+                confidence_yawpitch_target = confidence_yawpitch_target_debug;
 
-            var yawpitch = GetFinalConfidence(direction_yawpitch_offset, confidence_yawpitch_offset, direction_yawpitch_target, confidence_yawpitch_target);
+            var yawpitch = GetFinalConfidence(result_yawpitch_offset.DominantDirection, confidence_yawpitch_offset, direction_yawpitch_target, confidence_yawpitch_target);
 
             Vector3 dir_yaw = Vector3.right;
             Vector3 dir_pitch = Vector3.down;
@@ -937,10 +996,11 @@ namespace Jetpack2.FlightProcessing
             }
 
             float? confidence_roll = null;
-            if (_gazebuffer_roll.TryGetDominantDirection_Offset(out Vector3 direction_roll_local, out confidence, dirs.localroll_body_up))
-                confidence_roll = confidence;
+            //if (_gazebuffer_roll.TryGetDominantDirection_Offset(out Vector3 direction_roll_local, out float confidence_roll_debug, dirs.localroll_body_up))
+            if (_gazebuffer_roll.TryGetDominantDirection_Offset(out var result_roll_local, dirs.localroll_body_up))
+                confidence_roll = result_roll_local.Confidence;
 
-            Vector3 direction_roll = dirs.quat_fromlocalroll * direction_roll_local;
+            Vector3 direction_roll = dirs.quat_fromlocalroll * result_roll_local.DominantDirection;
 
             return new GazeResults
             {
@@ -953,9 +1013,16 @@ namespace Jetpack2.FlightProcessing
                 roll_direction = direction_roll,
 
                 confidence_yawpitch_offset = confidence_yawpitch_offset,
-                direction_yawpitch_offset = direction_yawpitch_offset,
+                direction_yawpitch_offset = result_yawpitch_offset.DominantDirection,
                 confidence_yawpitch_target = confidence_yawpitch_target,
                 direction_yawpitch_target = direction_yawpitch_target,
+
+                confidence_yawpitch_offset_debug = result_yawpitch_offset.Confidence,
+                confidence_yawpitch_target_debug = confidence_yawpitch_target_debug,
+                confidence_roll_debug = result_roll_local.Confidence,
+
+                yawpitch_offset_result = result_yawpitch_offset,
+                roll_offset_result = result_roll_local,
             };
         }
 
@@ -1218,33 +1285,6 @@ namespace Jetpack2.FlightProcessing
                 return;
 
             _rotator.RotateAround(center_player, turnrate.Value.axis, turnrate.Value.degrees_per_sec, elapsed_seconds);
-        }
-
-        #endregion
-        #region Private Methods
-
-        private void TrimForwardUp(ref Vector3 forward, ref Vector3 up)
-        {
-            // Yaw Trim
-            if (!UIModOptions.RotToLook_ForwardTrimDegrees_Yaw.IsNearZero())
-            {
-                Quaternion yaw = Quaternion.AngleAxis(UIModOptions.RotToLook_ForwardTrimDegrees_Yaw, up);
-
-                // Apply Yaw Rotation to both forward and up
-                forward = yaw * forward;
-                up = yaw * up;
-            }
-
-            // Pitch Trim
-            if (!UIModOptions.RotToLook_ForwardTrimDegrees_Pitch.IsNearZero())
-            {
-                Vector3 right = Vector3.Cross(forward, up);
-                Quaternion pitch = Quaternion.AngleAxis(UIModOptions.RotToLook_ForwardTrimDegrees_Pitch, right);
-
-                // Apply Pitch Rotation to both forward and up
-                forward = pitch * forward;
-                up = pitch * up;
-            }
         }
 
         #endregion
