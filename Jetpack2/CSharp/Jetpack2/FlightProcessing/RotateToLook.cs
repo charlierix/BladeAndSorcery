@@ -101,8 +101,6 @@ namespace Jetpack2.FlightProcessing
         private readonly GazeBuffer _gazebuffer = new GazeBuffer();
         private readonly GazeBuffer _gazebuffer_roll = new GazeBuffer();
 
-        private readonly PlayerRagdollUtil _ragdollUtil = new PlayerRagdollUtil();
-
         private readonly System.Random _rand;
 
         private float _capacitor_yaw = 0f;
@@ -184,13 +182,13 @@ namespace Jetpack2.FlightProcessing
                 ClearDebugVisuals();
         }
 
-        public void Update(float elapsed_seconds)
+        public void Update(Vector3 body_forward, Vector3 body_up, float elapsed_seconds)
         {
             if (!(UIModOptions.ShouldRotateToLook_Yaw || UIModOptions.ShouldRotateToLook_Pitch || UIModOptions.ShouldRotateToLook_Roll))
                 return;
 
             // Get body and head directions (also pos, velocity)
-            var dirs = GetDirections();
+            var dirs = GetDirections(body_forward, body_up);
 
             // Update gaze buffers, get their averaged directions
             var gaze = UpdateGazeBuffers(dirs);
@@ -901,10 +899,9 @@ namespace Jetpack2.FlightProcessing
         #endregion
         #region Private Methods - directions
 
-        private Directions GetDirections()
+        private Directions GetDirections(Vector3 body_forward, Vector3 body_up)
         {
             // initial values (world coords)
-            var (body_forward, body_up) = _ragdollUtil.GetRagdollForwardUp();
             Vector3 head_forward = Player.local.head.transform.forward;
             Vector3 head_up = Player.local.head.transform.up;
 

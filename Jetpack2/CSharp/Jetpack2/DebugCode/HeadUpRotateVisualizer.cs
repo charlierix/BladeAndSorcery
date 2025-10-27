@@ -1,4 +1,5 @@
-﻿using Jetpack2.InputWatchers;
+﻿using Jetpack2.Core;
+using Jetpack2.InputWatchers;
 using PerfectlyNormalBaS;
 using ThunderRoad;
 using UnityEngine;

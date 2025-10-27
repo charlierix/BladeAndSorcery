@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using ThunderRoad;
 using UnityEngine;
 
-namespace Jetpack2
+namespace Jetpack2.Core
 {
     public class PlaySounds
     {

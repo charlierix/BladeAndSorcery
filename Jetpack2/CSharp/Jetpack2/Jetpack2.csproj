@@ -41,6 +41,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\PlayerRagdollUtil.cs" />
+    <Compile Include="Core\UtilJetpack.cs" />
     <Compile Include="DebugCode\DebugStats.cs" />
     <Compile Include="DebugCode\GazeBufferVisualizer_Offset.cs" />
     <Compile Include="DebugCode\GazeBufferVisualizer_Target.cs" />
@@ -52,8 +54,8 @@
     <Compile Include="FlightProcessing\RotateToLook.cs" />
     <Compile Include="FlightProcessing\ThumbstickToAccel.cs" />
     <Compile Include="FlightProcessing\Wings.cs" />
+    <Compile Include="InputWatchers\AvgHandPositionTracker.cs" />
     <Compile Include="InputWatchers\GazeBuffer.cs" />
-    <Compile Include="InputWatchers\PlayerRagdollUtil.cs" />
     <Compile Include="Models\ModConfigDefaultsData.cs" />
     <Compile Include="Models\TestConfigData.cs" />
     <Compile Include="Models\ConfinedAreaData.cs" />
@@ -63,7 +65,7 @@
     <Compile Include="Scanning\RepelGround.cs" />
     <Compile Include="JetpackScript.cs" />
     <Compile Include="Models\ScaleData.cs" />
-    <Compile Include="PlaySounds.cs" />
+    <Compile Include="Core\PlaySounds.cs" />
     <Compile Include="DebugCode\DebugVisuals.cs" />
     <Compile Include="DebugCode\MaterialShaderFinder.cs" />
     <Compile Include="FlightProcessing\FlightJetpack.cs" />

@@ -33,6 +33,11 @@ namespace Jetpack2.DebugCode
         private DebugItem _waist_pos = null;
         private DebugItem _head_pos = null;
 
+        private DebugItem _lefthand_forward = null;
+        private DebugItem _lefthand_up = null;
+        private DebugItem _righthand_forward = null;
+        private DebugItem _righthand_up = null;
+
         private DebugItem _head_line1 = null;
         private DebugItem _head_line2 = null;
 
@@ -68,33 +73,33 @@ namespace Jetpack2.DebugCode
             // --------------- untested ---------------
 
 
-            UpdateDot(ref _gameobject_pos, Player.local.gameObject.transform.position, Color.blue, scale);
-            Debug.Log($"Player.local.transform.position: {Player.local.transform.position.ToStringSignificantDigits(3)}");
-            Debug.Log($"Player.local.gameObject.transform.position: {Player.local.gameObject.transform.position.ToStringSignificantDigits(3)}");
+            //UpdateDot(ref _gameobject_pos, Player.local.gameObject.transform.position, Color.blue, scale);
+            //Debug.Log($"Player.local.transform.position: {Player.local.transform.position.ToStringSignificantDigits(3)}");
+            //Debug.Log($"Player.local.gameObject.transform.position: {Player.local.gameObject.transform.position.ToStringSignificantDigits(3)}");
 
 
-            if (Player.local.gameObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
-            {
-                UpdateDot(ref _rigidbody_pos, Player.local.gameObject.transform.position, Color.cyan, scale);
-                Debug.Log($"rb.transform.position: {rb.transform.position.ToStringSignificantDigits(3)}");
-            }
-            else
-            {
-                UpdateDot(ref _rigidbody_pos, Vector3.zero, Color.cyan, scale);
-                Debug.Log("no rigid body");
-            }
+            //if (Player.local.gameObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
+            //{
+            //    UpdateDot(ref _rigidbody_pos, Player.local.gameObject.transform.position, Color.cyan, scale);
+            //    Debug.Log($"rb.transform.position: {rb.transform.position.ToStringSignificantDigits(3)}");
+            //}
+            //else
+            //{
+            //    UpdateDot(ref _rigidbody_pos, Vector3.zero, Color.cyan, scale);
+            //    Debug.Log("no rigid body");
+            //}
 
 
-            if (Player.local.gameObject.TryGetComponent<Collider>(out Collider col))
-            {
-                UpdateDot(ref _collider_pos, col.transform.position, Color.yellow, scale);
-                Debug.Log($"col.transform.position: {col.transform.position.ToStringSignificantDigits(3)}");
-            }
-            else
-            {
-                UpdateDot(ref _collider_pos, Vector3.zero, Color.cyan, scale);
-                Debug.Log("no collider");
-            }
+            //if (Player.local.gameObject.TryGetComponent<Collider>(out Collider col))
+            //{
+            //    UpdateDot(ref _collider_pos, col.transform.position, Color.yellow, scale);
+            //    Debug.Log($"col.transform.position: {col.transform.position.ToStringSignificantDigits(3)}");
+            //}
+            //else
+            //{
+            //    UpdateDot(ref _collider_pos, Vector3.zero, Color.cyan, scale);
+            //    Debug.Log("no collider");
+            //}
 
 
 
@@ -104,8 +109,15 @@ namespace Jetpack2.DebugCode
             // When the player rotates around, these rotate with
 
             // These two are active during the character selection scene.  The others (feet, waist, head) are probably null
-            UpdateDot(ref _lefthand_pos, Player.local.handLeft.root.position, Color.red, scale);
-            UpdateDot(ref _righthand_pos, Player.local.handRight.root.position, Color.green, scale);
+            Vector3 lefthand = Player.local.handLeft.root.position;
+            Vector3 righthand = Player.local.handRight.root.position;
+            UpdateDot(ref _lefthand_pos, lefthand, Color.red, scale);
+            UpdateDot(ref _righthand_pos, righthand, Color.green, scale);
+
+            UpdateLine(ref _lefthand_forward, lefthand, lefthand + Player.local.handLeft.root.forward, Color.blue, scale);
+            UpdateLine(ref _lefthand_up, lefthand, lefthand + Player.local.handLeft.root.up, Color.green, scale);
+            UpdateLine(ref _righthand_forward, righthand, righthand + Player.local.handRight.root.forward, Color.blue, scale);
+            UpdateLine(ref _righthand_up, righthand, righthand + Player.local.handRight.root.up, Color.green, scale);
 
             // These two appear to be the same point (center of where the feet are)
             // The legs animate, but this stays stable
@@ -172,6 +184,30 @@ namespace Jetpack2.DebugCode
             {
                 _renderer.Remove(_head_pos);
                 _head_pos = null;
+            }
+
+            if (_lefthand_forward != null)
+            {
+                _renderer.Remove(_lefthand_forward);
+                _lefthand_forward = null;
+            }
+
+            if (_lefthand_up != null)
+            {
+                _renderer.Remove(_lefthand_up);
+                _lefthand_up = null;
+            }
+
+            if (_righthand_forward != null)
+            {
+                _renderer.Remove(_righthand_forward);
+                _righthand_forward = null;
+            }
+
+            if (_righthand_up != null)
+            {
+                _renderer.Remove(_righthand_up);
+                _righthand_up = null;
             }
 
             if (_head_line1 != null)

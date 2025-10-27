@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using ThunderRoad;
 using UnityEngine;
 
-namespace Jetpack2.InputWatchers
+namespace Jetpack2.Core
 {
     // TODO: instead of relying on in game ragdoll, make a custom one that is just torso and gives the
     // hips some momentum.  Also tell it when rotations are being applied by this mod so that the whole

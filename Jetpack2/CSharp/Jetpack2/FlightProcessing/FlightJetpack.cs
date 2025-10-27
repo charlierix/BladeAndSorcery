@@ -1,3 +1,4 @@
+using Jetpack2.Core;
 using Jetpack2.DebugCode;
 using Jetpack2.InputWatchers;
 using Jetpack2.Models;
@@ -21,6 +22,8 @@ namespace Jetpack2.FlightProcessing
     public class FlightJetpack
     {
         private readonly RayCastStorage _raycast_storage;
+        private readonly PlayerRagdollUtil _ragdollUtil = new PlayerRagdollUtil();
+        private readonly AvgHandPositionTracker _handPositionTracker = new AvgHandPositionTracker();
         private readonly PlayerRotator _rotator;
         private readonly DebugStats _debugStats;
         private readonly ConfinedArea _confinedScanner;
@@ -149,6 +152,9 @@ namespace Jetpack2.FlightProcessing
             // Only do these when already in the air
             if (!Player.local.locomotion.isGrounded && (DateTime.UtcNow - _activation_time).TotalMilliseconds > 500)
             {
+                var (body_forward, body_up) = _ragdollUtil.GetRagdollForwardUp();
+                _handPositionTracker.Update(body_forward, body_up);
+
                 Vector3? accel_repel = _repelGround.Update_Finish(loco, input_dir);
                 if (accel_repel != null)
                     loco.physicBody.AddForce(accel_repel.Value, ForceMode.Acceleration);
@@ -157,7 +163,7 @@ namespace Jetpack2.FlightProcessing
                 if (accel_obstacle != null)
                     loco.physicBody.AddForce(accel_obstacle.Value, ForceMode.Acceleration);
 
-                _rotateToLook.Update(elapsed_seconds);
+                _rotateToLook.Update(body_forward, body_up, elapsed_seconds);
                 _gazeBufferVisualizer_target.Update();
                 _gazeBufferVisualizer_offset.Update();
                 _headUpRotateVisualizer.Update(elapsed_seconds);

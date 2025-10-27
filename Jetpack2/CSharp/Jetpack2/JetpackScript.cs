@@ -1,4 +1,5 @@
-﻿using Jetpack2.DebugCode;
+﻿using Jetpack2.Core;
+using Jetpack2.DebugCode;
 using Jetpack2.FlightProcessing;
 using Jetpack2.InputWatchers;
 using Jetpack2.Models;
@@ -131,7 +132,7 @@ namespace Jetpack2
             if (!_isPlayerSpawned || Player.local == null)
                 return;
 
-            _visualizePlayerPoints.Update(UIModOptions.playerScale / 100);
+            _visualizePlayerPoints.Update(UIModOptions.playerScale / 200);
             _debugStats.Update_Pre();
 
             bool should_switch = _transitions.Update(UIModOptions.FlightActivation_cast, UIModOptions.RequireBothHands, UIModOptions.DeactivateOnGround, _isFlying);
