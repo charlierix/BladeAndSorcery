@@ -103,7 +103,12 @@ namespace Jetpack2.InputWatchers
 
         private const float SAMPLE_INTERVAL_SECONDS = 0.1f;
         private const int MIN_SAMPLES_FOR_CLUSTERING = 100;
-        private const int NUM_CLUSTERS = 4;     // may want something that figures out how many clusters
+
+
+        // figure out best number of clusters (elbow method)
+        private const int NUM_CLUSTERS = 4;
+
+
         private const int CLUSTER_INTERVAL_SECONDS = 18;
 
         private DateTime _nextSampleTime = DateTime.UtcNow;
@@ -120,6 +125,13 @@ namespace Jetpack2.InputWatchers
                 return;
 
             AddSample(body_forward, body_up);
+
+
+            // TODO: before going down a rabbit hole of ways to store long term results, show kmeans
+            // results on screen
+            //
+            // most recent is one color, previous is more faded, N prev is most faded
+
 
 
             // see if a new clustering should happen:
@@ -185,6 +197,25 @@ namespace Jetpack2.InputWatchers
             //  store the sharable results
             //  mark the batch as finished
 
+            // ------------------
+
+            // when doing kmeans, use elbow method to figure out how many clusters to commit to
+
+            // ------------------
+
+
+            // once enough kmeans outputs are generated, do a bundle kmeans pass:
+
+            // result_roundrobin = UtilityCore.InfiniteRoundRobin(kmeans_results)
+            // while(samples.Count < max_count)
+            //    samples.add(GetRandomSample(result_roundrobin.Next()))        // returns a random sample from the next kmeans result set that hasn't been picked yet
+
+
+            // GetRandomSample(kmeans_output):
+            //  the results should already be stored sorted by distance from center
+            //  while(true)
+            //      int index = (1 - rand.nextpow(2)) * count
+            //      if index hasn't been picked before, return it
 
 
         }
