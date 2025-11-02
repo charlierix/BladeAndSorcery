@@ -41,7 +41,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Core\KMeansClusterer.cs" />
     <Compile Include="Core\PlayerRagdollUtil.cs" />
     <Compile Include="Core\UtilJetpack.cs" />
     <Compile Include="DebugCode\DebugStats.cs" />

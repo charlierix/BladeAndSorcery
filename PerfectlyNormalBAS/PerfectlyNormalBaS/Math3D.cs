@@ -758,7 +758,7 @@ namespace PerfectlyNormalBaS
             // Make a plane that the circle sits in (this is used by code shared with the circle/line intersect)
             //NOTE: The plane is using nearestAxisPoint, and not the arbitrary point that was passed in (this makes later logic easier)
             Vector3 circlePlaneLine1 = nearestDistance.IsNearZero() ?
-                GetArbitraryOrthonganal(axis.direction) :
+                GetArbitraryOrthogonal(axis.direction) :
                 nearestLine;
             Vector3 circlePlaneLine2 = Vector3.Cross(axis.direction, circlePlaneLine1);
             Plane circlePlane = new Plane(nearestAxisPoint.Value, nearestAxisPoint.Value + circlePlaneLine1, nearestAxisPoint.Value + circlePlaneLine2);
@@ -1594,7 +1594,7 @@ namespace PerfectlyNormalBaS
             return retVal;
         }
 
-        public static Vector3 GetArbitraryOrthonganal(Vector3 vector)
+        public static Vector3 GetArbitraryOrthogonal(Vector3 vector)
         {
             if (vector.IsInvalid() || vector.IsNearZero())
                 return new Vector3(float.NaN, float.NaN, float.NaN);

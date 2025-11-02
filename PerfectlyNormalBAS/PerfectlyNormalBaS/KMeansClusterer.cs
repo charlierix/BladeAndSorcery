@@ -1,13 +1,9 @@
-﻿using PerfectlyNormalBaS;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
-namespace Jetpack2.Core
+namespace PerfectlyNormalBaS
 {
-    // TODO: once this is proven, move to PerfectlyNormalBaS
-
     public static class KMeansClusterer
     {
         #region class: Sample
@@ -37,20 +33,14 @@ namespace Jetpack2.Core
         }
 
         #endregion
-        #region class: ElbowResult
-
-        private class ElbowResult<T>
-        {
-            public int NumClusters { get; set; }
-            public Cluster<T>[] Result { get; set; }
-            public float SumSquares { get; set; }
-        }
-
-        #endregion
         #region class: ElbowRunStats
 
         public class ElbowRunStats<T>
         {
+            public Cluster<T>[] Result => Runs[BestIndex].clusters;
+
+            // ------ everything below is for debugging and visualization ------
+
             public int MinK { get; set; }
             public int MaxK { get; set; }
 
@@ -60,187 +50,37 @@ namespace Jetpack2.Core
         }
         public class ElbowRunStats_Run<T>
         {
-            public int k { get; set; }
-            public float sse { get; set; }
-            public float distance { get; set; }
+            public int k { get; set; }      // how many clusters
+            public float sse { get; set; }      // sum distances from center
+            public float distance { get; set; }     // distance from trend line between runs[0] to runs[^1] (x=k,y=sse)
             public Cluster<T>[] clusters { get; set; }
         }
 
         #endregion
 
 
-
-        // TODO: need to make a function that goes farther than sqrt(count), draws results and shows the trend lines
-        // try with pure random data, and also try with more realistic data to see which performs better
-
-        // after seeing the results, returning the first dip won't always get the best one.  it's probably best to run
-        // them all
-
         /// <summary>
         /// This does multiple kmeans and uses elbow method to return the one with the best number of clusters
         /// </summary>
-        public static Cluster<T>[] DoClustering_ALL<T>(IList<Sample<T>> data)
+        /// <remarks>
+        /// NOTE: Can't stop the first time distance stops increasing.  There could be better distances later
+        /// </remarks>
+        /// <param name="data">The inputs.  Only vector is looked at by this function, source is for the caller to have an easy time getting at the object that the vector represents</param>
+        /// <param name="weights">Use this if some of the dimensions of vector should count more or less than others.  The values used don't matter too much, it's how they relate to each other</param>
+        /// <param name="keep_all_clusters">
+        /// True: use if doing analysis/visualization of all the data
+        /// False: only the optimal cluster is left populated.  this is more memory efficient and is what should be used in production
+        /// </param>
+        public static Cluster<T>[] DoClustering<T>(IList<Sample<T>> data, float[] weights = null)
         {
-            // Determine the maximum number of clusters to test
-            int maxK = Math.Max(2, (int)Math.Sqrt(data.Count));
-
-            // Store (k, sse) pairs for all tested cluster counts
-            var kSSEList = new List<(int k, float sse, Cluster<T>[] clusters)>();
-
-            for (int k = 1; k <= maxK; k++)
-            {
-                // Perform clustering for k clusters (Assume a method DoClustering is available)
-                Cluster<T>[] clusters = DoClustering(data, k);
-
-                // Compute the total within-cluster sum of squares (WSS)
-                float totalSSE = 0f;
-
-                foreach (var cluster in clusters)
-                    for (int i = 0; i < cluster.Item_DistSqr_FromCenter.Length; i++)
-                        totalSSE += cluster.Item_DistSqr_FromCenter[i];
-
-                kSSEList.Add((k, totalSSE, clusters));
-            }
-
-            // Extract first and last (k, sse) points for line reference
-            var first = kSSEList[0];
-            var last = kSSEList[kSSEList.Count - 1];
-            int optimalK = 1;
-            Cluster<T>[] optimal_clusters = first.clusters;
-            float maxDistance = 0f;
-
-            // Loop through all points except the first and last to find the maximum perpendicular distance
-            for (int i = 1; i < kSSEList.Count - 1; i++)
-            {
-                var point = kSSEList[i];
-                float x = point.k, y = point.sse;
-
-                float x1 = first.k, y1 = first.sse;
-                float x2 = last.k, y2 = last.sse;
-
-                // Calculate perpendicular distance using line equation
-                float numerator = (y2 - y1) * x - (x2 - x1) * y + (x2 * y1 - y2 * x1);
-                float distance = Math.Abs(numerator);
-
-                if (distance > maxDistance)
-                {
-                    maxDistance = distance;
-                    optimalK = point.k;
-                    optimal_clusters = point.clusters;
-                }
-            }
-
-            // Fallback: if no elbow is found, use the last k (lowest SSE)
-            if (maxDistance == 0)
-            {
-                optimalK = last.k;
-                optimal_clusters = last.clusters;
-            }
-
-            // Return final clustering with the chosen optimal number of clusters
-            return optimal_clusters;
+            return DoClustering_private(data, weights, false).Result;
         }
-        public static ElbowRunStats<T> DoClustering_ALL2<T>(IList<Sample<T>> data)
+        public static ElbowRunStats<T> DoClustering_Debug<T>(IList<Sample<T>> data, float[] weights = null)
         {
-            // Determine the maximum number of clusters to test
-            int maxK = Math.Max(2, (int)Math.Sqrt(data.Count));
-
-            // Store (k, sse) pairs for all tested cluster counts
-            //var kSSEList = new List<(int k, float sse, Cluster<T>[] clusters)>();
-            var runs = new List<ElbowRunStats_Run<T>>();
-
-            for (int k = 1; k <= maxK; k++)
-            {
-                // Perform clustering for k clusters (Assume a method DoClustering is available)
-                Cluster<T>[] clusters = DoClustering(data, k);
-
-                // Compute the total within-cluster sum of squares (WSS)
-                float totalSSE = 0f;
-
-                foreach (var cluster in clusters)
-                    for (int i = 0; i < cluster.Item_DistSqr_FromCenter.Length; i++)
-                        totalSSE += cluster.Item_DistSqr_FromCenter[i];
-
-                runs.Add(new ElbowRunStats_Run<T>
-                {
-                    k = k,
-                    sse = totalSSE,
-                    clusters = clusters,
-                });
-            }
-
-            // Extract first and last (k, sse) points for line reference
-            var first = runs[0];
-            var last = runs[runs.Count - 1];
-            int optimalIndex = 0;
-            float maxDistance = 0f;
-
-            // Loop through all points except the first and last to find the maximum perpendicular distance
-            for (int i = 1; i < runs.Count - 1; i++)
-            {
-                var point = runs[i];
-                float x = point.k, y = point.sse;
-
-                float x1 = first.k, y1 = first.sse;
-                float x2 = last.k, y2 = last.sse;
-
-                // Calculate perpendicular distance using line equation
-                float numerator = (y2 - y1) * x - (x2 - x1) * y + (x2 * y1 - y2 * x1);
-                float distance = Math.Abs(numerator);
-                runs[i].distance = distance;
-
-                if (distance > maxDistance)
-                {
-                    maxDistance = distance;
-                    optimalIndex = i;
-                }
-            }
-
-            // Fallback: if no elbow is found, use the last k (lowest SSE)
-            if (maxDistance == 0)
-                optimalIndex = runs.Count - 1;
-
-            // Return final clustering with the chosen optimal number of clusters
-            return new ElbowRunStats<T>
-            {
-                MinK = first.k,
-                MaxK = last.k,
-                BestIndex = optimalIndex,
-                Runs = runs.ToArray(),
-            };
-        }
-        public static Cluster<T>[] DoClustering_FIRST<T>(IList<Sample<T>> data)
-        {
-            // Determine the maximum number of clusters to test
-            int maxK = Math.Max(2, (int)Math.Sqrt(data.Count));
-
-            // Get first and last so that a line can be drawn from (1,first.sumsqr) to (maxK,last.sumsqr)
-            var first = GetElbowSample(1, data);
-            var last = GetElbowSample(maxK, data);
-
-            float maxDistance = 0f;
-            Cluster<T>[] optimal_clusters = first.Result;
-
-            for (int i = 2; i < maxK; i++)
-            {
-                var middle = GetElbowSample(i, data);
-
-                float distance = GetElbowDist(i, middle.SumSquares, first.NumClusters, first.SumSquares, last.NumClusters, last.SumSquares);
-
-                if (distance < maxDistance)
-                    return optimal_clusters;
-
-                maxDistance = distance;
-                optimal_clusters = middle.Result;
-            }
-
-            return last.Result;
+            return DoClustering_private(data, weights, true);
         }
 
-
-
-
-        public static Cluster<T>[] DoClustering<T>(IList<Sample<T>> data, int num_clusters)
+        public static Cluster<T>[] DoClustering<T>(IList<Sample<T>> data, int num_clusters, float[] weights = null)
         {
             if (data == null)
                 throw new ArgumentNullException("data");
@@ -251,12 +91,20 @@ namespace Jetpack2.Core
             if (num_clusters <= 0)
                 throw new ArgumentException($"Not enough clusters: {num_clusters}");
 
+            if (weights == null)
+                weights = Enumerable.Range(0, data[0].Vector.Length).
+                    Select(o => 1f).
+                    ToArray();
+
+            if (weights.Length != data[0].Vector.Length)
+                throw new InvalidOperationException($"weights isn't same length as first sample's vector length.  weights: {weights.Length}, vector: {data[0].Vector.Length}");
+
             // Initialize cluster centers with random samples
             var retVal = GetInitialClusters(data, num_clusters);
 
             // Keep shuffling until each cluster's item is closer to its center than other node centers
             while (true)
-                if (!Cluster_Step(retVal, data, num_clusters))       // keep refining until the cluster centers stop moving
+                if (!Cluster_Step(retVal, data, num_clusters, weights))       // keep refining until the cluster centers stop moving
                     break;
 
             return BuildFinalReturn(retVal);
@@ -265,14 +113,14 @@ namespace Jetpack2.Core
         /// <summary>
         /// Returns the index of the cluster that this point is closest to
         /// </summary>
-        public static int GetClusterIndex<T>(Cluster<T>[] clusters, float[] vector)
+        public static int GetClusterIndex<T>(Cluster<T>[] clusters, float[] vector, float[] weights)
         {
             int nearest_index = 0;
-            float min_distSqr = DistanceSqr(vector, clusters[0].Center);
+            float min_distSqr = DistanceSqr(vector, clusters[0].Center, weights);
 
             for (int i = 1; i < clusters.Length; i++)
             {
-                float distSqr = DistanceSqr(vector, clusters[i].Center);
+                float distSqr = DistanceSqr(vector, clusters[i].Center, weights);
                 if (distSqr < min_distSqr)
                 {
                     min_distSqr = distSqr;
@@ -298,10 +146,91 @@ namespace Jetpack2.Core
 
         #region Private Methods - elbow
 
-        private static ElbowResult<T> GetElbowSample<T>(int num_clusters, IList<Sample<T>> data)
+        private static ElbowRunStats<T> DoClustering_private<T>(IList<Sample<T>> data, float[] weights = null, bool keep_all_clusters = false)
+        {
+            if (data == null || data.Count == 0)
+                return new ElbowRunStats<T>
+                {
+                    BestIndex = -1,
+                    MinK = 0,
+                    MaxK = 0,
+                    Runs = new ElbowRunStats_Run<T>[0],
+                };
+
+            if (weights == null)
+                weights = Enumerable.Range(0, data[0].Vector.Length).
+                    Select(o => 1f).
+                    ToArray();
+
+            if (weights.Length != data[0].Vector.Length)
+                throw new InvalidOperationException($"weights isn't same length as first sample's vector length.  weights: {weights.Length}, vector: {data[0].Vector.Length}");
+
+            // Determine the maximum number of clusters to test
+            int maxK = Math.Max(2, (int)Math.Sqrt(data.Count));
+
+            // Store (k, sse) pairs for all tested cluster counts
+            //var kSSEList = new List<(int k, float sse, Cluster<T>[] clusters)>();
+            var runs = new ElbowRunStats_Run<T>[maxK];
+
+            runs[0] = GetElbowRun_Initial(1, data, weights);
+            runs[runs.Length - 1] = GetElbowRun_Initial(maxK, data, weights);
+
+            // Extract first and last (k, sse) points for line reference
+            var first = runs[0];
+            var last = runs[runs.Length - 1];
+            int optimalIndex = 0;
+            float maxDistance = 0f;
+
+            // Loop through all points except the first and last to find the maximum perpendicular distance
+            for (int i = 1; i < runs.Length - 1; i++)
+            {
+                runs[i] = GetElbowRun_Initial(i + 1, data, weights);
+
+                runs[i].distance = GetElbowDist(runs[i].k, runs[i].sse, first.k, first.sse, last.k, last.sse);
+
+                if (runs[i].distance > maxDistance)
+                {
+                    maxDistance = runs[i].distance;
+                    optimalIndex = i;
+
+                    if (!keep_all_clusters)
+                        runs[i - 1].clusters = null;        // (i starts at one, so i-1 is safe) it might already be null, but it also might have been the prev winner
+                }
+                else
+                {
+                    if (!keep_all_clusters)
+                        runs[i].clusters = null;
+                }
+            }
+
+            // Fallback: if no elbow is found, use the last k (lowest SSE)
+            if (maxDistance == 0)
+            {
+                optimalIndex = runs.Length - 1;
+
+                if (!keep_all_clusters)
+                    runs[runs.Length - 2].clusters = null;
+            }
+            else
+            {
+                if (!keep_all_clusters)
+                    runs[runs.Length - 1].clusters = null;
+            }
+
+            // Return final clustering with the chosen optimal number of clusters
+            return new ElbowRunStats<T>
+            {
+                MinK = first.k,
+                MaxK = last.k,
+                BestIndex = optimalIndex,
+                Runs = runs.ToArray(),
+            };
+        }
+
+        private static ElbowRunStats_Run<T> GetElbowRun_Initial<T>(int k, IList<Sample<T>> data, float[] weights)
         {
             // Perform clustering for k clusters (Assume a method DoClustering is available)
-            Cluster<T>[] clusters = DoClustering(data, num_clusters);
+            Cluster<T>[] clusters = DoClustering(data, k, weights);
 
             // Compute the total within-cluster sum of squares (WSS)
             float totalSSE = 0f;
@@ -310,13 +239,14 @@ namespace Jetpack2.Core
                 for (int i = 0; i < cluster.Item_DistSqr_FromCenter.Length; i++)
                     totalSSE += cluster.Item_DistSqr_FromCenter[i];
 
-            return new ElbowResult<T>
+            return new ElbowRunStats_Run<T>
             {
-                NumClusters = num_clusters,
-                Result = clusters,
-                SumSquares = totalSSE,
+                k = k,
+                sse = totalSSE,
+                clusters = clusters,
             };
         }
+
 
         private static float GetElbowDist(int num_clusters, float sumSquares, int first_numclusters, float first_sumsqr, int last_numclusters, float last_sumsqr)
         {
@@ -357,7 +287,7 @@ namespace Jetpack2.Core
             return retVal.ToArray();
         }
 
-        private static bool Cluster_Step<T>(Cluster_Building<T>[] clusters, IList<Sample<T>> data, int num_clusters)
+        private static bool Cluster_Step<T>(Cluster_Building<T>[] clusters, IList<Sample<T>> data, int num_clusters, float[] weights)
         {
             var clusters_step = new Cluster_Building<T>[num_clusters];
 
@@ -369,12 +299,12 @@ namespace Jetpack2.Core
 
             // Assign each data point to the nearest cluster
             foreach (var sample in data)
-                AddToNearestCluster(sample, clusters_step, num_clusters);
+                AddToNearestCluster(sample, clusters_step, num_clusters, weights);
 
             // Update clusters's centers and items according to what's in clusters_step
             bool changed = false;
             for (int i = 0; i < num_clusters; i++)
-                changed |= UpdateClusterCenters(clusters, clusters_step, i);
+                changed |= UpdateClusterCenters(clusters, clusters_step, i, weights);
 
             return changed;
         }
@@ -382,14 +312,14 @@ namespace Jetpack2.Core
         /// <summary>
         /// Adds each sample to the best node in clusters_step
         /// </summary>
-        private static void AddToNearestCluster<T>(Sample<T> sample, Cluster_Building<T>[] clusters_step, int num_clusters)
+        private static void AddToNearestCluster<T>(Sample<T> sample, Cluster_Building<T>[] clusters_step, int num_clusters, float[] weights)
         {
             int nearest_index = 0;
-            float min_distSqr = DistanceSqr(sample.Vector, clusters_step[0].Center);
+            float min_distSqr = DistanceSqr(sample.Vector, clusters_step[0].Center, weights);
 
             for (int i = 1; i < num_clusters; i++)
             {
-                float distSqr = DistanceSqr(sample.Vector, clusters_step[i].Center);
+                float distSqr = DistanceSqr(sample.Vector, clusters_step[i].Center, weights);
                 if (distSqr < min_distSqr)
                 {
                     min_distSqr = distSqr;
@@ -404,7 +334,7 @@ namespace Jetpack2.Core
         /// This sets clusters[index].center and makes items same as clusters_step[index].item
         /// also returns true if center moved
         /// </summary>
-        private static bool UpdateClusterCenters<T>(Cluster_Building<T>[] clusters, Cluster_Building<T>[] clusters_step, int index)
+        private static bool UpdateClusterCenters<T>(Cluster_Building<T>[] clusters, Cluster_Building<T>[] clusters_step, int index, float[] weights)
         {
             clusters[index].Items.Clear();
             clusters[index].Items.AddRange(clusters_step[index].Items);
@@ -417,9 +347,9 @@ namespace Jetpack2.Core
             for (int i = 0; i < new_center.Length; i++)
             {
                 new_center[i] = 0f;
-
                 foreach (var sample in clusters_step[index].Items)
-                    new_center[i] += sample.item.Vector[i];
+                    //new_center[i] += sample.item.Vector[i] * weights[i];
+                    new_center[i] += sample.item.Vector[i];     // the weight is already considered when building this dimension of vector, so no need to apply it here
 
                 new_center[i] /= clusters_step[index].Items.Count;
             }
@@ -498,14 +428,13 @@ namespace Jetpack2.Core
             return retVal;
         }
 
-        private static float DistanceSqr(float[] a, float[] b)
+        private static float DistanceSqr(float[] a, float[] b, float[] weights)
         {
             float sum = 0f;
 
             for (int i = 0; i < a.Length; i++)
-                sum += (a[i] - b[i]) * (a[i] - b[i]);
+                sum += (a[i] - b[i]) * (a[i] - b[i]) * weights[i]; // Apply weight to each dimension
 
-            //return Mathf.Sqrt(sum);
             return sum;
         }
 

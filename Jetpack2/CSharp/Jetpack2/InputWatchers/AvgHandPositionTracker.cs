@@ -3,11 +3,8 @@ using PerfectlyNormalBaS;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using ThunderRoad;
 using UnityEngine;
-using static Jetpack2.Core.UtilJetpack;
 
 namespace Jetpack2.InputWatchers
 {
@@ -64,20 +61,66 @@ namespace Jetpack2.InputWatchers
                 if (vector.Length != 27)
                     throw new ArgumentException($"vector needs to be length 27: {vector.Length}");
 
+                var head_dirs = GetRepairedForwardUp(new Vector3(vector[3], vector[4], vector[5]), new Vector3(vector[6], vector[7], vector[8]));
+                var left_dirs = GetRepairedForwardUp(new Vector3(vector[12], vector[13], vector[14]), new Vector3(vector[15], vector[16], vector[17]));
+                var right_dirs = GetRepairedForwardUp(new Vector3(vector[21], vector[22], vector[23]), new Vector3(vector[24], vector[25], vector[26]));
+
                 return new SamplePoints
                 {
                     HeadPos = new Vector3(vector[0], vector[1], vector[2]),
-                    HeadForward = new Vector3(vector[3], vector[4], vector[5]),
-                    HeadUp = new Vector3(vector[6], vector[7], vector[8]),
+                    HeadForward = head_dirs.forward,
+                    HeadUp = head_dirs.up,
 
                     LeftPos = new Vector3(vector[9], vector[10], vector[11]),
-                    LeftForward = new Vector3(vector[12], vector[13], vector[14]),
-                    LeftUp = new Vector3(vector[15], vector[16], vector[17]),
+                    LeftForward = left_dirs.forward,
+                    LeftUp = left_dirs.up,
 
                     RightPos = new Vector3(vector[18], vector[19], vector[20]),
-                    RightForward = new Vector3(vector[21], vector[22], vector[23]),
-                    RightUp = new Vector3(vector[24], vector[25], vector[26]),
+                    RightForward = right_dirs.forward,
+                    RightUp = right_dirs.up,
                 };
+            }
+
+            public static float[] GetWeights(float headPos = 1, float headForward = 1, float headUp = 1, float leftPos = 1, float leftForward = 1, float leftUp = 1, float rightPos = 1, float rightForward = 1, float rightUp = 1)
+            {
+                return new[] {
+                    headPos, headPos, headPos,
+                    headForward, headForward, headForward,
+                    headUp, headUp, headUp,
+                    leftPos, leftPos, leftPos,
+                    leftForward, leftForward, leftForward,
+                    leftUp, leftUp, leftUp,
+                    rightPos, rightPos, rightPos,
+                    rightForward, rightForward, rightForward,
+                    rightUp, rightUp, rightUp };
+            }
+
+            private static (Vector3 forward, Vector3 up) GetRepairedForwardUp(Vector3 forward, Vector3 up)
+            {
+                forward = forward.normalized;
+                up = up.normalized;
+
+                float dot = Vector3.Dot(forward, up);
+
+                // If already perpendicular (or nearly so), return as is
+                if (dot.IsNearZero())
+                    return (forward, up);
+
+                if (Math.Abs(dot).IsNearValue(1))
+                    return (forward, Math3D.GetArbitraryOrthogonal(forward));        // special case where they are parallel or opposed.  there's no good correct answer, so assume that forward is correct and return an arbitrary up
+
+                // Create a perpendicular vector using cross product
+                Vector3 perpendicular = Vector3.Cross(forward, up).normalized;
+
+                float angle = Math1D.Dot_to_Degrees(dot);
+                angle = 90 - angle;
+
+                var quat = Quaternion.AngleAxis(-angle / 2, perpendicular);
+
+                forward = quat * forward;
+                up = Quaternion.Inverse(quat) * up;
+
+                return (forward, up);
             }
         }
 
@@ -143,7 +186,7 @@ namespace Jetpack2.InputWatchers
 
         }
 
-        public PlayerVRPoints_Set GetAverageHandPositions()
+        public UtilJetpack.PlayerVRPoints_Set GetAverageHandPositions()
         {
 
             // figure out what to do if there hasn't been enough time to get samples for clustering
@@ -220,7 +263,7 @@ namespace Jetpack2.InputWatchers
 
         }
 
-        private static PlayerVRPoints_Set GetAverage(List<SamplePoints> samples)
+        private static UtilJetpack.PlayerVRPoints_Set GetAverage(List<SamplePoints> samples)
         {
             if (samples.Count == 0)
                 return null;
@@ -229,7 +272,7 @@ namespace Jetpack2.InputWatchers
             Vector3 left = Math3D.GetAverage(samples.Select(o => o.LeftPos));
             Vector3 right = Math3D.GetAverage(samples.Select(o => o.RightForward));
 
-            return new PlayerVRPoints_Set
+            return new UtilJetpack.PlayerVRPoints_Set
             {
                 center = Vector3.zero,      // local is centered on center, which is always zero
                 head = head,

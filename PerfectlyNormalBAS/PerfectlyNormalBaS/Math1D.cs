@@ -337,7 +337,7 @@ namespace PerfectlyNormalBaS
         /// <returns>radians away from forward (pi to 0)</returns>
         public static float Dot_to_Radians(float dot)
         {
-            return Mathf.Acos(dot);
+            return Mathf.Acos(Mathf.Clamp(dot, -1, 1));
         }
         public static float Radians_to_Dot(float radians)
         {
