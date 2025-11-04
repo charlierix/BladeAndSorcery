@@ -25,7 +25,7 @@ namespace Jetpack2.FlightProcessing
         private readonly PlayerRagdollUtil _ragdollUtil = new PlayerRagdollUtil();
         private readonly PlayerRotator _rotator;
         private readonly DebugStats _debugStats;
-        private readonly AvgHandPositionTracker _handPositionTracker;
+        //private readonly AvgHandPositionTracker _handPositionTracker;
         private readonly ConfinedArea _confinedScanner;
         private readonly RepelGround _repelGround;
         private readonly ObstacleAvoidance _obstacleAvoidance;
@@ -41,12 +41,13 @@ namespace Jetpack2.FlightProcessing
         private DateTime _activation_time = DateTime.UtcNow;
         private DateTime _prevTick = DateTime.UtcNow;
 
-        public FlightJetpack(RayCastStorage raycast_storage, PlayerRotator rotator, DebugStats debugStats, AvgHandPositionTracker handPositionTracker)
+        //public FlightJetpack(RayCastStorage raycast_storage, PlayerRotator rotator, DebugStats debugStats, AvgHandPositionTracker handPositionTracker)
+        public FlightJetpack(RayCastStorage raycast_storage, PlayerRotator rotator, DebugStats debugStats)
         {
             _raycast_storage = raycast_storage;
             _rotator = rotator;
             _debugStats = debugStats;
-            _handPositionTracker = handPositionTracker;
+            //_handPositionTracker = handPositionTracker;
             _confinedScanner = new ConfinedArea(_raycast_storage);
             _repelGround = new RepelGround(_raycast_storage);
             _obstacleAvoidance = new ObstacleAvoidance(_raycast_storage);
@@ -157,7 +158,7 @@ namespace Jetpack2.FlightProcessing
             {
                 var (body_forward, body_up) = _ragdollUtil.GetRagdollForwardUp();
 
-                _handPositionTracker.Update_Flying(body_forward, body_up, input_dir != null);
+                //_handPositionTracker.Update_Flying(body_forward, body_up, input_dir != null);
 
                 Vector3? accel_repel = _repelGround.Update_Finish(loco, input_dir);
                 if (accel_repel != null)

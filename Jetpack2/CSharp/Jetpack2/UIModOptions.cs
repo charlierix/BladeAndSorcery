@@ -493,23 +493,23 @@ namespace Jetpack2
 
         #region Player Pos Tracking
 
-        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
-        [ModOptionSlider]
-        [ModOption(name: "Clustering Weight - Head Pos", tooltip: "Priority of head position while clustering", order = 1)]
-        [ModOptionFloatValues(0, 4, 0.1f)]
-        public static float PlayerPosTracking_Weight_HeadPos = 0.7f;
+        //[ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        //[ModOptionSlider]
+        //[ModOption(name: "Clustering Weight - Head Pos", tooltip: "Priority of head position while clustering", order = 1)]
+        //[ModOptionFloatValues(0, 4, 0.1f)]
+        //public static float PlayerPosTracking_Weight_HeadPos = 0.7f;
 
-        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
-        [ModOptionSlider]
-        [ModOption(name: "Clustering Weight - Hand Pos", tooltip: "Priority of hand positions while clustering", order = 2)]
-        [ModOptionFloatValues(0, 4, 0.1f)]
-        public static float PlayerPosTracking_Weight_HandPos = 2;
+        //[ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        //[ModOptionSlider]
+        //[ModOption(name: "Clustering Weight - Hand Pos", tooltip: "Priority of hand positions while clustering", order = 2)]
+        //[ModOptionFloatValues(0, 4, 0.1f)]
+        //public static float PlayerPosTracking_Weight_HandPos = 2;
 
-        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
-        [ModOptionSlider]
-        [ModOption(name: "Clustering Weight - Directions", tooltip: "Priority of head/hand orientations while clustering", order = 3)]
-        [ModOptionFloatValues(0, 4, 0.1f)]
-        public static float PlayerPosTracking_Weight_Directions = 0.3f;
+        //[ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        //[ModOptionSlider]
+        //[ModOption(name: "Clustering Weight - Directions", tooltip: "Priority of head/hand orientations while clustering", order = 3)]
+        //[ModOptionFloatValues(0, 4, 0.1f)]
+        //public static float PlayerPosTracking_Weight_Directions = 0.3f;
 
         #endregion
 

@@ -69,7 +69,7 @@ namespace Jetpack2
 
         private RayCastStorage _raycast_storage = null;
         private FlightTransitionWatcher _transitions = null;
-        private AvgHandPositionTracker _handPositionTracker = null;
+        //private AvgHandPositionTracker _handPositionTracker = null;
         private PlayerRotator _rotator = null;
         private FlightJetpack _flight_jetpack = null;
 
@@ -86,9 +86,9 @@ namespace Jetpack2
 
             _raycast_storage = new RayCastStorage();
             _transitions = new FlightTransitionWatcher();
-            _handPositionTracker = new AvgHandPositionTracker();
+            //_handPositionTracker = new AvgHandPositionTracker();
             _rotator = new PlayerRotator();
-            _flight_jetpack = new FlightJetpack(_raycast_storage, _rotator, _debugStats, _handPositionTracker);
+            _flight_jetpack = new FlightJetpack(_raycast_storage, _rotator, _debugStats);
 
             //MaterialShaderFinder.Report();
 
@@ -171,7 +171,7 @@ namespace Jetpack2
                 _debugStats.Update_Final();
             }
 
-            _handPositionTracker.Update_Any(_isFlying);
+            //_handPositionTracker.Update_Any(_isFlying);
         }
         public override void ScriptFixedUpdate()
         {

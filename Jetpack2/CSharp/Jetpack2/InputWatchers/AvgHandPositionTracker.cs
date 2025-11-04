@@ -452,18 +452,31 @@ namespace Jetpack2.InputWatchers
 
             _newSamples.Clear();
 
+            //float[] weights = SamplePoints.GetWeights(
+            //    headPos: UIModOptions.PlayerPosTracking_Weight_HeadPos,           // sliders were commented out
+            //    headForward: UIModOptions.PlayerPosTracking_Weight_Directions,
+            //    headUp: UIModOptions.PlayerPosTracking_Weight_Directions,
+
+            //    leftPos: UIModOptions.PlayerPosTracking_Weight_HandPos,
+            //    leftForward: UIModOptions.PlayerPosTracking_Weight_Directions,
+            //    leftUp: UIModOptions.PlayerPosTracking_Weight_Directions,
+
+            //    rightPos: UIModOptions.PlayerPosTracking_Weight_HandPos,
+            //    rightForward: UIModOptions.PlayerPosTracking_Weight_Directions,
+            //    rightUp: UIModOptions.PlayerPosTracking_Weight_Directions);
+
             float[] weights = SamplePoints.GetWeights(
-                headPos: UIModOptions.PlayerPosTracking_Weight_HeadPos,
-                headForward: UIModOptions.PlayerPosTracking_Weight_Directions,
-                headUp: UIModOptions.PlayerPosTracking_Weight_Directions,
+                headPos: 0.7f,
+                headForward: 0.3f,
+                headUp: 0.3f,
 
-                leftPos: UIModOptions.PlayerPosTracking_Weight_HandPos,
-                leftForward: UIModOptions.PlayerPosTracking_Weight_Directions,
-                leftUp: UIModOptions.PlayerPosTracking_Weight_Directions,
+                leftPos: 2,
+                leftForward: 0.3f,
+                leftUp: 0.3f,
 
-                rightPos: UIModOptions.PlayerPosTracking_Weight_HandPos,
-                rightForward: UIModOptions.PlayerPosTracking_Weight_Directions,
-                rightUp: UIModOptions.PlayerPosTracking_Weight_Directions);
+                rightPos: 2,
+                rightForward: 0.3f,
+                rightUp: 0.3f);
 
 
 
