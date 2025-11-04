@@ -4,10 +4,24 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ThunderRoad;
+using ThunderRoad.DebugViz;
 using UnityEngine;
 
 namespace Jetpack2.InputWatchers
 {
+    // NOTE: this was made to help figure out when they have hands near the body and when stretched out,
+    // but that is a flawed idea, since flying around with hands out to be a wing would influence this
+    // class's results
+    //
+    // a simple threshold distance based on head to foot distance should be good enough
+    //
+    // so maybe this class could be useful in the future, but if used, will need to be improved.  it is
+    // currently just keeping the last cluster, so is very short term memory
+
+    // TODO: clustering has a lot of complexity and long term storage is expensive
+    // instead of returning cluster positions, return resting sphere, max sphere, halfway sphere (halfway
+    // plane between resting and outstretched)
+
     public class AvgHandPositionTracker
     {
         #region class: SamplePoints
@@ -53,7 +67,7 @@ namespace Jetpack2.InputWatchers
                     sample.RightUp.x, sample.RightUp.y, sample.RightUp.z
                 };
             }
-            public static SamplePoints FromVector(float[] vector)
+            public static SamplePoints FromVector(float[] vector, bool repair_dirs = true)
             {
                 if (vector == null)
                     throw new ArgumentNullException(nameof(vector));
@@ -61,9 +75,9 @@ namespace Jetpack2.InputWatchers
                 if (vector.Length != 27)
                     throw new ArgumentException($"vector needs to be length 27: {vector.Length}");
 
-                var head_dirs = GetRepairedForwardUp(new Vector3(vector[3], vector[4], vector[5]), new Vector3(vector[6], vector[7], vector[8]));
-                var left_dirs = GetRepairedForwardUp(new Vector3(vector[12], vector[13], vector[14]), new Vector3(vector[15], vector[16], vector[17]));
-                var right_dirs = GetRepairedForwardUp(new Vector3(vector[21], vector[22], vector[23]), new Vector3(vector[24], vector[25], vector[26]));
+                var head_dirs = GetRepairedForwardUp(new Vector3(vector[3], vector[4], vector[5]), new Vector3(vector[6], vector[7], vector[8]), repair_dirs);
+                var left_dirs = GetRepairedForwardUp(new Vector3(vector[12], vector[13], vector[14]), new Vector3(vector[15], vector[16], vector[17]), repair_dirs);
+                var right_dirs = GetRepairedForwardUp(new Vector3(vector[21], vector[22], vector[23]), new Vector3(vector[24], vector[25], vector[26]), repair_dirs);
 
                 return new SamplePoints
                 {
@@ -95,8 +109,11 @@ namespace Jetpack2.InputWatchers
                     rightUp, rightUp, rightUp };
             }
 
-            private static (Vector3 forward, Vector3 up) GetRepairedForwardUp(Vector3 forward, Vector3 up)
+            private static (Vector3 forward, Vector3 up) GetRepairedForwardUp(Vector3 forward, Vector3 up, bool repair_dirs)
             {
+                if (!repair_dirs)       // don't take the expense if they aren't used
+                    return (forward, up);
+
                 forward = forward.normalized;
                 up = up.normalized;
 
@@ -146,44 +163,80 @@ namespace Jetpack2.InputWatchers
 
         private const float SAMPLE_INTERVAL_SECONDS = 0.1f;
         private const int MIN_SAMPLES_FOR_CLUSTERING = 100;
-
-
-        // figure out best number of clusters (elbow method)
-        private const int NUM_CLUSTERS = 4;
-
-
         private const int CLUSTER_INTERVAL_SECONDS = 18;
+
+        private PlayerRagdollUtil _ragdollUtil = null;
 
         private DateTime _nextSampleTime = DateTime.UtcNow;
 
         private List<SamplePoints> _newSamples = new List<SamplePoints>();
 
+        private readonly object _lock = new object();
+        private bool _isClustering = false;
+        private KMeansClusterer.Cluster<SamplePoints>[] _clusters = null;
+        private DateTime _nextClusterTime = DateTime.UtcNow;
+
+        #region debug drawing vars
+
+        private const float DOT_SIZE = 0.05f;
+        private const float LINE_THICKNESS = 0.005f;
+        private const float TEXT_HEIGHT = 0.06f;
+
+        private DebugRenderer3D _renderer = null;
+
+        private DebugItem _stats = null;
+
+        private List<Color> _cluster_colors = new List<Color>();
+
+        private int _dot_index = -1;
+        private List<DebugItem> _dots = new List<DebugItem>();       // these are dots (showing contents of buffer)
+
         #endregion
 
-        public void Update(Vector3 body_forward, Vector3 body_up)
+        #endregion
+
+        public void Update_Flying(Vector3 body_forward, Vector3 body_up, bool had_thumbstick_input)
         {
+            // This class cares about resting hand position and that is most likely when they are using
+            // the thumbsticks.  This check will remove a lot of noise (like swinging a sword, putting the
+            // controllers down to go into the kitchen, etc)
+            if (!had_thumbstick_input)
+                return;
+
             DateTime now = DateTime.UtcNow;
 
             if (now < _nextSampleTime)
                 return;
 
+            _nextSampleTime = now + TimeSpan.FromSeconds(SAMPLE_INTERVAL_SECONDS);
+
             AddSample(body_forward, body_up);
+        }
+        public void Update_Any(bool isFlying)
+        {
+            DateTime now = DateTime.UtcNow;
 
+            TryKickoffCluster(now);
 
-            // TODO: before going down a rabbit hole of ways to store long term results, show kmeans
-            // results on screen
-            //
-            // most recent is one color, previous is more faded, N prev is most faded
+            if (UIModOptions.ShowPlayerPosTracking)
+            {
+                PrepareForDraw();
 
+                DrawStats();
 
+                if (_ragdollUtil == null)
+                    _ragdollUtil = new PlayerRagdollUtil();
 
-            // see if a new clustering should happen:
-            //  make sure time since last cluster >= CLUSTER_INTERVAL_SECONDS
-            //  make sure a current cluster isn't running
-            //  make sure _newSamples.Count >= MIN_SAMPLES_FOR_CLUSTERING
+                var (forward, up) = _ragdollUtil.GetRagdollForwardUp();
+                DrawClusterResults(forward, up);
 
+                FinishedDraw();
+            }
+        }
 
-
+        public void Clear()
+        {
+            ClearDebugVisuals();
         }
 
         public UtilJetpack.PlayerVRPoints_Set GetAverageHandPositions()
@@ -201,6 +254,154 @@ namespace Jetpack2.InputWatchers
 
         }
 
+        #region Private Methods - drawing
+
+        private void EnsureDebugActive()
+        {
+            if (_renderer == null)
+                _renderer = DebugRenderer3D.GetOrAddDebugRenderer3D();
+        }
+
+        private void ClearDebugVisuals()
+        {
+            if (_renderer == null)
+                return;
+
+            if (_stats != null)
+            {
+                _renderer.Remove(_stats);
+                _stats = null;
+            }
+
+            foreach (DebugItem item in _dots)
+                _renderer.Remove(item);
+            _dots.Clear();
+
+            _renderer = null;
+        }
+
+        // These manage visuals that persist across frames.  Prepare removes despawned, finsih sets visibility based on how many are used this frame
+        private void PrepareForDraw()
+        {
+            RemoveDespawned(_dots);
+
+            _dot_index = -1;
+        }
+        private void FinishedDraw()
+        {
+            SetActive(_dots, _dot_index + 1);
+        }
+
+        private static void RemoveDespawned(List<DebugItem> items)
+        {
+            int index = 0;
+
+            while (index < items.Count)
+            {
+                if (items[index].Object == null)
+                {
+                    //Debug.Log($"Removing despawned visual: {items[index].Token}");
+                    items.RemoveAt(index);
+                }
+                else
+                {
+                    index++;
+                }
+            }
+        }
+
+        private static void SetActive(List<DebugItem> items, int count)
+        {
+            for (int i = 0; i < items.Count; i++)
+                items[i].Object.SetActive(i < count);     // this should be cheaper than removing/adding
+        }
+
+        private void DrawStats()
+        {
+            EnsureDebugActive();
+
+            Vector3 text_pos = Player.local.head.anchor.position +
+                Player.local.head.transform.forward * 1.5f +
+                Player.local.head.transform.right * -0.35f +
+                Player.local.head.transform.up * -0.25f;
+
+            bool isClustering = false;
+            int? cluster_count = null;
+            lock (_lock)
+            {
+                isClustering = _isClustering;
+                cluster_count = _clusters?.Length;
+            }
+
+            string[] lines = new[]
+            {
+                $"num samples: {_newSamples.Count}",
+                $"is clustering: {isClustering}",
+                $"num clusters: {cluster_count?.ToString() ?? "--"}",
+            };
+            string text = string.Join(Environment.NewLine, lines);
+
+            if (_stats == null)
+                _stats = _renderer.AddText(text, text_pos, Player.local.head.transform.forward, Color.black, Color.green, TEXT_HEIGHT * lines.Length);
+
+            _stats.Object.transform.position = text_pos;
+            _stats.Object.transform.rotation = Quaternion.LookRotation((text_pos - Player.local.head.anchor.position).normalized, Player.local.head.transform.up);
+
+            DebugRenderer3D.AdjustText(_stats, new_text: text);
+        }
+
+        private void DrawClusterResults(Vector3 body_forward, Vector3 body_up)
+        {
+            EnsureDebugActive();
+
+            // Get info from cluster
+            (Vector3 left, Vector3 right)[] centers = null;
+            lock (_lock)
+            {
+                if (_clusters != null)
+                {
+                    centers = new (Vector3 left, Vector3 right)[_clusters.Length];
+
+                    for (int i = 0; i < _clusters.Length; i++)
+                    {
+                        var sample = SamplePoints.FromVector(_clusters[i].Center, false);
+                        centers[i] = (sample.LeftPos, sample.RightPos);
+                    }
+                }
+            }
+
+            if (centers == null)
+                return;
+
+            // Draw the positions
+            while (_cluster_colors.Count < centers.Length)
+                _cluster_colors.Add(UtilityColor.RandomHSV(0, 1, 0.65f, 1f, 0.5f, 0.85f));
+
+            var positions = UtilJetpack.GetPlayerPoints(body_forward, body_up);
+
+            for (int i = 0; i < centers.Length; i++)
+            {
+                AddDot(positions.Transform_ToWorld(centers[i].left), _cluster_colors[i]);
+                AddDot(positions.Transform_ToWorld(centers[i].right), _cluster_colors[i]);
+            }
+        }
+
+        private void AddDot(Vector3 pos, Color color)
+        {
+            _dot_index++;
+
+            if (_dot_index < _dots.Count)
+            {
+                _dots[_dot_index].Object.transform.position = pos;
+                DebugRenderer3D.AdjustColor(_dots[_dot_index], color);
+            }
+            else
+            {
+                _dots.Add(_renderer.AddDot(pos, DOT_SIZE, color));
+            }
+        }
+
+        #endregion
         #region Private Methods
 
         private void AddSample(Vector3 body_forward, Vector3 body_up)
@@ -223,28 +424,70 @@ namespace Jetpack2.InputWatchers
             });
         }
 
-        private void KickoffCluster()
+        private void TryKickoffCluster(DateTime now)
         {
-            // if there's a current one running, throw exception (the check should have happened before calling this function)
+            if (_newSamples.Count < MIN_SAMPLES_FOR_CLUSTERING)
+                return;
 
-            // move _newSamples into batch list (current thread)
-            // store that a batch has started
+            lock (_lock)
+            {
+                if (_isClustering)
+                    return;
 
-            // in a separate thread:
-            //  cluster the batch of samples
-            //  add those results into the long term storage
-            //      this involves analyzing cluster, maybe merging clusters or doing a new cluster with 150% num nodes
-            //  reevaluate the sharable results
-            //
-            // continue in current thread (or lock):
-            //  store the sharable results
-            //  mark the batch as finished
+                if (now < _nextClusterTime)
+                    return;
+            }
 
-            // ------------------
+            // ------ Prep for clustering in main thread ------
+            _isClustering = true;
 
-            // when doing kmeans, use elbow method to figure out how many clusters to commit to
+            var samples = new KMeansClusterer.Sample<SamplePoints>[_newSamples.Count];
 
-            // ------------------
+            for (int i = 0; i < _newSamples.Count; i++)
+                samples[i] = new KMeansClusterer.Sample<SamplePoints>
+                {
+                    Vector = _newSamples[i].ToVector(),
+                    Source = _newSamples[i],
+                };
+
+            _newSamples.Clear();
+
+            float[] weights = SamplePoints.GetWeights(
+                headPos: UIModOptions.PlayerPosTracking_Weight_HeadPos,
+                headForward: UIModOptions.PlayerPosTracking_Weight_Directions,
+                headUp: UIModOptions.PlayerPosTracking_Weight_Directions,
+
+                leftPos: UIModOptions.PlayerPosTracking_Weight_HandPos,
+                leftForward: UIModOptions.PlayerPosTracking_Weight_Directions,
+                leftUp: UIModOptions.PlayerPosTracking_Weight_Directions,
+
+                rightPos: UIModOptions.PlayerPosTracking_Weight_HandPos,
+                rightForward: UIModOptions.PlayerPosTracking_Weight_Directions,
+                rightUp: UIModOptions.PlayerPosTracking_Weight_Directions);
+
+
+
+            // ------ Do clustering in separate thread ------
+
+            var clusters = KMeansClusterer.DoClustering(samples, weights);
+
+            // analyze cluster results, merge with long term result
+
+
+            // ------ Store results ------
+
+            lock (_lock)
+            {
+                _clusters = clusters;       // for now, just store directly
+                _nextClusterTime = DateTime.UtcNow + TimeSpan.FromSeconds(CLUSTER_INTERVAL_SECONDS);
+                _isClustering = false;
+            }
+
+
+
+
+
+
 
 
             // once enough kmeans outputs are generated, do a bundle kmeans pass:

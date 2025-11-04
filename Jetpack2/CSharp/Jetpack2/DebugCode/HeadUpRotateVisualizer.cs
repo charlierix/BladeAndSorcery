@@ -55,9 +55,7 @@ namespace Jetpack2.DebugCode
         public void Clear()
         {
             _gazebuffer_roll.Clear();
-
-            if (UIModOptions.ShowHeadUpRotateVisualizer)
-                ClearDebugVisuals();
+            ClearDebugVisuals();
         }
 
         public void Update(float elapsed_seconds)

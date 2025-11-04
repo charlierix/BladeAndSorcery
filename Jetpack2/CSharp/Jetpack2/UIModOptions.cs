@@ -26,6 +26,7 @@ namespace Jetpack2
         private const string CATEGORY_ROTATELOOK_LOOKZONES = "Rotate To Look - Look Zones";
         private const string CATEGORY_ROTATELOOK_TURNRATES = "Rotate To Look - Turn Rates";
         private const string CATEGORY_ROTATELOOK_IK = "Rotate To Look - IK Rig";
+        private const string CATEGORY_PLAYERPOSTRACKING = "Player Pos Tracking";
         private const string CATEGORY_SOUNDS = "Sounds";        // TODO: add this
         private const string CATEGORY_SCALE = "Player Size";
         private const string CATEGORY_VISIBILITY = "Player Visibility";
@@ -39,6 +40,7 @@ namespace Jetpack2
         private const int ORDER_ROTATELOOK_LOOKZONES = 6;
         private const int ORDER_ROTATELOOK_TURNRATES = 7;
         private const int ORDER_ROTATELOOK_IK = 8;
+        private const int ORDER_PLAYERPOSTRACKING = 9;
         private const int ORDER_SOUNDS = 50;
         private const int ORDER_SCALE = 51;
         private const int ORDER_VISIBILITY = 52;
@@ -489,6 +491,28 @@ namespace Jetpack2
 
         #endregion
 
+        #region Player Pos Tracking
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Clustering Weight - Head Pos", tooltip: "Priority of head position while clustering", order = 1)]
+        [ModOptionFloatValues(0, 4, 0.1f)]
+        public static float PlayerPosTracking_Weight_HeadPos = 0.7f;
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Clustering Weight - Hand Pos", tooltip: "Priority of hand positions while clustering", order = 2)]
+        [ModOptionFloatValues(0, 4, 0.1f)]
+        public static float PlayerPosTracking_Weight_HandPos = 2;
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Clustering Weight - Directions", tooltip: "Priority of head/hand orientations while clustering", order = 3)]
+        [ModOptionFloatValues(0, 4, 0.1f)]
+        public static float PlayerPosTracking_Weight_Directions = 0.3f;
+
+        #endregion
+
         #region Player Size
 
         [ModOptionCategory(CATEGORY_SCALE, ORDER_SCALE)]
@@ -626,6 +650,10 @@ namespace Jetpack2
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
         [ModOption(name: "Show HeadUpRotateVisualizer", tooltip: "Focused tester showing world to model rotations and back of head up vector", order = 9)]
         public static bool ShowHeadUpRotateVisualizer = false;
+
+        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
+        [ModOption(name: "Show Player Pos Tracking", tooltip: "Watches head and hand positions over time, clusters on stable positions", order = 9)]
+        public static bool ShowPlayerPosTracking = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
         [ModOption(name: "Visualize Player Points", tooltip: "Shows points/lines on various transforms of the player avatar", order = 10)]

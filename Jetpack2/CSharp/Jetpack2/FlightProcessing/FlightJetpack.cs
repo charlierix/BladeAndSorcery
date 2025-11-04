@@ -23,9 +23,9 @@ namespace Jetpack2.FlightProcessing
     {
         private readonly RayCastStorage _raycast_storage;
         private readonly PlayerRagdollUtil _ragdollUtil = new PlayerRagdollUtil();
-        private readonly AvgHandPositionTracker _handPositionTracker = new AvgHandPositionTracker();
         private readonly PlayerRotator _rotator;
         private readonly DebugStats _debugStats;
+        private readonly AvgHandPositionTracker _handPositionTracker;
         private readonly ConfinedArea _confinedScanner;
         private readonly RepelGround _repelGround;
         private readonly ObstacleAvoidance _obstacleAvoidance;
@@ -41,11 +41,12 @@ namespace Jetpack2.FlightProcessing
         private DateTime _activation_time = DateTime.UtcNow;
         private DateTime _prevTick = DateTime.UtcNow;
 
-        public FlightJetpack(RayCastStorage raycast_storage, PlayerRotator rotator, DebugStats debugStats)
+        public FlightJetpack(RayCastStorage raycast_storage, PlayerRotator rotator, DebugStats debugStats, AvgHandPositionTracker handPositionTracker)
         {
             _raycast_storage = raycast_storage;
             _rotator = rotator;
             _debugStats = debugStats;
+            _handPositionTracker = handPositionTracker;
             _confinedScanner = new ConfinedArea(_raycast_storage);
             _repelGround = new RepelGround(_raycast_storage);
             _obstacleAvoidance = new ObstacleAvoidance(_raycast_storage);
@@ -117,13 +118,15 @@ namespace Jetpack2.FlightProcessing
             _headUpRotateVisualizer.Clear();
         }
 
+        // TODO: split into Update, FixedUpdate
+
         public void Update(float drag, float horz_accel, float vert_accel, float gravity)
         {
             // TODO: see if Time.fixedDeltaTime is better
 
             // TODO: may need a second elapsed that considers time slowdown
             DateTime now = DateTime.UtcNow;
-            float elapsed_seconds = (float)Math1D.Clamp((now - _prevTick).TotalSeconds, 0, 0.25);       
+            float elapsed_seconds = (float)Math1D.Clamp((now - _prevTick).TotalSeconds, 0, 0.25);
             _prevTick = now;
 
             Locomotion loco = Player.local.locomotion;
@@ -153,7 +156,8 @@ namespace Jetpack2.FlightProcessing
             if (!Player.local.locomotion.isGrounded && (DateTime.UtcNow - _activation_time).TotalMilliseconds > 500)
             {
                 var (body_forward, body_up) = _ragdollUtil.GetRagdollForwardUp();
-                _handPositionTracker.Update(body_forward, body_up);
+
+                _handPositionTracker.Update_Flying(body_forward, body_up, input_dir != null);
 
                 Vector3? accel_repel = _repelGround.Update_Finish(loco, input_dir);
                 if (accel_repel != null)

@@ -178,8 +178,7 @@ namespace Jetpack2.FlightProcessing
             _gazebuffer.Clear();
             _gazebuffer_roll.Clear();
 
-            if (UIModOptions.ShowRotateToLook)
-                ClearDebugVisuals();
+            ClearDebugVisuals();
         }
 
         public void Update(Vector3 body_forward, Vector3 body_up, float elapsed_seconds)
@@ -845,7 +844,7 @@ namespace Jetpack2.FlightProcessing
             // Axis Lines
             Vector3 axis_center = Player.local.head.anchor.position +
                 Player.local.head.transform.forward * 1.25f +
-                Player.local.head.transform.right * +0.15f +
+                Player.local.head.transform.right * 0.15f +
                 Player.local.head.transform.up * 0.15f;
 
             Vector3 axis_yaw = turnrate_yaw?.axis * LINE_LEN ?? new Vector3(LINE_LEN_HIDDEN, 0, 0);
