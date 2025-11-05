@@ -40,6 +40,12 @@ namespace Jetpack2.FlightProcessing
 
         private DateTime _activation_time = DateTime.UtcNow;
         private DateTime _prevTick = DateTime.UtcNow;
+        private DateTime _prevTick_fixed = DateTime.UtcNow;
+
+        private bool _wereRaycastsConsumed = true;      // default to true so that the first call to update will do raycasts and set to false
+
+        private Vector2 _left_stick = Vector2.zero;
+        private Vector2 _right_stick = Vector2.zero;
 
         //public FlightJetpack(RayCastStorage raycast_storage, PlayerRotator rotator, DebugStats debugStats, AvgHandPositionTracker handPositionTracker)
         public FlightJetpack(RayCastStorage raycast_storage, PlayerRotator rotator, DebugStats debugStats)
@@ -60,6 +66,7 @@ namespace Jetpack2.FlightProcessing
         public void Activate(float drag)
         {
             _prevTick = DateTime.UtcNow;
+            _prevTick_fixed = DateTime.UtcNow;
 
             if (_standardState == null)
                 _standardState = GetCurrentState();
@@ -94,6 +101,7 @@ namespace Jetpack2.FlightProcessing
         public void Deactivate()
         {
             _prevTick = DateTime.UtcNow;
+            _prevTick_fixed = DateTime.UtcNow;
 
             Locomotion loco = Player.local.locomotion;
 
@@ -119,16 +127,61 @@ namespace Jetpack2.FlightProcessing
             _headUpRotateVisualizer.Clear();
         }
 
-        // TODO: split into Update, FixedUpdate
-
-        public void Update(float drag, float horz_accel, float vert_accel, float gravity)
+        public void Update()
         {
-            // TODO: see if Time.fixedDeltaTime is better
-
+            // TODO: see if Time.deltaTime is better
             // TODO: may need a second elapsed that considers time slowdown
             DateTime now = DateTime.UtcNow;
             float elapsed_seconds = (float)Math1D.Clamp((now - _prevTick).TotalSeconds, 0, 0.25);
             _prevTick = now;
+
+            Locomotion loco = Player.local.locomotion;
+
+            if (_wereRaycastsConsumed)      // don't need to fire rays more often than fixedupdate can use them
+            {
+                // TODO: instead of blindly clearing, each enum should have a time setting for how long between clears
+                // then each of the ray cast functions should exit early if storage already has that enum
+
+                _raycast_storage.Clear();
+                _confinedScanner.Update_CastRays();
+                _repelGround.Update_CastRays(loco);
+                _obstacleAvoidance.Update_CastRays();
+                _wereRaycastsConsumed = false;
+            }
+
+
+            // TODO: listen for thumbstick events off of loco instead of hardcoding against input hardware
+            _left_stick = InputUtil.GetLeftStick();
+            _right_stick = InputUtil.GetRightStick();
+
+
+
+            // Only do these when already in the air
+            if (!Player.local.locomotion.isGrounded && (DateTime.UtcNow - _activation_time).TotalMilliseconds > 500)
+            {
+                var (body_forward, body_up) = _ragdollUtil.GetRagdollForwardUp();
+
+                _rotateToLook.Update(body_forward, body_up, elapsed_seconds);
+
+                _gazeBufferVisualizer_target.Update();
+                _gazeBufferVisualizer_offset.Update();
+                _headUpRotateVisualizer.Update(elapsed_seconds);
+            }
+        }
+        public void UpdateFixed()
+        {
+            float drag = UIModOptions.Drag;
+            float horz_accel = UIModOptions.HorizontalAccel;
+            float vert_accel = UIModOptions.VerticalAccel;
+            float gravity = UIModOptions.GravitySetting;
+
+            // TODO: see if Time.fixedDeltaTime is better (this may also fix the time dilation error)
+            // TODO: may need a second elapsed that considers time slowdown
+            DateTime now = DateTime.UtcNow;
+            float elapsed_seconds = (float)Math1D.Clamp((now - _prevTick_fixed).TotalSeconds, 0, 0.25);
+            _prevTick_fixed = now;
+
+            _wereRaycastsConsumed = true;
 
             Locomotion loco = Player.local.locomotion;
 
@@ -138,20 +191,13 @@ namespace Jetpack2.FlightProcessing
                 _last_applied_drag = drag;
             }
 
-            _raycast_storage.Clear();
-            _confinedScanner.Update_CastRays();
-            _repelGround.Update_CastRays(loco);
-            _obstacleAvoidance.Update_CastRays();
-
             _confinedScanner.Update_Finish(elapsed_seconds);
             float percent_accel = UtilityMath.GetScaledValue_Capped(0.25f, 1f, 1f, 0f, _confinedScanner.ConfinedPercent);
 
             DestabilizeHeldNPC(Player.local.handLeft);
             DestabilizeHeldNPC(Player.local.handRight);
 
-            Vector2 left_stick = InputUtil.GetLeftStick();
-            Vector2 right_stick = InputUtil.GetRightStick();
-            Vector3? input_dir = ThumbstickToAccel.GetInputDirection(left_stick, right_stick, loco);
+            Vector3? input_dir = ThumbstickToAccel.GetInputDirection(_left_stick, _right_stick, loco);
 
             // Only do these when already in the air
             if (!Player.local.locomotion.isGrounded && (DateTime.UtcNow - _activation_time).TotalMilliseconds > 500)
@@ -167,17 +213,13 @@ namespace Jetpack2.FlightProcessing
                 Vector3? accel_obstacle = _obstacleAvoidance.Update_Finish(input_dir);
                 if (accel_obstacle != null)
                     loco.physicBody.AddForce(accel_obstacle.Value, ForceMode.Acceleration);
-
-                _rotateToLook.Update(body_forward, body_up, elapsed_seconds);
-                _gazeBufferVisualizer_target.Update();
-                _gazeBufferVisualizer_offset.Update();
-                _headUpRotateVisualizer.Update(elapsed_seconds);
             }
 
             // TODO: make an option for horiztonal control mode (direct or accel)
             //loco.horizontalAirSpeed = horizontalSpeed / 100f;
 
-            ThumbstickToAccel.ApplyAccel(input_dir, loco, horz_accel, vert_accel, gravity);
+            if (!Player.local.locomotion.isGrounded)
+                ThumbstickToAccel.ApplyAccel(input_dir, loco, horz_accel, vert_accel, gravity);
         }
 
         private static void DestabilizeHeldNPC(PlayerHand side)

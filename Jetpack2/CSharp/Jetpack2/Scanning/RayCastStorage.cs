@@ -32,6 +32,8 @@ namespace Jetpack2.Scanning
 
         private Dictionary<RayCategory, RayCastBundle> _storage = new Dictionary<RayCategory, RayCastBundle>();
 
+        public bool ContainsKey(RayCategory key) => _storage.ContainsKey(key);
+
         // called at the beginning of an update
         public void Clear()
         {

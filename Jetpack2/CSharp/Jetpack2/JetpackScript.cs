@@ -172,6 +172,9 @@ namespace Jetpack2
             }
 
             //_handPositionTracker.Update_Any(_isFlying);
+
+            if (Player.currentCreature && _isFlying && !Player.local.locomotion.isGrounded)
+                _flight_jetpack.Update();
         }
         public override void ScriptFixedUpdate()
         {
@@ -182,7 +185,7 @@ namespace Jetpack2
             if (Player.currentCreature)
             {
                 if (_isFlying && !Player.local.locomotion.isGrounded)
-                    _flight_jetpack.Update(UIModOptions.Drag, UIModOptions.HorizontalAccel, UIModOptions.VerticalAccel, UIModOptions.GravitySetting);
+                    _flight_jetpack.UpdateFixed();
             }
             else
             {
