@@ -90,7 +90,7 @@ namespace Jetpack2.InputWatchers
             bool retVal = _gestureTracker.IsHeld(requireBothHands);
 
             if (retVal)
-                _gestureTracker.RequireReset();        
+                _gestureTracker.RequireReset();
 
             return retVal;
         }
@@ -116,8 +116,8 @@ namespace Jetpack2.InputWatchers
                     break;
 
                 case FlightActivationType.DoubleClick_Thumbpad:
-                    if (InputUtil.SupportsFingerTracking())
-                        _keyDoublePressTracker = new KeyDoublePressTracker();
+                    //if (InputUtil.SupportsFingerTracking())
+                    _keyDoublePressTracker = new KeyDoublePressTracker();
                     break;
 
                 case FlightActivationType.HoldBird:

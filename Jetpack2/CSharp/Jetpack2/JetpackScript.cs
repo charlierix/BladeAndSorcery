@@ -67,6 +67,7 @@ namespace Jetpack2
         private bool _markedToFly = false;      // will fly once not grounded
         private float _last_applied_drag = -1;
 
+        private InputUtil _inputUtil = new InputUtil();
         private RayCastStorage _raycast_storage = null;
         private FlightTransitionWatcher _transitions = null;
         //private AvgHandPositionTracker _handPositionTracker = null;
@@ -106,6 +107,8 @@ namespace Jetpack2
 
             if (Player.local != null)
             {
+                _inputUtil.HookEvents();
+
                 //Debug.Log("showing morphology");
                 Player.local.showMorphology = true;
             }
@@ -116,6 +119,8 @@ namespace Jetpack2
         private void Player_onDespawn(Player player)
         {
             _isPlayerSpawned = false;
+
+            _inputUtil.UnHookEvents();
 
             _rotator.OnPlayerDespawned();
             _debugStats.Clear();
@@ -143,6 +148,7 @@ namespace Jetpack2
             {
                 PlaySounds.Play(SoundName.Jetpack_Activate, cache_effect: false);       // for some reason, the cached version only plays once.  Maybe it gets disabled once the the sound stops?  or needs to be reset somehow?
 
+                // TODO: listen to AirHelper OnGroundEvent OnAirEvent, Player.local.locomotion.OnGroundEvent, Player.local.locomotion.OnFlyEvent
                 if (Player.local.locomotion.isGrounded)
                 {
                     if (_isFlying)
@@ -229,16 +235,30 @@ namespace Jetpack2
 
         private void PopulateDebug()
         {
-            _debugStats.AddEntry("is flying", _isFlying.ToString());
-            _debugStats.AddEntry("is grounded", Player.local.locomotion.isGrounded.ToString());
-            _debugStats.AddEntry("is marked to fly", _markedToFly.ToString());
+            // Left
+            _debugStats.AddEntry_Left("is flying", _isFlying.ToString());
+            _debugStats.AddEntry_Left("is grounded", Player.local.locomotion.isGrounded.ToString());
+            _debugStats.AddEntry_Left("is marked to fly", _markedToFly.ToString());
 
             Vector3 velocity = Player.local.locomotion.physicBody.velocity;
-            _debugStats.AddEntry("velocity", velocity.ToStringSignificantDigits(2));
-            _debugStats.AddEntry("vel speed", velocity.magnitude.ToStringSignificantDigits(2));
+            _debugStats.AddEntry_Left("velocity", velocity.ToStringSignificantDigits(2));
+            _debugStats.AddEntry_Left("vel speed", velocity.magnitude.ToStringSignificantDigits(2));
 
-            _debugStats.AddEntry("stick left", InputUtil.GetLeftStick().ToStringSignificantDigits(2));
-            _debugStats.AddEntry("stick right", InputUtil.GetRightStick().ToStringSignificantDigits(2));
+            _debugStats.AddEntry_Left("stick left", InputUtil.GetLeftStick().ToStringSignificantDigits(2));
+            _debugStats.AddEntry_Left("stick right", InputUtil.GetRightStick().ToStringSignificantDigits(2));
+
+            // Right (these go from 0 to 1)
+            //_debugStats.AddEntry_Right("left thumbCurl", PlayerControl.handLeft.thumbCurl.ToStringSignificantDigits(2));
+            //_debugStats.AddEntry_Right("left indexCurl", PlayerControl.handLeft.indexCurl.ToStringSignificantDigits(2));
+            //_debugStats.AddEntry_Right("left middleCurl", PlayerControl.handLeft.middleCurl.ToStringSignificantDigits(2));
+            //_debugStats.AddEntry_Right("left ringCurl", PlayerControl.handLeft.ringCurl.ToStringSignificantDigits(2));
+            //_debugStats.AddEntry_Right("left littleCurl", PlayerControl.handLeft.littleCurl.ToStringSignificantDigits(2));
+
+            //_debugStats.AddEntry_Right("right thumbCurl", PlayerControl.handRight.thumbCurl.ToStringSignificantDigits(2));
+            //_debugStats.AddEntry_Right("right indexCurl", PlayerControl.handRight.indexCurl.ToStringSignificantDigits(2));
+            //_debugStats.AddEntry_Right("right middleCurl", PlayerControl.handRight.middleCurl.ToStringSignificantDigits(2));
+            //_debugStats.AddEntry_Right("right ringCurl", PlayerControl.handRight.ringCurl.ToStringSignificantDigits(2));
+            //_debugStats.AddEntry_Right("right littleCurl", PlayerControl.handRight.littleCurl.ToStringSignificantDigits(2));
         }
 
         #region debug research

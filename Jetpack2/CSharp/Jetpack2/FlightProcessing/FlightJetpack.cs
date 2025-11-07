@@ -85,6 +85,12 @@ namespace Jetpack2.FlightProcessing
             Player.crouchOnJump = false;
             //GameManager.options.allowStickJump = false;       // this doesn't seem to affect anything
 
+            // these supress the thumbsticks from moving the player during flight.  this mod should be doing that with accelerations
+            //PlayerControl.local.MoveActive(false);        // can't disable these, because PlayerControl move and turn are called directly form the various inputs (oculus, steamvr, etc) and the top of the move and turn functions return if these bools are false.  under that is where they invoke move/turn, which is what populates PlayerControl.handLeft.JoystickAxis
+            //PlayerControl.local.TurnActive(false);
+            //loco.allowMove = false;       // these are checked during locomotion, after the thumbsticks have been populated
+            //loco.allowTurn = false;
+
             _activation_time = DateTime.UtcNow;
 
             // Reset scanner
@@ -117,6 +123,11 @@ namespace Jetpack2.FlightProcessing
                 Player.crouchOnJump = _standardState.CrouchOnJump;
                 GameManager.options.allowStickJump = _standardState.StickJump;
             }
+
+            //PlayerControl.local.MoveActive(true);
+            //PlayerControl.local.TurnActive(true);
+            //loco.allowMove = true;
+            //loco.allowTurn = true;
 
             _confinedScanner.Clear();
             _repelGround.Clear();
