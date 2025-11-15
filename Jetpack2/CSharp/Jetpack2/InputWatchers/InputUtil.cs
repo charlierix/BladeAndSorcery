@@ -1,4 +1,6 @@
-﻿using ThunderRoad;
+﻿using System;
+using System.Collections.Concurrent;
+using ThunderRoad;
 using UnityEngine;
 
 namespace Jetpack2.InputWatchers
@@ -8,26 +10,36 @@ namespace Jetpack2.InputWatchers
     /// </summary>
     public class InputUtil
     {
+        // key is side+button.  if the key isn't in the dictionary, assume false
+        private static Lazy<ConcurrentDictionary<(Side side, PlayerControl.Hand.Button button), bool>> _button_state = new Lazy<ConcurrentDictionary<(Side side, PlayerControl.Hand.Button button), bool>>(() => new ConcurrentDictionary<(Side side, PlayerControl.Hand.Button button), bool>());
+
         public void HookEvents()
         {
             //PlayerControl.local.OnButtonPressEvent
             //PlayerControl.local.OnJoystickMoveEvent
             //PlayerControl.local.OnJumpButtonEvent
-        }
 
+            _button_state.Value.Clear();
+
+            PlayerControl.local.OnButtonPressEvent += Local_OnButtonPressEvent;
+        }
         public void UnHookEvents()
         {
+            PlayerControl.local.OnButtonPressEvent -= Local_OnButtonPressEvent;
+
+            _button_state.Value.Clear();
         }
 
-
-
-        // TODO: rework this by listening to PlayerControl.local.OnButtonPressEvent
         public static void Update_KeyTracker(KeyDoublePressTracker tracker)
         {
-            tracker.Update(PlayerControl.handLeft.thumbCurl, PlayerControl.handRight.thumbCurl);
+            _button_state.Value.TryGetValue((Side.Left, PlayerControl.Hand.Button.AlternateUse), out bool left_alt_pressed);        // if the entry isn't in the dictionary, the bool will get the default value of false
+            _button_state.Value.TryGetValue((Side.Right, PlayerControl.Hand.Button.AlternateUse), out bool right_alt_pressed);
+
+            float left_curl = left_alt_pressed ? 1 : 0;
+            float right_curl = right_alt_pressed ? 1 : 0;
+
+            tracker.Update(left_curl, right_curl);
         }
-
-
 
         public static void Update_GestureTracker(HoldGestureTracker tracker)
         {
@@ -45,6 +57,28 @@ namespace Jetpack2.InputWatchers
         public static Vector2 GetRightStick()
         {
             return PlayerControl.handRight.JoystickAxis;
+        }
+
+        public static bool IsButtonPressed(Side side, PlayerControl.Hand.Button button)
+        {
+            _button_state.Value.TryGetValue((side, button), out bool retVal);        // if the entry isn't in the dictionary, the bool will get the default value of false
+            return retVal;
+        }
+
+        private void Local_OnButtonPressEvent(PlayerControl.Hand hand, PlayerControl.Hand.Button button, bool pressed)
+        {
+            // hand.Side
+            //     Right,
+            //     Left
+
+            // Button
+            //     Use,
+            //     AlternateUse,
+            //     Grip,
+            //     Stick
+
+            var key = (hand.side, button);
+            _button_state.Value[key] = pressed;
         }
     }
 }

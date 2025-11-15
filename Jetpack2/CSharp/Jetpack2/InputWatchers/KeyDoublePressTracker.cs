@@ -40,9 +40,8 @@ namespace Jetpack2.InputWatchers
 
         DateTime _prevTime = DateTime.UtcNow;
 
-
-        // TODO: there shouldn't be a need to use thumb curl.  PlayerControl.local.OnButtonPressEvent probably has the alt button.  let InputUtil listen for that and pass its state to an overload of this function
-
+        // InputUtil is now listening to button press event, so could pass bools, but leaving this as curl in case the class
+        // wants to be reused for some of the fingers (like a pinky double click)
         public void Update(float thumbcurl_left, float thumbcurl_right)
         {
             // It was averaging 10 - 15 ms
@@ -61,8 +60,6 @@ namespace Jetpack2.InputWatchers
             if (Math.Abs((_left.DoubleClickTime.Value - _right.DoubleClickTime.Value).TotalMilliseconds) <= SYNC_MILLISECONDS)
                 WasBothDoubleClicked = true;
         }
-
-
 
         public void Clear()
         {

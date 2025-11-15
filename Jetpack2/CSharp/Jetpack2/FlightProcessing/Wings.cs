@@ -8,6 +8,7 @@ namespace Jetpack2.FlightProcessing
 {
     public class Wings
     {
+
         // check if either or both hands are stretched out
 
         // if both hands stretched out and roughly mirror each other, and fingers are open, continue with wing or braking
@@ -24,6 +25,36 @@ namespace Jetpack2.FlightProcessing
         //  that class is too tied into game object and rigid body
         //  make a class that can calculate the same, but is a util function
 
+        public void Update()
+        {
+            // figure out thresholds based on height using head to foot distance
 
+            //float left_outstretched = GetPercentOutstretched();
+            //float right_outstretched = GetPercentOutstretched();
+
+            //if(left_outstretched)     // get angle of attack
+
+
+            // --------------------------------------
+
+            // the shape may be a cylinder or truncated cone
+
+            // when alt button is pressed, draw a point every N ms
+
+
+
+
+
+        }
+        public void UpdateFixed()
+        {
+
+        }
+
+
+        private float GetPercentOutstretched()
+        {
+            return 0;
+        }
     }
 }

@@ -42,7 +42,6 @@ namespace Jetpack2.DebugCode
         private const float LINE_THICKNESS = 0.005f;
         private const float TEXT_HEIGHT = 0.06f;
 
-        private readonly PlayerRagdollUtil _ragdollUtil = new PlayerRagdollUtil();
         private readonly GazeBuffer _gazebuffer_roll = new GazeBuffer();
 
         private DebugRenderer3D _renderer = null;
@@ -58,7 +57,7 @@ namespace Jetpack2.DebugCode
             ClearDebugVisuals();
         }
 
-        public void Update(float elapsed_seconds)
+        public void Update(float elapsed_seconds, Vector3 body_forward1, Vector3 body_up1)
         {
             if (!UIModOptions.ShowHeadUpRotateVisualizer)
                 return;
@@ -78,7 +77,6 @@ namespace Jetpack2.DebugCode
 
 
             // 1: initial values (world coords)
-            var (body_forward1, body_up1) = _ragdollUtil.GetRagdollForwardUp();
             Vector3 head_forward1 = Player.local.head.transform.forward;
             Vector3 head_up1 = Player.local.head.transform.up;
 

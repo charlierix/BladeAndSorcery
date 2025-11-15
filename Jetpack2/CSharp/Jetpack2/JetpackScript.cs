@@ -235,7 +235,7 @@ namespace Jetpack2
 
         private void PopulateDebug()
         {
-            // Left
+            // ------------ Left ------------
             _debugStats.AddEntry_Left("is flying", _isFlying.ToString());
             _debugStats.AddEntry_Left("is grounded", Player.local.locomotion.isGrounded.ToString());
             _debugStats.AddEntry_Left("is marked to fly", _markedToFly.ToString());
@@ -247,7 +247,9 @@ namespace Jetpack2
             _debugStats.AddEntry_Left("stick left", InputUtil.GetLeftStick().ToStringSignificantDigits(2));
             _debugStats.AddEntry_Left("stick right", InputUtil.GetRightStick().ToStringSignificantDigits(2));
 
-            // Right (these go from 0 to 1)
+            // ------------ Right ------------
+
+            // (these go from 0 to 1)
             //_debugStats.AddEntry_Right("left thumbCurl", PlayerControl.handLeft.thumbCurl.ToStringSignificantDigits(2));
             //_debugStats.AddEntry_Right("left indexCurl", PlayerControl.handLeft.indexCurl.ToStringSignificantDigits(2));
             //_debugStats.AddEntry_Right("left middleCurl", PlayerControl.handLeft.middleCurl.ToStringSignificantDigits(2));
@@ -259,6 +261,16 @@ namespace Jetpack2
             //_debugStats.AddEntry_Right("right middleCurl", PlayerControl.handRight.middleCurl.ToStringSignificantDigits(2));
             //_debugStats.AddEntry_Right("right ringCurl", PlayerControl.handRight.ringCurl.ToStringSignificantDigits(2));
             //_debugStats.AddEntry_Right("right littleCurl", PlayerControl.handRight.littleCurl.ToStringSignificantDigits(2));
+
+            _debugStats.AddEntry_Right("left use", InputUtil.IsButtonPressed(Side.Left, PlayerControl.Hand.Button.Use).ToString());
+            _debugStats.AddEntry_Right("left alternate use", InputUtil.IsButtonPressed(Side.Left, PlayerControl.Hand.Button.AlternateUse).ToString());
+            _debugStats.AddEntry_Right("left grip", InputUtil.IsButtonPressed(Side.Left, PlayerControl.Hand.Button.Grip).ToString());
+            _debugStats.AddEntry_Right("left stick", InputUtil.IsButtonPressed(Side.Left, PlayerControl.Hand.Button.Stick).ToString());
+
+            _debugStats.AddEntry_Right("right use", InputUtil.IsButtonPressed(Side.Right, PlayerControl.Hand.Button.Use).ToString());
+            _debugStats.AddEntry_Right("right alternate use", InputUtil.IsButtonPressed(Side.Right, PlayerControl.Hand.Button.AlternateUse).ToString());
+            _debugStats.AddEntry_Right("right grip", InputUtil.IsButtonPressed(Side.Right, PlayerControl.Hand.Button.Grip).ToString());
+            _debugStats.AddEntry_Right("right stick", InputUtil.IsButtonPressed(Side.Right, PlayerControl.Hand.Button.Stick).ToString());
         }
 
         #region debug research

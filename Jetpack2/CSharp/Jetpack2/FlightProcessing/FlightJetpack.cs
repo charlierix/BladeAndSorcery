@@ -33,6 +33,7 @@ namespace Jetpack2.FlightProcessing
         private readonly GazeBufferVisualizer_Target _gazeBufferVisualizer_target;
         private readonly GazeBufferVisualizer_Offset _gazeBufferVisualizer_offset;
         private readonly HeadUpRotateVisualizer _headUpRotateVisualizer;
+        private readonly HandZonePosVisualizer _handZonePosVisualizer;
 
         private FlightData _standardState = null;
 
@@ -61,6 +62,7 @@ namespace Jetpack2.FlightProcessing
             _gazeBufferVisualizer_target = new GazeBufferVisualizer_Target();
             _gazeBufferVisualizer_offset = new GazeBufferVisualizer_Offset();
             _headUpRotateVisualizer = new HeadUpRotateVisualizer();
+            _handZonePosVisualizer = new HandZonePosVisualizer();
         }
 
         public void Activate(float drag)
@@ -103,6 +105,7 @@ namespace Jetpack2.FlightProcessing
             _gazeBufferVisualizer_target.Clear();
             _gazeBufferVisualizer_offset.Clear();
             _headUpRotateVisualizer.Clear();
+            _handZonePosVisualizer.Clear();
         }
         public void Deactivate()
         {
@@ -136,6 +139,7 @@ namespace Jetpack2.FlightProcessing
             _gazeBufferVisualizer_target.Clear();
             _gazeBufferVisualizer_offset.Clear();
             _headUpRotateVisualizer.Clear();
+            _handZonePosVisualizer.Clear();
         }
 
         public void Update()
@@ -175,8 +179,9 @@ namespace Jetpack2.FlightProcessing
                 _rotateToLook.Update(body_forward, body_up, elapsed_seconds);
 
                 _gazeBufferVisualizer_target.Update();
-                _gazeBufferVisualizer_offset.Update();
-                _headUpRotateVisualizer.Update(elapsed_seconds);
+                _gazeBufferVisualizer_offset.Update(body_forward);
+                _headUpRotateVisualizer.Update(elapsed_seconds, body_forward, body_up);
+                _handZonePosVisualizer.Update(body_forward, body_up);
             }
         }
         public void UpdateFixed()

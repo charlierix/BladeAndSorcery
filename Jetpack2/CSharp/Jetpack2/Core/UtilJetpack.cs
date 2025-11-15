@@ -25,6 +25,8 @@ namespace Jetpack2.Core
             public Quaternion rot_to_local { get; set; }        // rotation from body_forward,body_up to (0,0,1)(0,1,0)
             public Quaternion rot_to_world { get; set; }        // inverse of to local
 
+            public float height { get; set; }
+
             public Vector3 Transform_ToLocal(Vector3 point)
             {
                 if (world == null)
@@ -85,7 +87,9 @@ namespace Jetpack2.Core
             Vector3 head_pos = Player.local.head.anchor.position;
             Vector3 foot_pos = Math3D.GetAverage(Player.local.footLeft.ragdollFoot.root.position, Player.local.footRight.ragdollFoot.root.position);        // Player.local.transform.position is the room level origin
 
-            Vector3 center_player = foot_pos + (head_pos - foot_pos) * 0.5f;
+            Vector3 foot_to_head = head_pos - foot_pos;
+
+            Vector3 center_player = foot_pos + foot_to_head * 0.5f;
 
             Vector3 lefthand_pos = Player.local.handLeft.root.position;
             Vector3 righthand_pos = Player.local.handRight.root.position;
@@ -113,6 +117,8 @@ namespace Jetpack2.Core
                     right = to_local * (righthand_pos - center_player),
                     center = Vector3.zero,
                 },
+
+                height = foot_to_head.magnitude,
 
                 rot_to_local = to_local,
                 rot_to_world = Quaternion.Inverse(to_local),

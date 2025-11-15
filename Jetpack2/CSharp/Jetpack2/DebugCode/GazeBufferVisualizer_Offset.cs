@@ -17,7 +17,6 @@ namespace Jetpack2.DebugCode
         private const float TEXT_HEIGHT = 0.06f;
 
         private readonly GazeBuffer _gazeBuffer = new GazeBuffer();
-        private readonly PlayerRagdollUtil _ragdollUtil = new PlayerRagdollUtil();
 
         private DebugRenderer3D _renderer = null;
 
@@ -39,24 +38,23 @@ namespace Jetpack2.DebugCode
             ClearDebugVisuals();
         }
 
-        public void Update()
+        public void Update(Vector3 body_forward)
         {
             if (!UIModOptions.ShowGazeBuffer_Offset)
                 return;
 
             Vector3 pos = Player.local.head.anchor.position;
             Vector3 look = Player.local.head.transform.forward;
-            Vector3 forward = _ragdollUtil.GetRagdollForwardUp().forward;
 
             PrepForBufferUpdate();
             _gazeBuffer.PrepareForNewFrame();
 
-            DrawForwardLook(pos, look, forward);
+            DrawForwardLook(pos, look, body_forward);
 
-            _gazeBuffer.AddSample_Offset(look, forward);
+            _gazeBuffer.AddSample_Offset(look, body_forward);
 
             float? confidence = null;
-            if (_gazeBuffer.TryGetDominantDirection_Offset(out Vector3 dominant_direction, out float confidence2, forward))
+            if (_gazeBuffer.TryGetDominantDirection_Offset(out Vector3 dominant_direction, out float confidence2, body_forward))
             {
                 confidence = confidence2;
                 DrawDirection(dominant_direction, pos);
@@ -69,7 +67,7 @@ namespace Jetpack2.DebugCode
                 _dominant_direction = null;
             }
 
-            DrawBuffer(pos, forward);
+            DrawBuffer(pos, body_forward);
             DrawStatus(confidence);
 
             FinishBufferUpdate();

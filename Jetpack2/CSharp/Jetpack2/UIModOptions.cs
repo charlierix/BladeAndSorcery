@@ -660,11 +660,15 @@ namespace Jetpack2
         public static bool VisualizePlayerPoints = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Debug Visuals", tooltip: "This one looks like an early tester of figuring out how to render debug visuals - pretty useless beyond that", order = 11)]
+        [ModOption(name: "Visualize Hand Zone Positions", tooltip: "Shows regions where the hands could be", order = 11)]
+        public static bool VisualizeHandZonePositions = false;
+
+        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
+        [ModOption(name: "Show Debug Visuals", tooltip: "This one looks like an early tester of figuring out how to render debug visuals - pretty useless beyond that", order = 12)]
         public static bool ShowDebugVisuals = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Debug Status", tooltip: "Shows various properties in a textbox", order = 12)]
+        [ModOption(name: "Show Debug Status", tooltip: "Shows various properties in a textbox", order = 13)]
         public static bool ShowDebugStats = false;
 
         #endregion
