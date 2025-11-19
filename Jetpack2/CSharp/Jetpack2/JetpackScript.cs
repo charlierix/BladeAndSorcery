@@ -209,6 +209,16 @@ namespace Jetpack2
                 return;
             }
 
+
+
+
+            // TODO: figure out why this isn't doing anything
+            if (Player.local.locomotion.isGrounded)
+                Player.local.locomotion.Jump(true);     // get the player off the ground
+
+
+
+
             _isFlying = true;
 
             _flight_jetpack.Activate(UIModOptions.Drag);
@@ -364,6 +374,8 @@ namespace Jetpack2
         {
             try
             {
+                Debug.Log($"Path.GetFullPath(\".\"): {Path.GetFullPath(".")}");
+
                 Debug.Log($"ConfinedAreaData.FalloffPower: {ConfinedAreaData.falloffPower}");
                 Debug.Log($"RepelGroundData.InverseSqr_MaxAccel: {RepelGroundData.inverseSqr_MaxAccel}");
             }

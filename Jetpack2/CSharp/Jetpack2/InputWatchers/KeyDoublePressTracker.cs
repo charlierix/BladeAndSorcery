@@ -1,10 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ThunderRoad;
-using UnityEngine;
 
 
 // look at:
@@ -104,7 +99,7 @@ namespace Jetpack2.InputWatchers
         //private const float OPEN = 0f;        // the value when the thumb is fully open
         //private const float CLOSED = 1f;      // the value when the thumb is on the thumbpad
         private const float OPEN = 0.5f;        // allowing for some fuzziness.  The curl just needs to pass these thresholds
-        private const float CLOSED = 0.8f;
+        private const float CLOSED = InputUtil.CURL_CLOSED; //0.8f;
 
         private const double TOTAL_MILLISECONDS = 650;
 

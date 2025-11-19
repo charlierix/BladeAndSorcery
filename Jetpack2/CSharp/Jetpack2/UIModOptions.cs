@@ -210,7 +210,7 @@ namespace Jetpack2
 
         [ModOptionCategory(CATEGORY_ACTIVATE, ORDER_ACTIVATE)]
         [ModOption(name: "Require Both Hands", tooltip: "Options that are double click or gestures can be required to be done at the same time by both hands or just one\n\nSingle hand is easier but may cause misreads", order = 2)]
-        public static bool RequireBothHands = true;
+        public static bool RequireBothHands = false;
 
         #endregion
 
@@ -510,6 +510,84 @@ namespace Jetpack2
         //[ModOption(name: "Clustering Weight - Directions", tooltip: "Priority of head/hand orientations while clustering", order = 3)]
         //[ModOptionFloatValues(0, 4, 0.1f)]
         //public static float PlayerPosTracking_Weight_Directions = 0.3f;
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Resting Pos - Min X", tooltip: "Defines a box where hands are considered to be in the resting position", order = 4)]
+        [ModOptionFloatValues(-0.1f, 0.2f, 0.01f)]
+        public static float PlayerPosTracking_RestingPos_MinX = 0;
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Resting Pos - Max X", tooltip: "Defines a box where hands are considered to be in the resting position", order = 5)]
+        [ModOptionFloatValues(0, 0.35f, 0.01f)]
+        public static float PlayerPosTracking_RestingPos_MaxX = 0.24f;
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Resting Pos - Min Y", tooltip: "Defines a box where hands are considered to be in the resting position", order = 6)]
+        [ModOptionFloatValues(-0.25f, 0.1f, 0.01f)]
+        public static float PlayerPosTracking_RestingPos_MinY = -0.1f;
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Resting Pos - Max Y", tooltip: "Defines a box where hands are considered to be in the resting position", order = 7)]
+        [ModOptionFloatValues(0.3f, 0.6f, 0.01f)]
+        public static float PlayerPosTracking_RestingPos_MaxY = 0.45f;
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Resting Pos - Min Z", tooltip: "Defines a box where hands are considered to be in the resting position", order = 8)]
+        [ModOptionFloatValues(-0.15f, 0.15f, 0.01f)]
+        public static float PlayerPosTracking_RestingPos_MinZ = -0.08f;
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Resting Pos - Max Z", tooltip: "Defines a box where hands are considered to be in the resting position", order = 9)]
+        [ModOptionFloatValues(0.25f, 0.5f, 0.01f)]
+        public static float PlayerPosTracking_RestingPos_MaxZ = 0.39f;
+
+
+
+
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Wing Pos - Min X", tooltip: "Defines a box where hands are considered to be in the wing extended position", order = 10)]
+        [ModOptionFloatValues(0.2f, 0.4f, 0.01f)]
+        public static float PlayerPosTracking_WingPos_MinX = 0.3f;
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Wing Pos - Max X", tooltip: "Defines a box where hands are considered to be in the wing extended position", order = 11)]
+        [ModOptionFloatValues(0.45f, 0.7f, 0.01f)]
+        public static float PlayerPosTracking_WingPos_MaxX = 0.6f;
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Wing Pos - Min Y", tooltip: "Defines a box where hands are considered to be in the wing extended position", order = 12)]
+        [ModOptionFloatValues(0, 0.2f, 0.01f)]
+        public static float PlayerPosTracking_WingPos_MinY = 0.1f;
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Wing Pos - Max Y", tooltip: "Defines a box where hands are considered to be in the wing extended position", order = 13)]
+        [ModOptionFloatValues(0.4f, 0.65f, 0.01f)]
+        public static float PlayerPosTracking_WingPos_MaxY = 0.5f;
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Wing Pos - Min Z", tooltip: "Defines a box where hands are considered to be in the wing extended position", order = 14)]
+        [ModOptionFloatValues(-0.15f, 0, 0.01f)]
+        public static float PlayerPosTracking_WingPos_MinZ = -0.1f;
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Wing Pos - Max Z", tooltip: "Defines a box where hands are considered to be in the wing extended position", order = 15)]
+        [ModOptionFloatValues(0.3f, 0.5f, 0.01f)]
+        public static float PlayerPosTracking_WingPos_MaxZ = 0.4f;
+
+
 
         #endregion
 
