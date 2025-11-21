@@ -79,6 +79,8 @@ namespace Jetpack2.DebugCode
         private DebugItem _region_left = null;
         private DebugItem _region_right = null;
 
+        private float _hash = -1;
+
         #endregion
 
         public void Clear()
@@ -91,6 +93,13 @@ namespace Jetpack2.DebugCode
         {
             if (!UIModOptions.VisualizeHandZonePositions)
                 return;
+
+            float hash = GetConfigHash();
+            if (!hash.IsNearValue(_hash))       // if config sliders changed, clear debug visuals so they can be redrawn
+            {
+                ClearDebugVisuals();
+                _hash = hash;
+            }
 
             var positions = UtilJetpack.GetPlayerPoints(body_forward, body_up);
             Vector3 normalized_left = positions.local.left / positions.height;
@@ -141,7 +150,7 @@ namespace Jetpack2.DebugCode
             // which regions the hands are in
             DrawRegionBools(in_resting_left, in_resting_right, in_transition_left, in_transition_right, in_wing_left, in_wing_right);
 
-            DrawWings(positions, in_transition_left, in_transition_right, in_wing_left, in_wing_right);
+            DrawWings(positions, in_transition_left, in_transition_right, in_wing_left, in_wing_right, body_forward);
 
             FinishedDraw();
         }
@@ -383,10 +392,10 @@ namespace Jetpack2.DebugCode
             // NOTE: the points are normalized to height, so need to multiply by height to get them in world units
             float x1 = UIModOptions.PlayerPosTracking_RestingPos_MaxX * x_mult * positions.height;
             float x2 = UIModOptions.PlayerPosTracking_WingPos_MinX * x_mult * positions.height;
-            float y1 = UIModOptions.PlayerPosTracking_RestingPos_MaxY * positions.height;
-            float y2 = UIModOptions.PlayerPosTracking_WingPos_MinY * positions.height;
-            float z1 = UIModOptions.PlayerPosTracking_RestingPos_MaxZ * positions.height;
-            float z2 = UIModOptions.PlayerPosTracking_WingPos_MinZ * positions.height;
+            float y1 = ((UIModOptions.PlayerPosTracking_RestingPos_MinY + UIModOptions.PlayerPosTracking_WingPos_MinY) / 2) * positions.height;
+            float y2 = ((UIModOptions.PlayerPosTracking_RestingPos_MaxY + UIModOptions.PlayerPosTracking_WingPos_MaxY) / 2) * positions.height;
+            float z1 = ((UIModOptions.PlayerPosTracking_RestingPos_MinZ + UIModOptions.PlayerPosTracking_WingPos_MinZ) / 2) * positions.height;
+            float z2 = ((UIModOptions.PlayerPosTracking_RestingPos_MaxZ + UIModOptions.PlayerPosTracking_WingPos_MaxZ) / 2) * positions.height;
 
             DrawWireframeBox(ref resting, renderer, x1, x2, y1, y2, z1, z2, positions, is_left);
         }
@@ -445,16 +454,31 @@ namespace Jetpack2.DebugCode
             lines.Object.transform.rotation = positions.rot_to_world;
         }
 
-        private void DrawWings(UtilJetpack.PlayerVRPoints positions, float? in_transition_left, float? in_transition_right, bool in_wing_left, bool in_wing_right)
+        private void DrawWings(UtilJetpack.PlayerVRPoints positions, float? in_transition_left, float? in_transition_right, bool in_wing_left, bool in_wing_right, Vector3 body_forward)
         {
             EnsureDebugActive();
 
-            DrawWing(ref _wing_left, ref _forward_left, ref _up_left, _renderer, in_transition_left, in_wing_left, true);
-            DrawWing(ref _wing_right, ref _forward_right, ref _up_right, _renderer, in_transition_right, in_wing_right, false);
+            DrawWing(ref _wing_left, ref _forward_left, ref _up_left, _renderer, in_transition_left, in_wing_left, body_forward, positions.world.left_wing_pos, positions.world.left_wing_forward, positions.world.left_wing_up, true);
+            DrawWing(ref _wing_right, ref _forward_right, ref _up_right, _renderer, in_transition_right, in_wing_right, body_forward, positions.world.right_wing_pos, positions.world.right_wing_forward, positions.world.right_wing_up, false);
         }
-        private static void DrawWing(ref DebugItem wing, ref DebugItem visual_forward, ref DebugItem visual_up, DebugRenderer3D renderer, float? in_transition, bool in_wing, bool is_left)
+        private static void DrawWing(ref DebugItem wing, ref DebugItem visual_forward, ref DebugItem visual_up, DebugRenderer3D renderer, float? in_transition, bool in_wing, Vector3 body_forward, Vector3 pos, Vector3 forward, Vector3 up, bool is_left)
         {
-            if (in_transition == null && !in_wing)
+            const float PARACHUTE = 0.9f;
+            const float MAX_WING = 0.8f;
+
+            float percent = 1;
+
+            if (in_transition != null)
+                percent *= in_transition.Value;
+
+            if (UIModOptions.PlayerPosTracking_WingRequireOpenHand)
+                percent *= 1 - (is_left ? PlayerControl.handLeft : PlayerControl.handRight).GetAverageCurl();       // if hand is closed, this will be zero
+
+            float wing_dot_forward = Vector3.Dot(-body_forward, up);
+            bool in_gap = wing_dot_forward < PARACHUTE && wing_dot_forward > MAX_WING;
+
+            // Exit early if no wing
+            if ((in_transition == null && !in_wing) || in_gap || percent.IsNearZero())
             {
                 if (wing != null)
                 {
@@ -477,54 +501,17 @@ namespace Jetpack2.DebugCode
                 return;
             }
 
-            Vector3 pos, forward, up;
-            if (is_left)
-            {
-                pos = Player.local.handLeft.root.position;
-                forward = Player.local.handLeft.root.forward;
-                up = Player.local.handLeft.root.up;
-
-                // forward is along thumb, up is either down fingers or up arm.  need to rotate
-
-            }
-            else
-            {
-                pos = Player.local.handRight.root.position;
-                forward = Player.local.handRight.root.forward;
-                up = Player.local.handRight.root.up;
-
-
-            }
-
+            // Wing
             if (wing == null)
             {
-                Vector3 scale = new Vector3(0.2f, 0.01f, 0.4f);
+                Vector3 scale = new Vector3(0.15f, 0.01f, 0.45f);
                 wing = renderer.AddCube(Vector3.zero, scale, Color.white);
             }
 
             wing.Object.transform.position = pos;
             wing.Object.transform.rotation = Math3D.GetRotation(new DoubleVector(new Vector3(0, 0, 1), new Vector3(0, 1, 0)), new DoubleVector(forward, up));
 
-
-
-
-
-            // TODO: put this logic in its own function
-            Vector3 velocity = Player.local.locomotion.physicBody.velocity;
-
-            // TODO: I don't think it should be simply split at 45 degrees.  it should be a steeper angle where parachute
-            // starts, maybe a few degrees where there is nothing
-            //bool is_parachute = Vector3.Dot(velocity.normalized, up) > 0.71f;
-            bool is_parachute = false;
-
-            // TODO: do another dot with Z along body's right axis.  if the angle is too steep, don't make a wing (also
-            // make a gradient region)
-            //
-            // maybe not a simple dot product.  the farther forward the hand is, the larger the angle should be (so it's
-            // wrist deviation from arm, not just global angle from body)
-
-
-
+            // Forward/Up
             if (visual_forward == null)
                 visual_forward = renderer.AddLine_Basic(pos, pos + forward, LINE_THICKNESS, Color.blue);
             else
@@ -535,18 +522,16 @@ namespace Jetpack2.DebugCode
             else
                 DebugRenderer3D.AdjustLinePositions(visual_up, pos, pos + up);
 
-
-
-
-
+            // Color
+            bool is_parachute = wing_dot_forward >= PARACHUTE;
 
             // color is based on dot product with velocity (wing or parachute)
             Color color = is_parachute ?
                 Color.black :
                 Color.white;
 
-            if (in_transition != null)
-                color.a = in_transition.Value;
+            if (!percent.IsNearValue(1))
+                color.a = percent;
 
             DebugRenderer3D.AdjustColor(wing, color);
         }
@@ -766,9 +751,19 @@ namespace Jetpack2.DebugCode
 
             bool inRange = true;
 
-            inRange &= pos.x >= UIModOptions.PlayerPosTracking_RestingPos_MaxX && pos.x <= UIModOptions.PlayerPosTracking_WingPos_MinX;
-            inRange &= pos.y >= UIModOptions.PlayerPosTracking_RestingPos_MaxY && pos.y <= UIModOptions.PlayerPosTracking_WingPos_MinY;
-            inRange &= pos.z >= UIModOptions.PlayerPosTracking_RestingPos_MaxZ && pos.z <= UIModOptions.PlayerPosTracking_WingPos_MinZ;
+            inRange &= pos.x >= UIModOptions.PlayerPosTracking_RestingPos_MaxX && pos.x <= UIModOptions.PlayerPosTracking_WingPos_MinX;     // x is correct
+
+            if (!inRange)
+                return null;
+
+            // x is in range, lerp y and z based on percent of x
+            float min_y = UtilityMath.GetScaledValue(UIModOptions.PlayerPosTracking_RestingPos_MinY, UIModOptions.PlayerPosTracking_WingPos_MinY, UIModOptions.PlayerPosTracking_RestingPos_MaxX, UIModOptions.PlayerPosTracking_WingPos_MinX, pos.x);
+            float max_y = UtilityMath.GetScaledValue(UIModOptions.PlayerPosTracking_RestingPos_MaxY, UIModOptions.PlayerPosTracking_WingPos_MaxY, UIModOptions.PlayerPosTracking_RestingPos_MaxX, UIModOptions.PlayerPosTracking_WingPos_MinX, pos.x);
+            float min_z = UtilityMath.GetScaledValue(UIModOptions.PlayerPosTracking_RestingPos_MinZ, UIModOptions.PlayerPosTracking_WingPos_MinZ, UIModOptions.PlayerPosTracking_RestingPos_MaxX, UIModOptions.PlayerPosTracking_WingPos_MinX, pos.x);
+            float max_z = UtilityMath.GetScaledValue(UIModOptions.PlayerPosTracking_RestingPos_MaxZ, UIModOptions.PlayerPosTracking_WingPos_MaxZ, UIModOptions.PlayerPosTracking_RestingPos_MaxX, UIModOptions.PlayerPosTracking_WingPos_MinX, pos.x);
+
+            inRange &= pos.y >= min_y && pos.y <= max_y;
+            inRange &= pos.z >= min_z && pos.z <= max_z;
 
             if (!inRange)
                 return null;
@@ -788,6 +783,25 @@ namespace Jetpack2.DebugCode
             retVal &= pos.z >= UIModOptions.PlayerPosTracking_WingPos_MinZ && pos.z <= UIModOptions.PlayerPosTracking_WingPos_MaxZ;
 
             return retVal;
+        }
+
+        private float GetConfigHash()
+        {
+            return
+                UIModOptions.PlayerPosTracking_RestingPos_MinX +
+                UIModOptions.PlayerPosTracking_RestingPos_MaxX +
+                UIModOptions.PlayerPosTracking_RestingPos_MinY +
+                UIModOptions.PlayerPosTracking_RestingPos_MaxY +
+                UIModOptions.PlayerPosTracking_RestingPos_MinZ +
+                UIModOptions.PlayerPosTracking_RestingPos_MaxZ +
+                UIModOptions.PlayerPosTracking_WingPos_MinX +
+                UIModOptions.PlayerPosTracking_WingPos_MaxX +
+                UIModOptions.PlayerPosTracking_WingPos_MinY +
+                UIModOptions.PlayerPosTracking_WingPos_MaxY +
+                UIModOptions.PlayerPosTracking_WingPos_MinZ +
+                UIModOptions.PlayerPosTracking_WingPos_MaxZ +
+                UIModOptions.PlayerPosTracking_WingRotateAngle +
+                UIModOptions.PlayerPosTracking_WingTranslateCord;
         }
 
         #endregion

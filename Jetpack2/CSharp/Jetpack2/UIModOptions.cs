@@ -547,10 +547,6 @@ namespace Jetpack2
         [ModOptionFloatValues(0.25f, 0.5f, 0.01f)]
         public static float PlayerPosTracking_RestingPos_MaxZ = 0.39f;
 
-
-
-
-
         [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
         [ModOptionSlider]
         [ModOption(name: "Wing Pos - Min X", tooltip: "Defines a box where hands are considered to be in the wing extended position", order = 10)]
@@ -587,7 +583,21 @@ namespace Jetpack2
         [ModOptionFloatValues(0.3f, 0.5f, 0.01f)]
         public static float PlayerPosTracking_WingPos_MaxZ = 0.4f;
 
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Wing Rotate Angle", tooltip: "Rotates the wing so it's not perfectly in line with the arm.  Natural arm position is to be held at a 45 degree angle, so this compensates", order = 16)]
+        [ModOptionFloatValues(-90, 90, 1)]
+        public static float PlayerPosTracking_WingRotateAngle = 0;
 
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOptionSlider]
+        [ModOption(name: "Wing Slide Offset", tooltip: "Slides the wing back so the center is hand and not at thumb/finger", order = 17)]
+        [ModOptionFloatValues(-0.3f, 0.3f, 0.01f)]
+        public static float PlayerPosTracking_WingTranslateCord = 0;
+
+        [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
+        [ModOption(name: "Require Open Hand", tooltip: "Wing won't appear if hand is closed", order = 18)]
+        public static bool PlayerPosTracking_WingRequireOpenHand = false;
 
         #endregion
 
