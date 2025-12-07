@@ -34,6 +34,7 @@ namespace Jetpack2.FlightProcessing
         private readonly GazeBufferVisualizer_Offset _gazeBufferVisualizer_offset;
         private readonly HeadUpRotateVisualizer _headUpRotateVisualizer;
         private readonly HandZonePosVisualizer _handZonePosVisualizer;
+        private readonly Wings _wings;
 
         private FlightData _standardState = null;
 
@@ -63,6 +64,7 @@ namespace Jetpack2.FlightProcessing
             _gazeBufferVisualizer_offset = new GazeBufferVisualizer_Offset();
             _headUpRotateVisualizer = new HeadUpRotateVisualizer();
             _handZonePosVisualizer = new HandZonePosVisualizer();
+            _wings = new Wings();
         }
 
         public void Activate(float drag)
@@ -106,6 +108,7 @@ namespace Jetpack2.FlightProcessing
             _gazeBufferVisualizer_offset.Clear();
             _headUpRotateVisualizer.Clear();
             _handZonePosVisualizer.Clear();
+            _wings.Clear();
         }
         public void Deactivate()
         {
@@ -140,6 +143,7 @@ namespace Jetpack2.FlightProcessing
             _gazeBufferVisualizer_offset.Clear();
             _headUpRotateVisualizer.Clear();
             _handZonePosVisualizer.Clear();
+            _wings.Clear();
         }
 
         public void Update()
@@ -182,6 +186,7 @@ namespace Jetpack2.FlightProcessing
                 _gazeBufferVisualizer_offset.Update(body_forward);
                 _headUpRotateVisualizer.Update(elapsed_seconds, body_forward, body_up);
                 _handZonePosVisualizer.Update(body_forward, body_up);
+                _wings.Update(body_forward, body_up);
             }
         }
         public void UpdateFixed()
@@ -229,6 +234,13 @@ namespace Jetpack2.FlightProcessing
                 Vector3? accel_obstacle = _obstacleAvoidance.Update_Finish(input_dir);
                 if (accel_obstacle != null)
                     loco.physicBody.AddForce(accel_obstacle.Value, ForceMode.Acceleration);
+
+                var accel_wings = _wings.UpdateFixed();
+                if (accel_wings != null)
+                {
+                    loco.physicBody.AddForce(accel_wings.Value.accel, ForceMode.Acceleration);
+                    loco.physicBody.AddTorque(accel_wings.Value.torque, ForceMode.Acceleration);
+                }
             }
 
             // TODO: make an option for horiztonal control mode (direct or accel)

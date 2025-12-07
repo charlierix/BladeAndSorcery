@@ -27,6 +27,7 @@ namespace Jetpack2
         private const string CATEGORY_ROTATELOOK_TURNRATES = "Rotate To Look - Turn Rates";
         private const string CATEGORY_ROTATELOOK_IK = "Rotate To Look - IK Rig";
         private const string CATEGORY_PLAYERPOSTRACKING = "Player Pos Tracking";
+        private const string CATEGORY_WINGS = "Hand Wings";
         private const string CATEGORY_SOUNDS = "Sounds";        // TODO: add this
         private const string CATEGORY_SCALE = "Player Size";
         private const string CATEGORY_VISIBILITY = "Player Visibility";
@@ -41,6 +42,7 @@ namespace Jetpack2
         private const int ORDER_ROTATELOOK_TURNRATES = 7;
         private const int ORDER_ROTATELOOK_IK = 8;
         private const int ORDER_PLAYERPOSTRACKING = 9;
+        private const int ORDER_WINGS = 10;
         private const int ORDER_SOUNDS = 50;
         private const int ORDER_SCALE = 51;
         private const int ORDER_VISIBILITY = 52;
@@ -239,6 +241,14 @@ namespace Jetpack2
         [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
         [ModOption(name: "Should Rotate Toward Look - roll", tooltip: "Will rotate the player toward the direction looking", order = 6)]
         public static bool ShouldRotateToLook_Roll = false;
+
+        [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
+        [ModOption(name: "Should Use Wings", tooltip: "Sprout wings when sticking the arms out", order = 7)]
+        public static bool ShouldShouldUseWings = true;
+
+        [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
+        [ModOption(name: "Should Use Air Brake", tooltip: "Sprout air brakes when sticking the arms out", order = 8)]
+        public static bool ShouldShouldUseAirBrake = true;
 
         #endregion
 
@@ -472,6 +482,17 @@ namespace Jetpack2
         [ModOptionFloatValues(1, 270, 1f)]
         public static float RotateToLook_TurnRate_Roll = 120;
 
+
+
+
+        // TODO: decrease deadzones, increase capacitor based on speed:
+        //  0 is most chill
+        //  >= N is max sensitive
+        //  gradient between
+
+
+
+
         #endregion
         #region Rotate To Look - ik
 
@@ -580,7 +601,7 @@ namespace Jetpack2
         [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
         [ModOptionSlider]
         [ModOption(name: "Wing Pos - Max Z", tooltip: "Defines a box where hands are considered to be in the wing extended position", order = 15)]
-        [ModOptionFloatValues(0.3f, 0.5f, 0.01f)]
+        [ModOptionFloatValues(0.3f, 0.6f, 0.01f)]
         public static float PlayerPosTracking_WingPos_MaxZ = 0.4f;
 
         [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
@@ -598,6 +619,68 @@ namespace Jetpack2
         [ModOptionCategory(CATEGORY_PLAYERPOSTRACKING, ORDER_PLAYERPOSTRACKING)]
         [ModOption(name: "Require Open Hand", tooltip: "Wing won't appear if hand is closed", order = 18)]
         public static bool PlayerPosTracking_WingRequireOpenHand = false;
+
+        #endregion
+        #region Wings
+
+        [ModOptionCategory(CATEGORY_WINGS, ORDER_WINGS)]
+        [ModOptionSlider]
+        [ModOption(name: "Force At X (left/right)", tooltip: "The point where forces on the rigid body are applied (normalized to player height)", order = 1)]
+        [ModOptionFloatValues(0, 0.6f, 0.01f)]
+        public static float Wing_ForceAt_X = 0.15f;
+
+        [ModOptionCategory(CATEGORY_WINGS, ORDER_WINGS)]
+        [ModOptionSlider]
+        [ModOption(name: "Force At Y (up/down)", tooltip: "The point where forces on the rigid body are applied (normalized to player height).  Centered at player's mid point", order = 2)]
+        [ModOptionFloatValues(-0.5f, 0.5f, 0.01f)]
+        public static float Wing_ForceAt_Y = 0f;
+
+        [ModOptionCategory(CATEGORY_WINGS, ORDER_WINGS)]
+        [ModOptionSlider]
+        [ModOption(name: "Force At Z (forward/back)", tooltip: "The point where forces on the rigid body are applied (normalized to player height).  Centered at player's mid point", order = 3)]
+        [ModOptionFloatValues(-0.2f, 0.2f, 0.01f)]
+        public static float Wing_ForceAt_Z = 0f;
+
+        [ModOptionCategory(CATEGORY_WINGS, ORDER_WINGS)]
+        [ModOptionSlider]
+        [ModOption(name: "Surface Area (wing)", tooltip: "How big each wing is", order = 4)]
+        [ModOptionFloatValues(0, 3, 0.1f)]
+        public static float Wing_SurfaceArea = 1f;
+
+        [ModOptionCategory(CATEGORY_WINGS, ORDER_WINGS)]
+        [ModOptionSlider]
+        [ModOption(name: "Surface Area (airbrake)", tooltip: "How big each air brake is", order = 4)]
+        [ModOptionFloatValues(0, 3, 0.1f)]
+        public static float Wing_Airbrake_SurfaceArea = 1f;
+
+        [ModOptionCategory(CATEGORY_WINGS, ORDER_WINGS)]
+        [ModOptionSlider]
+        [ModOption(name: "Air Density", tooltip: "Thick air will make it more like water", order = 5)]
+        [ModOptionFloatValues(0, 3, 0.1f)]
+        public static float Wing_AirDensity = 1.2f;
+
+        [ModOptionCategory(CATEGORY_WINGS, ORDER_WINGS)]
+        [ModOptionSlider]
+        [ModOption(name: "Player Mass (kg)", tooltip: "In game, the mass is unreliable, so making it configurable here", order = 6)]
+        [ModOptionFloatValues(0.01f, 1.5f, 0.01f)]
+        public static float Wing_PlayerMass = 0.5f;
+
+        [ModOptionCategory(CATEGORY_WINGS, ORDER_WINGS)]
+        [ModOptionSlider]
+        [ModOption(name: "Player Radius", tooltip: "Used to calculate moment of inertia, pretending the player is a solid sphere", order = 7)]
+        [ModOptionFloatValues(0.1f, 2, 0.05f)]
+        public static float Wing_PlayerRadius = 1;
+
+
+        // this one isn't needed
+
+        [ModOptionCategory(CATEGORY_WINGS, ORDER_WINGS)]
+        [ModOptionSlider]
+        [ModOption(name: "Airbrake Drag Coefficient", tooltip: "When it's in airbrake mode, how much drag should it be", order = 8)]
+        [ModOptionFloatValues(0, 3, 0.01f)]
+        public static float Wing_Airbrake_DragCoefficient = 1.28f;
+
+
 
         #endregion
 
@@ -752,11 +835,15 @@ namespace Jetpack2
         public static bool VisualizeHandZonePositions = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Debug Visuals", tooltip: "This one looks like an early tester of figuring out how to render debug visuals - pretty useless beyond that", order = 12)]
+        [ModOption(name: "Show Wing Stats", tooltip: "Shows info about wings", order = 12)]
+        public static bool ShowWingStats = false;
+
+        [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
+        [ModOption(name: "Show Debug Visuals", tooltip: "This one looks like an early tester of figuring out how to render debug visuals - pretty useless beyond that", order = 13)]
         public static bool ShowDebugVisuals = false;
 
         [ModOptionCategory(CATEGORY_DEBUGDRAWING, ORDER_DEBUGDRAWING)]
-        [ModOption(name: "Show Debug Status", tooltip: "Shows various properties in a textbox", order = 13)]
+        [ModOption(name: "Show Debug Status", tooltip: "Shows various properties in a textbox", order = 14)]
         public static bool ShowDebugStats = false;
 
         #endregion

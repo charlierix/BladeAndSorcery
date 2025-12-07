@@ -1,0 +1,18 @@
+﻿{
+  "$type": "Jetpack2.Models.WingsData, Jetpack2",
+  "id": "Jetpack2_Config_Wings",
+  "sensitiveContent": "None",
+  "sensitiveFilterBehaviour": "Discard",
+  "version": 0,
+  "groupPath": null,
+
+  // Dot product above this is airbrake, below wing is wing, in between is nothing
+  // Dot product is with velocity, unless standing still, then it's with body forward
+  "dot_airbrake": 0.9,
+  "dot_wing": 0.8,
+
+  "openhand_min": 0.2,
+  "openhand_max": 0.8,
+
+  "minSpeed": 0.05
+}

@@ -1,5 +1,6 @@
 ﻿using Jetpack2.Core;
 using Jetpack2.InputWatchers;
+using Jetpack2.Models;
 using PerfectlyNormalBaS;
 using System;
 using System.Collections.Generic;
@@ -463,9 +464,6 @@ namespace Jetpack2.DebugCode
         }
         private static void DrawWing(ref DebugItem wing, ref DebugItem visual_forward, ref DebugItem visual_up, DebugRenderer3D renderer, float? in_transition, bool in_wing, Vector3 body_forward, Vector3 pos, Vector3 forward, Vector3 up, bool is_left)
         {
-            const float PARACHUTE = 0.9f;
-            const float MAX_WING = 0.8f;
-
             float percent = 1;
 
             if (in_transition != null)
@@ -475,7 +473,7 @@ namespace Jetpack2.DebugCode
                 percent *= 1 - (is_left ? PlayerControl.handLeft : PlayerControl.handRight).GetAverageCurl();       // if hand is closed, this will be zero
 
             float wing_dot_forward = Vector3.Dot(-body_forward, up);
-            bool in_gap = wing_dot_forward < PARACHUTE && wing_dot_forward > MAX_WING;
+            bool in_gap = wing_dot_forward < WingsData.dot_airbrake && wing_dot_forward > WingsData.dot_wing;
 
             // Exit early if no wing
             if ((in_transition == null && !in_wing) || in_gap || percent.IsNearZero())
@@ -523,10 +521,10 @@ namespace Jetpack2.DebugCode
                 DebugRenderer3D.AdjustLinePositions(visual_up, pos, pos + up);
 
             // Color
-            bool is_parachute = wing_dot_forward >= PARACHUTE;
+            bool is_airbrake = wing_dot_forward >= WingsData.dot_airbrake;
 
-            // color is based on dot product with velocity (wing or parachute)
-            Color color = is_parachute ?
+            // color is based on dot product with velocity (wing or air brake)
+            Color color = is_airbrake ?
                 Color.black :
                 Color.white;
 
@@ -729,7 +727,7 @@ namespace Jetpack2.DebugCode
             };
         }
 
-        private bool IsIn_Resting(Vector3 pos, Side side)
+        private static bool IsIn_Resting(Vector3 pos, Side side)
         {
             pos = side == Side.Left ?
                 new Vector3(-pos.x, pos.y, pos.z) :
@@ -743,7 +741,7 @@ namespace Jetpack2.DebugCode
 
             return retVal;
         }
-        private float? IsIn_Transition(Vector3 pos, Side side)
+        private static float? IsIn_Transition(Vector3 pos, Side side)
         {
             pos = side == Side.Left ?
                 new Vector3(-pos.x, pos.y, pos.z) :
@@ -770,7 +768,7 @@ namespace Jetpack2.DebugCode
 
             return UtilityMath.GetScaledValue(0, 1, UIModOptions.PlayerPosTracking_RestingPos_MaxX, UIModOptions.PlayerPosTracking_WingPos_MinX, pos.x);
         }
-        private bool IsIn_Wing(Vector3 pos, Side side)
+        private static bool IsIn_Wing(Vector3 pos, Side side)
         {
             pos = side == Side.Left ?
                 new Vector3(-pos.x, pos.y, pos.z) :

@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using ThunderRoad;
+using ThunderRoad.DebugViz;
 using UnityEngine;
 
 
@@ -214,7 +215,22 @@ namespace Jetpack2
 
             // TODO: figure out why this isn't doing anything
             if (Player.local.locomotion.isGrounded)
+            {
+                // This isn't doing anything
                 Player.local.locomotion.Jump(true);     // get the player off the ground
+
+
+                // it eventually kicks off this event if various criteria is met
+                //Player.local.locomotion.OnJumpEvent?.Invoke();
+                //Player.local.creature.locomotion.OnJumpEvent?.Invoke();
+                //Player.local.locomotion.player.creature.locomotion.OnJumpEvent?.Invoke();
+
+
+                // can't invoke events from outside the class unless using reflection
+            }
+
+            
+
 
 
 
@@ -272,15 +288,22 @@ namespace Jetpack2
             //_debugStats.AddEntry_Right("right ringCurl", PlayerControl.handRight.ringCurl.ToStringSignificantDigits(2));
             //_debugStats.AddEntry_Right("right littleCurl", PlayerControl.handRight.littleCurl.ToStringSignificantDigits(2));
 
-            _debugStats.AddEntry_Right("left use", InputUtil.IsButtonPressed(Side.Left, PlayerControl.Hand.Button.Use).ToString());
-            _debugStats.AddEntry_Right("left alternate use", InputUtil.IsButtonPressed(Side.Left, PlayerControl.Hand.Button.AlternateUse).ToString());
-            _debugStats.AddEntry_Right("left grip", InputUtil.IsButtonPressed(Side.Left, PlayerControl.Hand.Button.Grip).ToString());
-            _debugStats.AddEntry_Right("left stick", InputUtil.IsButtonPressed(Side.Left, PlayerControl.Hand.Button.Stick).ToString());
+            //_debugStats.AddEntry_Right("left use", InputUtil.IsButtonPressed(Side.Left, PlayerControl.Hand.Button.Use).ToString());
+            //_debugStats.AddEntry_Right("left alternate use", InputUtil.IsButtonPressed(Side.Left, PlayerControl.Hand.Button.AlternateUse).ToString());
+            //_debugStats.AddEntry_Right("left grip", InputUtil.IsButtonPressed(Side.Left, PlayerControl.Hand.Button.Grip).ToString());
+            //_debugStats.AddEntry_Right("left stick", InputUtil.IsButtonPressed(Side.Left, PlayerControl.Hand.Button.Stick).ToString());
 
-            _debugStats.AddEntry_Right("right use", InputUtil.IsButtonPressed(Side.Right, PlayerControl.Hand.Button.Use).ToString());
-            _debugStats.AddEntry_Right("right alternate use", InputUtil.IsButtonPressed(Side.Right, PlayerControl.Hand.Button.AlternateUse).ToString());
-            _debugStats.AddEntry_Right("right grip", InputUtil.IsButtonPressed(Side.Right, PlayerControl.Hand.Button.Grip).ToString());
-            _debugStats.AddEntry_Right("right stick", InputUtil.IsButtonPressed(Side.Right, PlayerControl.Hand.Button.Stick).ToString());
+            //_debugStats.AddEntry_Right("right use", InputUtil.IsButtonPressed(Side.Right, PlayerControl.Hand.Button.Use).ToString());
+            //_debugStats.AddEntry_Right("right alternate use", InputUtil.IsButtonPressed(Side.Right, PlayerControl.Hand.Button.AlternateUse).ToString());
+            //_debugStats.AddEntry_Right("right grip", InputUtil.IsButtonPressed(Side.Right, PlayerControl.Hand.Button.Grip).ToString());
+            //_debugStats.AddEntry_Right("right stick", InputUtil.IsButtonPressed(Side.Right, PlayerControl.Hand.Button.Stick).ToString());
+
+            
+
+            _debugStats.AddEntry_Right("left hand velocity", $"{PlayerControl.handLeft.GetHandVelocity().ToStringSignificantDigits(3)} ({PlayerControl.handLeft.GetHandVelocity().magnitude.ToStringSignificantDigits(3)})");
+            _debugStats.AddEntry_Right("right hand velocity", $"{PlayerControl.handRight.GetHandVelocity().ToStringSignificantDigits(3)} ({PlayerControl.handRight.GetHandVelocity().magnitude.ToStringSignificantDigits(3)})");
+            _debugStats.AddEntry_Right("left hand ang velocity", $"{PlayerControl.handLeft.GetHandAngularVelocity().ToStringSignificantDigits(3)} ({PlayerControl.handLeft.GetHandAngularVelocity().magnitude.ToStringSignificantDigits(3)})");
+            _debugStats.AddEntry_Right("right hand ang velocity", $"{PlayerControl.handRight.GetHandAngularVelocity().ToStringSignificantDigits(3)} ({PlayerControl.handRight.GetHandAngularVelocity().magnitude.ToStringSignificantDigits(3)})");
         }
 
         #region debug research

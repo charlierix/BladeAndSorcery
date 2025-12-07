@@ -345,6 +345,19 @@ namespace PerfectlyNormalBaS
                 a.z + (b.z - a.z) * percent);
         }
 
+        // This came from Game.Orig.Math3D.TorqueBall
+        public static (Vector3 translationForce, Vector3 torque) SplitForceIntoTranslationAndTorque(Vector3 offsetFromCenterMass, Vector3 force)
+        {
+            return
+            (
+                // I'm still not convinced this is totally right, but none of the articles I've read seem to do anything different
+                translationForce: force,
+
+                // Torque is how much of the force is applied perpendicular to the radius
+                torque: Vector3.Cross(offsetFromCenterMass, force)
+            );
+        }
+
         #endregion
 
         #region intersections

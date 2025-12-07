@@ -62,6 +62,7 @@
     <Compile Include="Models\ConfinedAreaData.cs" />
     <Compile Include="Models\ObstacleAvoidanceData.cs" />
     <Compile Include="Models\RepelGroundData.cs" />
+    <Compile Include="Models\WingsData.cs" />
     <Compile Include="Scanning\RayCastStorage.cs" />
     <Compile Include="Scanning\RepelGround.cs" />
     <Compile Include="JetpackScript.cs" />
@@ -678,6 +679,7 @@
     <None Include="Configs\ObstacleAvoidance.json" />
     <None Include="Configs\RepelGround.json" />
     <None Include="Configs\test_config.json" />
+    <None Include="Configs\Wings.json" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

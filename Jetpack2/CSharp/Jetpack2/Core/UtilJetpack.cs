@@ -1,4 +1,5 @@
-﻿using PerfectlyNormalBaS;
+﻿using Jetpack2.Models;
+using PerfectlyNormalBaS;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -91,6 +92,31 @@ namespace Jetpack2.Core
             public Vector3 left_wing_up { get; set; }
             public Vector3 right_wing_forward { get; set; }
             public Vector3 right_wing_up { get; set; }
+        }
+
+        #endregion
+        #region class: HandWings
+
+        public class HandWings
+        {
+            public PlayerVRPoints PlayerPoints { get; set; }
+
+            // These will be null if the hands aren't wings (in the wrong region, hand closed, etc)
+            public HandWing Left { get; set; }
+            public HandWing Right { get; set; }
+        }
+        public class HandWing
+        {
+            public float Percent { get; set; }      // can be less than one if arm isn't extended very far, or fingers partially closed
+            public bool IsAirBrake { get; set; }
+            public Vector3 Normal { get; set; }
+            /// <summary>
+            /// abs value of velocity direction dot wing's up direction
+            /// </summary>
+            /// <remarks>
+            /// near zero is edge into wind, near one is airbrake
+            /// </remarks>
+            public float WingDotUp { get; set; }
         }
 
         #endregion
@@ -204,5 +230,134 @@ namespace Jetpack2.Core
                 rot_to_world = Quaternion.Inverse(to_local),
             };
         }
+
+        public static HandWings GetHandWings(PlayerVRPoints positions)
+        {
+            Vector3 normalized_left = positions.local.left / positions.height;
+            Vector3 normalized_right = positions.local.right / positions.height;
+
+            bool in_resting_left = IsIn_Resting(normalized_left, Side.Left);
+            bool in_resting_right = IsIn_Resting(normalized_right, Side.Right);
+
+            float? in_transition_left = IsIn_Transition(normalized_left, Side.Left);
+            float? in_transition_right = IsIn_Transition(normalized_right, Side.Right);
+
+            bool in_wing_left = IsIn_Wing(normalized_left, Side.Left);
+            bool in_wing_right = IsIn_Wing(normalized_right, Side.Right);
+
+            Vector3 velocity = Player.local.locomotion.physicBody.velocity;
+
+            HandWing wing_left = GetWing(in_transition_left, in_wing_left, positions.basedon_body_forward_world, positions.world.left_wing_pos, positions.world.left_wing_forward, positions.world.left_wing_up, velocity, true);
+            HandWing wing_right = GetWing(in_transition_right, in_wing_right, positions.basedon_body_forward_world, positions.world.right_wing_pos, positions.world.right_wing_forward, positions.world.right_wing_up, velocity, false);
+
+            return new HandWings
+            {
+                PlayerPoints = positions,
+                Left = wing_left,
+                Right = wing_right,
+            };
+        }
+
+        #region Private Methods - hand wings
+
+        private static bool IsIn_Resting(Vector3 pos, Side side)
+        {
+            pos = side == Side.Left ?
+                new Vector3(-pos.x, pos.y, pos.z) :
+                pos;
+
+            bool retVal = true;
+
+            retVal &= pos.x >= UIModOptions.PlayerPosTracking_RestingPos_MinX && pos.x <= UIModOptions.PlayerPosTracking_RestingPos_MaxX;
+            retVal &= pos.y >= UIModOptions.PlayerPosTracking_RestingPos_MinY && pos.y <= UIModOptions.PlayerPosTracking_RestingPos_MaxY;
+            retVal &= pos.z >= UIModOptions.PlayerPosTracking_RestingPos_MinZ && pos.z <= UIModOptions.PlayerPosTracking_RestingPos_MaxZ;
+
+            return retVal;
+        }
+        private static float? IsIn_Transition(Vector3 pos, Side side)
+        {
+            pos = side == Side.Left ?
+                new Vector3(-pos.x, pos.y, pos.z) :
+                pos;
+
+            bool inRange = true;
+
+            inRange &= pos.x >= UIModOptions.PlayerPosTracking_RestingPos_MaxX && pos.x <= UIModOptions.PlayerPosTracking_WingPos_MinX;     // x is correct
+
+            if (!inRange)
+                return null;
+
+            // x is in range, lerp y and z based on percent of x
+            float min_y = UtilityMath.GetScaledValue(UIModOptions.PlayerPosTracking_RestingPos_MinY, UIModOptions.PlayerPosTracking_WingPos_MinY, UIModOptions.PlayerPosTracking_RestingPos_MaxX, UIModOptions.PlayerPosTracking_WingPos_MinX, pos.x);
+            float max_y = UtilityMath.GetScaledValue(UIModOptions.PlayerPosTracking_RestingPos_MaxY, UIModOptions.PlayerPosTracking_WingPos_MaxY, UIModOptions.PlayerPosTracking_RestingPos_MaxX, UIModOptions.PlayerPosTracking_WingPos_MinX, pos.x);
+            float min_z = UtilityMath.GetScaledValue(UIModOptions.PlayerPosTracking_RestingPos_MinZ, UIModOptions.PlayerPosTracking_WingPos_MinZ, UIModOptions.PlayerPosTracking_RestingPos_MaxX, UIModOptions.PlayerPosTracking_WingPos_MinX, pos.x);
+            float max_z = UtilityMath.GetScaledValue(UIModOptions.PlayerPosTracking_RestingPos_MaxZ, UIModOptions.PlayerPosTracking_WingPos_MaxZ, UIModOptions.PlayerPosTracking_RestingPos_MaxX, UIModOptions.PlayerPosTracking_WingPos_MinX, pos.x);
+
+            inRange &= pos.y >= min_y && pos.y <= max_y;
+            inRange &= pos.z >= min_z && pos.z <= max_z;
+
+            if (!inRange)
+                return null;
+
+            return UtilityMath.GetScaledValue(0, 1, UIModOptions.PlayerPosTracking_RestingPos_MaxX, UIModOptions.PlayerPosTracking_WingPos_MinX, pos.x);
+        }
+        private static bool IsIn_Wing(Vector3 pos, Side side)
+        {
+            pos = side == Side.Left ?
+                new Vector3(-pos.x, pos.y, pos.z) :
+                pos;
+
+            bool retVal = true;
+
+            retVal &= pos.x >= UIModOptions.PlayerPosTracking_WingPos_MinX && pos.x <= UIModOptions.PlayerPosTracking_WingPos_MaxX;
+            retVal &= pos.y >= UIModOptions.PlayerPosTracking_WingPos_MinY && pos.y <= UIModOptions.PlayerPosTracking_WingPos_MaxY;
+            retVal &= pos.z >= UIModOptions.PlayerPosTracking_WingPos_MinZ && pos.z <= UIModOptions.PlayerPosTracking_WingPos_MaxZ;
+
+            return retVal;
+        }
+
+        private static HandWing GetWing(float? in_transition, bool in_wing, Vector3 body_forward, Vector3 pos, Vector3 forward, Vector3 up, Vector3 velocity, bool is_left)
+        {
+            float percent = 1;
+
+            if (in_transition != null)
+                percent *= in_transition.Value;
+
+            if (percent.IsNearZero())
+                return null;
+
+            if (UIModOptions.PlayerPosTracking_WingRequireOpenHand)
+            {
+                float open_percent = (is_left ? PlayerControl.handLeft : PlayerControl.handRight).GetAverageCurlNoThumb();     // 0 is open, 1 is closed
+
+                // Adjust the value against the narrower range
+                if (open_percent < WingsData.openhand_min)
+                    open_percent = 0;
+                else if (open_percent > WingsData.openhand_max)
+                    open_percent = 1;
+                else
+                    open_percent = UtilityMath.GetScaledValue_Capped(0, 1, WingsData.openhand_min, WingsData.openhand_max, open_percent);
+
+                percent *= 1 - open_percent;
+            }
+
+            Vector3 compare_forward = velocity.sqrMagnitude < WingsData.minSpeed * WingsData.minSpeed ?
+                body_forward :
+                velocity.normalized;
+
+            float wing_dot_up = Mathf.Abs(Vector3.Dot(compare_forward, up));
+            float dot_mid = (WingsData.dot_airbrake + WingsData.dot_wing) / 2;
+            bool is_airbrake = wing_dot_up > dot_mid;
+
+            return new HandWing
+            {
+                Percent = percent,
+                IsAirBrake = is_airbrake,
+                Normal = up,
+                WingDotUp = wing_dot_up,
+            };
+        }
+
+        #endregion
     }
 }
