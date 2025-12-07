@@ -54,6 +54,7 @@
     <Compile Include="FlightProcessing\PlayerRotator.cs" />
     <Compile Include="FlightProcessing\RotateToLook.cs" />
     <Compile Include="FlightProcessing\ThumbstickToAccel.cs" />
+    <Compile Include="FlightProcessing\TriggerThrusters.cs" />
     <Compile Include="FlightProcessing\Wings.cs" />
     <Compile Include="InputWatchers\AvgHandPositionTracker.cs" />
     <Compile Include="InputWatchers\GazeBuffer.cs" />

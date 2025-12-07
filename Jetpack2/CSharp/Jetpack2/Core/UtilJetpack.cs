@@ -323,7 +323,7 @@ namespace Jetpack2.Core
             if (in_transition != null)
                 percent *= in_transition.Value;
 
-            if (percent.IsNearZero())
+            if (!in_wing && percent.IsNearZero())       // during transition, in_wing will be false
                 return null;
 
             if (UIModOptions.PlayerPosTracking_WingRequireOpenHand)

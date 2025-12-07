@@ -35,6 +35,7 @@ namespace Jetpack2.FlightProcessing
         private readonly HeadUpRotateVisualizer _headUpRotateVisualizer;
         private readonly HandZonePosVisualizer _handZonePosVisualizer;
         private readonly Wings _wings;
+        private readonly TriggerThrusters _triggerThrust;
 
         private FlightData _standardState = null;
 
@@ -65,6 +66,7 @@ namespace Jetpack2.FlightProcessing
             _headUpRotateVisualizer = new HeadUpRotateVisualizer();
             _handZonePosVisualizer = new HandZonePosVisualizer();
             _wings = new Wings();
+            _triggerThrust = new TriggerThrusters();
         }
 
         public void Activate(float drag)
@@ -109,6 +111,7 @@ namespace Jetpack2.FlightProcessing
             _headUpRotateVisualizer.Clear();
             _handZonePosVisualizer.Clear();
             _wings.Clear();
+            _triggerThrust.Clear();
         }
         public void Deactivate()
         {
@@ -144,6 +147,7 @@ namespace Jetpack2.FlightProcessing
             _headUpRotateVisualizer.Clear();
             _handZonePosVisualizer.Clear();
             _wings.Clear();
+            _triggerThrust.Clear();
         }
 
         public void Update()
@@ -187,6 +191,7 @@ namespace Jetpack2.FlightProcessing
                 _headUpRotateVisualizer.Update(elapsed_seconds, body_forward, body_up);
                 _handZonePosVisualizer.Update(body_forward, body_up);
                 _wings.Update(body_forward, body_up);
+                _triggerThrust.Update(body_forward, body_up);
             }
         }
         public void UpdateFixed()
@@ -240,6 +245,13 @@ namespace Jetpack2.FlightProcessing
                 {
                     loco.physicBody.AddForce(accel_wings.Value.accel, ForceMode.Acceleration);
                     loco.physicBody.AddTorque(accel_wings.Value.torque, ForceMode.Acceleration);
+                }
+
+                var accel_triggers = _triggerThrust.UpdateFixed();
+                if (accel_triggers != null)
+                {
+                    loco.physicBody.AddForce(accel_triggers.Value.accel, ForceMode.Acceleration);
+                    loco.physicBody.AddTorque(accel_triggers.Value.torque, ForceMode.Acceleration);
                 }
             }
 

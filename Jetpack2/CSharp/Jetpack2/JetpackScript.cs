@@ -229,7 +229,7 @@ namespace Jetpack2
                 // can't invoke events from outside the class unless using reflection
             }
 
-            
+
 
 
 
@@ -298,12 +298,17 @@ namespace Jetpack2
             //_debugStats.AddEntry_Right("right grip", InputUtil.IsButtonPressed(Side.Right, PlayerControl.Hand.Button.Grip).ToString());
             //_debugStats.AddEntry_Right("right stick", InputUtil.IsButtonPressed(Side.Right, PlayerControl.Hand.Button.Stick).ToString());
 
-            
 
-            _debugStats.AddEntry_Right("left hand velocity", $"{PlayerControl.handLeft.GetHandVelocity().ToStringSignificantDigits(3)} ({PlayerControl.handLeft.GetHandVelocity().magnitude.ToStringSignificantDigits(3)})");
-            _debugStats.AddEntry_Right("right hand velocity", $"{PlayerControl.handRight.GetHandVelocity().ToStringSignificantDigits(3)} ({PlayerControl.handRight.GetHandVelocity().magnitude.ToStringSignificantDigits(3)})");
-            _debugStats.AddEntry_Right("left hand ang velocity", $"{PlayerControl.handLeft.GetHandAngularVelocity().ToStringSignificantDigits(3)} ({PlayerControl.handLeft.GetHandAngularVelocity().magnitude.ToStringSignificantDigits(3)})");
-            _debugStats.AddEntry_Right("right hand ang velocity", $"{PlayerControl.handRight.GetHandAngularVelocity().ToStringSignificantDigits(3)} ({PlayerControl.handRight.GetHandAngularVelocity().magnitude.ToStringSignificantDigits(3)})");
+
+            //_debugStats.AddEntry_Right("left hand velocity", $"{PlayerControl.handLeft.GetHandVelocity().ToStringSignificantDigits(3)} ({PlayerControl.handLeft.GetHandVelocity().magnitude.ToStringSignificantDigits(3)})");
+            //_debugStats.AddEntry_Right("right hand velocity", $"{PlayerControl.handRight.GetHandVelocity().ToStringSignificantDigits(3)} ({PlayerControl.handRight.GetHandVelocity().magnitude.ToStringSignificantDigits(3)})");
+            //_debugStats.AddEntry_Right("left hand ang velocity", $"{PlayerControl.handLeft.GetHandAngularVelocity().ToStringSignificantDigits(3)} ({PlayerControl.handLeft.GetHandAngularVelocity().magnitude.ToStringSignificantDigits(3)})");
+            //_debugStats.AddEntry_Right("right hand ang velocity", $"{PlayerControl.handRight.GetHandAngularVelocity().ToStringSignificantDigits(3)} ({PlayerControl.handRight.GetHandAngularVelocity().magnitude.ToStringSignificantDigits(3)})");
+
+
+
+            //_debugStats.AddEntry_Right("left trigger", PlayerControl.handLeft.useAxis.ToStringSignificantDigits(2));
+            //_debugStats.AddEntry_Right("right trigger", PlayerControl.handRight.useAxis.ToStringSignificantDigits(2));
         }
 
         #region debug research

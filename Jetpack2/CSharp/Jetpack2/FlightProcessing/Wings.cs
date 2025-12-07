@@ -21,7 +21,7 @@ namespace Jetpack2.FlightProcessing
 
         #region class: ForceAtPos
 
-        private class ForceAtPos
+        internal class ForceAtPos
         {
             // relative to middle point, body_forward, body_up
             public Vector3 Normalized_Left { get; set; }
@@ -41,8 +41,6 @@ namespace Jetpack2.FlightProcessing
 
         private UtilJetpack.PlayerVRPoints _positions = null;
         private UtilJetpack.HandWings _wings = null;
-
-        private Rigidbody _rigidBody = null;
 
         private Vector3 _prev_vel = Vector3.zero;
         private (Vector3 accel, Vector3 torque)? _prev_left = null;
@@ -79,7 +77,6 @@ namespace Jetpack2.FlightProcessing
 
         public void Clear()
         {
-            _rigidBody = null;
             ClearDebugVisuals();
         }
 
@@ -111,15 +108,12 @@ namespace Jetpack2.FlightProcessing
             if (_positions == null || _wings == null)
                 return null;
 
-            if (_rigidBody == null && !Player.local.gameObject.TryGetComponent<Rigidbody>(out _rigidBody))
-                return null;
-
             // Get pos where forces will be applied
             var force_at = GetForceAtPosition(_positions);
 
             // Treat left and right hands independently
-            var left = Process(_wings.Left, _positions.world.center, force_at.World_Left, _rigidBody);
-            var right = Process(_wings.Right, _positions.world.center, force_at.World_Right, _rigidBody);
+            var left = Process(_wings.Left, _positions.world.center, force_at.World_Left);
+            var right = Process(_wings.Right, _positions.world.center, force_at.World_Right);
 
             _prev_vel = Player.local.locomotion.physicBody.velocity;
             _prev_left = left;
@@ -396,7 +390,7 @@ namespace Jetpack2.FlightProcessing
         #endregion
         #region Private Methods
 
-        private static ForceAtPos GetForceAtPosition(UtilJetpack.PlayerVRPoints positions)
+        internal static ForceAtPos GetForceAtPosition(UtilJetpack.PlayerVRPoints positions)
         {
             // sliders are normalized
             //UIModOptions.Wing_ForceAt_X
@@ -423,7 +417,7 @@ namespace Jetpack2.FlightProcessing
             };
         }
 
-        private static (Vector3 accel, Vector3 torque)? Process(UtilJetpack.HandWing wing, Vector3 center_world, Vector3 forceat_world, Rigidbody rigidBody)
+        private static (Vector3 accel, Vector3 torque)? Process(UtilJetpack.HandWing wing, Vector3 center_world, Vector3 forceat_world)
         {
             if (wing == null)
                 return null;
@@ -431,10 +425,10 @@ namespace Jetpack2.FlightProcessing
             Vector3 velocity = Player.local.locomotion.physicBody.velocity;
 
             if (wing.IsAirBrake && UIModOptions.ShouldShouldUseAirBrake)
-                return Process_Common(wing, forceat_world, rigidBody, center_world, velocity, UIModOptions.Wing_Airbrake_SurfaceArea);
+                return Process_Common(wing, forceat_world, center_world, velocity, UIModOptions.Wing_Airbrake_SurfaceArea);
 
             else if (!wing.IsAirBrake && UIModOptions.ShouldShouldUseWings)
-                return Process_Common(wing, forceat_world, rigidBody, center_world, velocity, UIModOptions.Wing_SurfaceArea);
+                return Process_Common(wing, forceat_world, center_world, velocity, UIModOptions.Wing_SurfaceArea);
 
             return null;
         }
@@ -651,13 +645,13 @@ namespace Jetpack2.FlightProcessing
             rigidBody.AddTorque(angularAcceleration, ForceMode.Acceleration);
         }
 
-        private static (Vector3 accel, Vector3 torque) Process_Common(UtilJetpack.HandWing wing, Vector3 forceat_world, Rigidbody rigidBody, Vector3 center_mass_world, Vector3 velocity, float surface_area)
+        private static (Vector3 accel, Vector3 torque) Process_Common(UtilJetpack.HandWing wing, Vector3 forceat_world, Vector3 center_mass_world, Vector3 velocity, float surface_area)
         {
             float speed = velocity.magnitude;
             float dynamicPressure = 0.5f * UIModOptions.Wing_AirDensity * speed * speed;
 
             // Turn the magnitude of velocity into what the force will be
-            float mult = dynamicPressure * surface_area / UIModOptions.Wing_PlayerMass;
+            float mult = dynamicPressure * surface_area;// / UIModOptions.Wing_PlayerMass;      // don't divide mass here, that will mess with the torque calculation
             Vector3 vel_force = (velocity / speed) * mult;
             vel_force = -vel_force;     // the force acts in the opposite direction of travel
 
@@ -670,11 +664,11 @@ namespace Jetpack2.FlightProcessing
             // Split into translation and torque
             var split = Math3D.SplitForceIntoTranslationAndTorque(rel_pos, vel_projected_normal);
 
-            // Adjust torque with proper angular acceleration calculation
+            // Convert to accelerations
             float momentOfInertia = (2f / 5f) * UIModOptions.Wing_PlayerMass * UIModOptions.Wing_PlayerRadius * UIModOptions.Wing_PlayerRadius;     // for a solid sphere: I = (2/5) * m * r^2
             Vector3 angularAcceleration = split.torque / momentOfInertia;
 
-            return (split.translationForce, angularAcceleration);
+            return (split.translationForce / UIModOptions.Wing_PlayerMass, angularAcceleration);
         }
 
         #endregion

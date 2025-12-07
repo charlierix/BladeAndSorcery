@@ -28,6 +28,7 @@ namespace Jetpack2
         private const string CATEGORY_ROTATELOOK_IK = "Rotate To Look - IK Rig";
         private const string CATEGORY_PLAYERPOSTRACKING = "Player Pos Tracking";
         private const string CATEGORY_WINGS = "Hand Wings";
+        private const string CATEGORY_TRIGGERTHRUST = "Trigger Thrust";
         private const string CATEGORY_SOUNDS = "Sounds";        // TODO: add this
         private const string CATEGORY_SCALE = "Player Size";
         private const string CATEGORY_VISIBILITY = "Player Visibility";
@@ -43,6 +44,7 @@ namespace Jetpack2
         private const int ORDER_ROTATELOOK_IK = 8;
         private const int ORDER_PLAYERPOSTRACKING = 9;
         private const int ORDER_WINGS = 10;
+        private const int ORDER_TRIGGERTHRUST = 11;
         private const int ORDER_SOUNDS = 50;
         private const int ORDER_SCALE = 51;
         private const int ORDER_VISIBILITY = 52;
@@ -249,6 +251,10 @@ namespace Jetpack2
         [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
         [ModOption(name: "Should Use Air Brake", tooltip: "Sprout air brakes when sticking the arms out", order = 8)]
         public static bool ShouldShouldUseAirBrake = true;
+
+        [ModOptionCategory(CATEGORY_TOGGLEBEHAVIORS, ORDER_TOGGLEBEHAVIORS)]
+        [ModOption(name: "Should Use Trigger Thrust", tooltip: "Applies thrust when squeezing triggers", order = 9)]
+        public static bool ShouldShouldUseTriggerThrust = false;
 
         #endregion
 
@@ -627,7 +633,7 @@ namespace Jetpack2
         [ModOptionSlider]
         [ModOption(name: "Force At X (left/right)", tooltip: "The point where forces on the rigid body are applied (normalized to player height)", order = 1)]
         [ModOptionFloatValues(0, 0.6f, 0.01f)]
-        public static float Wing_ForceAt_X = 0.15f;
+        public static float Wing_ForceAt_X = 0.25f;
 
         [ModOptionCategory(CATEGORY_WINGS, ORDER_WINGS)]
         [ModOptionSlider]
@@ -681,6 +687,16 @@ namespace Jetpack2
         public static float Wing_Airbrake_DragCoefficient = 1.28f;
 
 
+
+        #endregion
+
+        #region Trigger Thrust
+
+        [ModOptionCategory(CATEGORY_TRIGGERTHRUST, ORDER_TRIGGERTHRUST)]
+        [ModOptionSlider]
+        [ModOption(name: "Acceleration", tooltip: "How hard to accelerate forward when trigger is fully squeezed.  This is per side, so will be double if both triggers are squeezed", order = 1)]
+        [ModOptionFloatValues(0, 18, 0.25f)]
+        public static float TriggerThrust_Accel = 6f;
 
         #endregion
 
