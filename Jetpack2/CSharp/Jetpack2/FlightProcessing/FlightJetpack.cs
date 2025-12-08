@@ -21,9 +21,12 @@ namespace Jetpack2.FlightProcessing
 
     public class FlightJetpack
     {
+        #region Declaration Section
+
         private readonly RayCastStorage _raycast_storage;
         private readonly PlayerRagdollUtil _ragdollUtil = new PlayerRagdollUtil();
         private readonly PlayerRotator _rotator;
+        private readonly AngularVelocityProcessor _angVel;
         private readonly DebugStats _debugStats;
         //private readonly AvgHandPositionTracker _handPositionTracker;
         private readonly ConfinedArea _confinedScanner;
@@ -50,11 +53,14 @@ namespace Jetpack2.FlightProcessing
         private Vector2 _left_stick = Vector2.zero;
         private Vector2 _right_stick = Vector2.zero;
 
+        #endregion
+
         //public FlightJetpack(RayCastStorage raycast_storage, PlayerRotator rotator, DebugStats debugStats, AvgHandPositionTracker handPositionTracker)
         public FlightJetpack(RayCastStorage raycast_storage, PlayerRotator rotator, DebugStats debugStats)
         {
             _raycast_storage = raycast_storage;
             _rotator = rotator;
+            _angVel = new AngularVelocityProcessor(_rotator);
             _debugStats = debugStats;
             //_handPositionTracker = handPositionTracker;
             _confinedScanner = new ConfinedArea(_raycast_storage);
@@ -112,6 +118,7 @@ namespace Jetpack2.FlightProcessing
             _handZonePosVisualizer.Clear();
             _wings.Clear();
             _triggerThrust.Clear();
+            _angVel.Clear();
         }
         public void Deactivate()
         {
@@ -148,6 +155,7 @@ namespace Jetpack2.FlightProcessing
             _handZonePosVisualizer.Clear();
             _wings.Clear();
             _triggerThrust.Clear();
+            _angVel.Clear();
         }
 
         public void Update()
@@ -183,15 +191,17 @@ namespace Jetpack2.FlightProcessing
             if (!Player.local.locomotion.isGrounded && (DateTime.UtcNow - _activation_time).TotalMilliseconds > 500)
             {
                 var (body_forward, body_up) = _ragdollUtil.GetRagdollForwardUp();
+                var positions = UtilJetpack.GetPlayerPoints(body_forward, body_up);
 
                 _rotateToLook.Update(body_forward, body_up, elapsed_seconds);
 
                 _gazeBufferVisualizer_target.Update();
                 _gazeBufferVisualizer_offset.Update(body_forward);
                 _headUpRotateVisualizer.Update(elapsed_seconds, body_forward, body_up);
-                _handZonePosVisualizer.Update(body_forward, body_up);
-                _wings.Update(body_forward, body_up);
-                _triggerThrust.Update(body_forward, body_up);
+                _handZonePosVisualizer.Update(body_forward, body_up, positions);
+                _wings.Update(body_forward, body_up, positions);
+                _triggerThrust.Update(body_forward, body_up, positions);
+                _angVel.Update(positions, elapsed_seconds);
             }
         }
         public void UpdateFixed()
@@ -244,15 +254,19 @@ namespace Jetpack2.FlightProcessing
                 if (accel_wings != null)
                 {
                     loco.physicBody.AddForce(accel_wings.Value.accel, ForceMode.Acceleration);
-                    loco.physicBody.AddTorque(accel_wings.Value.torque, ForceMode.Acceleration);
+                    //loco.physicBody.AddTorque(accel_wings.Value.torque, ForceMode.Acceleration);      // the player isn't rotating freely (rigid body likely has constraints)
+                    _angVel.AddAngularAccel(accel_wings.Value.torque);
                 }
 
                 var accel_triggers = _triggerThrust.UpdateFixed();
                 if (accel_triggers != null)
                 {
                     loco.physicBody.AddForce(accel_triggers.Value.accel, ForceMode.Acceleration);
-                    loco.physicBody.AddTorque(accel_triggers.Value.torque, ForceMode.Acceleration);
+                    //loco.physicBody.AddTorque(accel_triggers.Value.torque, ForceMode.Acceleration);
+                    _angVel.AddAngularAccel(accel_triggers.Value.torque);
                 }
+
+                _angVel.UpdateFixed(elapsed_seconds);
             }
 
             // TODO: make an option for horiztonal control mode (direct or accel)

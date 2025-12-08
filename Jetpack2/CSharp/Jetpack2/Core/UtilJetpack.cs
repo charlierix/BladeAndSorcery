@@ -318,13 +318,13 @@ namespace Jetpack2.Core
 
         private static HandWing GetWing(float? in_transition, bool in_wing, Vector3 body_forward, Vector3 pos, Vector3 forward, Vector3 up, Vector3 velocity, bool is_left)
         {
+            if (!in_wing && in_transition == null)       // during transition, in_wing will be false
+                return null;
+
             float percent = 1;
 
             if (in_transition != null)
                 percent *= in_transition.Value;
-
-            if (!in_wing && percent.IsNearZero())       // during transition, in_wing will be false
-                return null;
 
             if (UIModOptions.PlayerPosTracking_WingRequireOpenHand)
             {

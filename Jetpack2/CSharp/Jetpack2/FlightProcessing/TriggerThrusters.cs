@@ -5,6 +5,8 @@ using UnityEngine;
 
 namespace Jetpack2.FlightProcessing
 {
+    // TODO: when wings are out, apply thrust along wing forward instead of body forward (but not if airbrake is active)
+
     /// <summary>
     /// Applies thrust along body forward when the trigger is pulled in
     /// </summary>
@@ -17,6 +19,7 @@ namespace Jetpack2.FlightProcessing
 
         private Vector3 _body_forward = Vector3.zero;
         private Vector3 _body_up = Vector3.zero;
+        private UtilJetpack.PlayerVRPoints _positions = null;
 
         #region drawing
 
@@ -35,23 +38,25 @@ namespace Jetpack2.FlightProcessing
             ClearDebugVisuals();
         }
 
-        public void Update(Vector3 body_forward, Vector3 body_up)
+        public void Update(Vector3 body_forward, Vector3 body_up, UtilJetpack.PlayerVRPoints positions)
         {
             _body_forward = body_forward;
             _body_up = body_up;
+            _positions = positions;
         }
         public (Vector3 accel, Vector3 torque)? UpdateFixed()
         {
             if (!UIModOptions.ShouldShouldUseTriggerThrust)
                 return null;
 
-            var positions = UtilJetpack.GetPlayerPoints(_body_forward, _body_up);
+            if (_positions == null)
+                return null;
 
             // Get pos where forces will be applied
-            var force_at = Wings.GetForceAtPosition(positions);
+            var force_at = Wings.GetForceAtPosition(_positions);
 
-            var left = Process(force_at.World_Left, positions.world.center, _body_forward, PlayerControl.handLeft.useAxis);
-            var right = Process(force_at.World_Right, positions.world.center, _body_forward, PlayerControl.handRight.useAxis);
+            var left = Process(force_at.World_Left, _positions.world.center, _body_forward, PlayerControl.handLeft.useAxis);
+            var right = Process(force_at.World_Right, _positions.world.center, _body_forward, PlayerControl.handRight.useAxis);
 
             if (left == null && right == null)
                 return null;

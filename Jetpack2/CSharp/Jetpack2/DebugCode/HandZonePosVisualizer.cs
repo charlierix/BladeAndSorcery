@@ -90,7 +90,7 @@ namespace Jetpack2.DebugCode
             ClearDebugVisuals();
         }
 
-        public void Update(Vector3 body_forward, Vector3 body_up)
+        public void Update(Vector3 body_forward, Vector3 body_up, UtilJetpack.PlayerVRPoints positions)
         {
             if (!UIModOptions.VisualizeHandZonePositions)
                 return;
@@ -102,7 +102,6 @@ namespace Jetpack2.DebugCode
                 _hash = hash;
             }
 
-            var positions = UtilJetpack.GetPlayerPoints(body_forward, body_up);
             Vector3 normalized_left = positions.local.left / positions.height;
             Vector3 normalized_right = positions.local.right / positions.height;
 

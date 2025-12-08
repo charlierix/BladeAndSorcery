@@ -7,18 +7,11 @@ using UnityEngine;
 
 namespace Jetpack2.FlightProcessing
 {
+    // TODO: instead of putting forceat at z=0, put forward like canards, then add a small stationary wing at z=0 or a little negative
+    // this will make the player pitch properly
+
     public class Wings
     {
-
-        // check if either or both hands are stretched out
-        // if both hands stretched out and roughly mirror each other, and fingers are open, continue with wing or braking
-        // if only one hand is stretched, only do braking if hand is at correct range of angles
-
-
-        // see egg wings AeroSurface
-        //  that class is too tied into game object and rigid body
-        //  make a class that can calculate the same, but is a util function
-
         #region class: ForceAtPos
 
         internal class ForceAtPos
@@ -69,6 +62,7 @@ namespace Jetpack2.FlightProcessing
         private DebugItem _accel_right = null;
         private DebugItem _torque_right = null;
 
+        private DebugItem _rb_stats = null;
         private DebugItem _stats = null;
 
         #endregion
@@ -80,12 +74,12 @@ namespace Jetpack2.FlightProcessing
             ClearDebugVisuals();
         }
 
-        public void Update(Vector3 body_forward, Vector3 body_up)
+        public void Update(Vector3 body_forward, Vector3 body_up, UtilJetpack.PlayerVRPoints positions)
         {
             if (!UIModOptions.ShouldShouldUseWings && !UIModOptions.ShouldShouldUseAirBrake)
                 return;
 
-            _positions = UtilJetpack.GetPlayerPoints(body_forward, body_up);
+            _positions = positions;
             _wings = UtilJetpack.GetHandWings(_positions);
 
             if (UIModOptions.ShowWingStats)
@@ -96,6 +90,7 @@ namespace Jetpack2.FlightProcessing
                 // show velocity component along normal
                 DrawForceLines();
 
+                //DrawRigidBodyStats();
                 DrawStats();
             }
 
@@ -168,6 +163,12 @@ namespace Jetpack2.FlightProcessing
             {
                 _renderer.Remove(_right_up);
                 _right_up = null;
+            }
+
+            if (_rb_stats != null)
+            {
+                _renderer.Remove(_rb_stats);
+                _rb_stats = null;
             }
 
             if (_stats != null)
@@ -297,8 +298,40 @@ namespace Jetpack2.FlightProcessing
                 DebugRenderer3D.AdjustLinePositions(viz_torque, pos, pos + torque.Value);
         }
 
+        private void DrawRigidBodyStats()
+        {
+            EnsureDebugActive();
+
+            Vector3 text_pos = Player.local.head.anchor.position +
+                Player.local.head.transform.forward * 1.5f +
+                //Player.local.head.transform.right * 0.35f +
+                Player.local.head.transform.up * 0.3f;
+
+            var lines = new List<string>();
+
+            var phys_body = Player.local.locomotion.physicBody;
+
+            // this is near zero like I suspected.  ended up making AngularVelocityProcessor to do the rotations
+            lines.Add($"ang speed: {phys_body.angularVelocity.magnitude.ToStringSignificantDigits(3)} ({phys_body.angularVelocity.ToStringSignificantDigits(3)})");
+
+            //phys_body.constraints.
+
+
+            string text = string.Join(Environment.NewLine, lines);
+
+            if (_rb_stats == null)
+                _rb_stats = _renderer.AddText(text, text_pos, Player.local.head.transform.forward, UtilityColor.FromHex("5C4023"), UtilityColor.FromHex("74C4BF"), TEXT_HEIGHT * lines.Count);
+
+            _rb_stats.Object.transform.position = text_pos;
+            _rb_stats.Object.transform.rotation = Quaternion.LookRotation((text_pos - Player.local.head.anchor.position).normalized, Player.local.head.transform.up);
+
+            DebugRenderer3D.AdjustText(_rb_stats, new_text: text);
+        }
+
         private void DrawStats()
         {
+            EnsureDebugActive();
+
             Vector3 text_pos = Player.local.head.anchor.position +
                 Player.local.head.transform.forward * 1.5f +
                 //Player.local.head.transform.right * 0.35f +
@@ -309,31 +342,61 @@ namespace Jetpack2.FlightProcessing
             // velocity
             lines.Add($"speed: {_prev_vel.magnitude.ToStringSignificantDigits(3)}");
 
+            if (_wings.Left != null || _wings.Right != null)
+                lines.Add("");
+
             // left
             float? dot = _wings?.Left?.WingDotUp;
-            string angle = dot != null ?
-                Math1D.Dot_to_Degrees(1 - dot.Value).ToStringSignificantDigits(3) :
+            string dot_text = dot != null ?
+                dot.Value.ToStringSignificantDigits(3) :
                 "--";
 
-            string accel = _prev_left?.accel.ToStringSignificantDigits(3) ?? "--";
-            string torque = _prev_left?.torque.ToStringSignificantDigits(3) ?? "--";
+            //string angle = dot != null ?
+            //    Math1D.Dot_to_Degrees(1 - dot.Value).ToStringSignificantDigits(3) :
+            //    "--";
 
-            lines.Add($"left angle: {angle}");
-            lines.Add($"left translate accel: {accel}");
-            lines.Add($"left torque accel: {torque}");
+            string accel_mag = _prev_left?.accel.magnitude.ToStringSignificantDigits(3) ?? "--";
+            string accel = _prev_left?.accel.ToStringSignificantDigits(3) ?? "--";
+            string torque_mag = _prev_left?.torque.magnitude.ToStringSignificantDigits(3) ?? "--";
+            string torque = _prev_left?.torque.ToStringSignificantDigits(3) ?? "--";
+            string is_airbrake = _wings?.Left?.IsAirBrake.ToString() ?? "--";
+
+            if (_wings.Left != null)
+            {
+                lines.Add($"left dot up: {dot_text}");
+                //lines.Add($"left angle: {angle}");
+                lines.Add($"left translate accel: {accel_mag} ({accel})");
+                lines.Add($"left torque accel: {torque_mag} ({torque})");
+                lines.Add($"left is airbrake: {is_airbrake}");
+            }
+
+            if (_wings.Left != null && _wings.Right != null)
+                lines.Add("");
 
             // right
             dot = _wings?.Right?.WingDotUp;
-            angle = dot != null ?
-                Math1D.Dot_to_Degrees(1 - dot.Value).ToStringSignificantDigits(3) :
+            dot_text = dot != null ?
+                dot.Value.ToStringSignificantDigits(3) :
                 "--";
 
-            accel = _prev_right?.accel.ToStringSignificantDigits(3) ?? "--";
-            torque = _prev_right?.torque.ToStringSignificantDigits(3) ?? "--";
+            //angle = dot != null ?
+            //    Math1D.Dot_to_Degrees(1 - dot.Value).ToStringSignificantDigits(3) :
+            //    "--";
 
-            lines.Add($"right angle: {angle}");
-            lines.Add($"right translate accel: {accel}");
-            lines.Add($"right torque accel: {torque}");
+            accel_mag = _prev_right?.accel.magnitude.ToStringSignificantDigits(3) ?? "--";
+            accel = _prev_right?.accel.ToStringSignificantDigits(3) ?? "--";
+            torque_mag = _prev_right?.torque.magnitude.ToStringSignificantDigits(3) ?? "--";
+            torque = _prev_right?.torque.ToStringSignificantDigits(3) ?? "--";
+            is_airbrake = _wings?.Right?.IsAirBrake.ToString() ?? "--";
+
+            if (_wings.Right != null)
+            {
+                lines.Add($"right dot up: {dot_text}");
+                //lines.Add($"right angle: {angle}");
+                lines.Add($"right translate accel: {accel_mag} ({accel})");
+                lines.Add($"right torque accel: {torque_mag} ({torque})");
+                lines.Add($"right is airbrake: {is_airbrake}");
+            }
 
             string text = string.Join(Environment.NewLine, lines);
 
@@ -343,7 +406,7 @@ namespace Jetpack2.FlightProcessing
             _stats.Object.transform.position = text_pos;
             _stats.Object.transform.rotation = Quaternion.LookRotation((text_pos - Player.local.head.anchor.position).normalized, Player.local.head.transform.up);
 
-            DebugRenderer3D.AdjustText(_stats, new_text: text);
+            DebugRenderer3D.AdjustText(_stats, new_text: text, new_worldheight: TEXT_HEIGHT * lines.Count);
         }
 
         private void DrawWings()

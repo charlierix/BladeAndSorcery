@@ -280,7 +280,13 @@ namespace Jetpack2
 
         [ModOptionCategory(CATEGORY_FLIGHTPROPS, ORDER_FLIGHTPROPS)]
         [ModOptionSlider]
-        [ModOption(name: "Gravity", tooltip: "0 is no gravity.  9.8 is standard", order = 3)]
+        [ModOption(name: "Angular Drag", tooltip: "Slows down rotations", order = 3)]
+        [ModOptionFloatValues(0, 2, 0.05f)]
+        public static float AngularDrag = 0.2f;
+
+        [ModOptionCategory(CATEGORY_FLIGHTPROPS, ORDER_FLIGHTPROPS)]
+        [ModOptionSlider]
+        [ModOption(name: "Gravity", tooltip: "0 is no gravity.  9.8 is standard", order = 4)]
         [ModOptionFloatValues(0, 18, 0.1f)]
         public static float GravitySetting = 0f;
 
